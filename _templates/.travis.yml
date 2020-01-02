@@ -1,0 +1,19 @@
+---
+language: go
+sudo: false
+go:
+  - "1.12"
+  - "1.13"
+env:
+  global:
+    - GO111MODULE=on
+cache:
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
+script:
+  - make coverage
+  - make lint
+# optionally push to codecov.io
+# after_success:
+#   - bash <(curl -s https://codecov.io/bash)
