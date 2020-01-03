@@ -5,11 +5,12 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/ghodss/yaml"
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/skeleton-go/pkg/file"
-	"github.com/martinohmann/skeleton-go/pkg/git"
 	"github.com/spf13/cobra"
+	gitconfig "github.com/tcnksm/go-gitconfig"
 )
 
 const (
@@ -53,18 +54,25 @@ func (c *Config) SkeletonDir() string {
 }
 
 func (c *Config) Complete(outputDir string) (err error) {
-	gitConfig := git.GlobalConfig()
-
 	if c.Author.Fullname == "" {
-		c.Author.Fullname = gitConfig.Username
+		c.Author.Fullname, err = gitconfig.Global("user.name")
+		if err != nil {
+			log.Warn("user.name not found in git config, set it to automatically populate author fullname")
+		}
 	}
 
 	if c.Author.Email == "" {
-		c.Author.Email = gitConfig.Email
+		c.Author.Email, err = gitconfig.Global("user.email")
+		if err != nil {
+			log.Warn("user.email not found in git config, set it to automatically populate author email")
+		}
 	}
 
 	if c.Repository.User == "" {
-		c.Repository.User = gitConfig.GitHubUser
+		c.Repository.User, err = gitconfig.Global("github.user")
+		if err != nil {
+			log.Warn("github.user not found in git config, set it to automatically populate repository user")
+		}
 	}
 
 	if c.ProjectName == "" {

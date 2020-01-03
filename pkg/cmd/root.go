@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -16,11 +13,6 @@ func NewRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-			logHandler := cli.New(os.Stdout)
-			logHandler.Padding = 0
-
-			log.SetHandler(logHandler)
-
 			if debug {
 				log.SetLevel(log.DebugLevel)
 			}

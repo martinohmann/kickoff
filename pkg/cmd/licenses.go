@@ -11,6 +11,7 @@ func NewLicensesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "licenses",
 		Short: "List available licenses",
+		Long:  "Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			licenses, err := license.List()
@@ -18,9 +19,9 @@ func NewLicensesCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("%-20s NAME\n", "KEY")
+			fmt.Printf("%-15s NAME\n", "KEY")
 			for _, license := range licenses {
-				fmt.Printf("%-20s %s\n", license.Key, license.Name)
+				fmt.Printf("%-15s %s\n", license.Key, license.Name)
 			}
 
 			return nil

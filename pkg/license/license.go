@@ -1,85 +1,111 @@
+// Package license provides an adapter to fetch license texts from the GitHub
+// Licenses API.
 package license
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-)
 
-const (
-	licensesURL = "https://api.github.com/licenses"
+	"github.com/google/go-github/v28/github"
 )
 
 var (
+	// ErrLicenseNotFound is returned by the Adapter if a license cannot be
+	// found via the GitHub Licenses API.
 	ErrLicenseNotFound = errors.New("license not found")
+
+	// DefaultAdapter is the default adapter for the GitHub Licenses API.
+	DefaultAdapter = NewAdapter(github.NewClient(nil).Licenses)
 )
 
+// GitHubLicensesService is the interface of the GitHub Licenses API Service.
+type GitHubLicensesService interface {
+	Get(ctx context.Context, licenseName string) (*github.License, *github.Response, error)
+	List(ctx context.Context) ([]*github.License, *github.Response, error)
+}
+
+// Info holds information about a single license.
 type Info struct {
 	Key  string
 	Name string
 	Body string
 }
 
-func Lookup(name string) (*Info, error) {
-	name = strings.ToLower(name)
-
-	licenses, err := List()
-	if err != nil {
-		return nil, err
+func toInfo(license *github.License) *Info {
+	if license == nil {
+		return nil
 	}
 
-	for _, license := range licenses {
-		if strings.ToLower(license.Key) == name || strings.ToLower(license.Name) == name {
-			return Get(license.Key)
-		}
-	}
-
-	return nil, ErrLicenseNotFound
-}
-
-func Get(key string) (*Info, error) {
 	info := Info{}
 
-	err := get(fmt.Sprintf("%s/%s", licensesURL, key), &info)
+	if license.Key != nil {
+		info.Key = *license.Key
+	}
+
+	if license.Name != nil {
+		info.Name = *license.Name
+	}
+
+	if license.Body != nil {
+		info.Body = *license.Body
+	}
+
+	return &info
+}
+
+// Adapter adapts to the GitHub Licences API.
+type Adapter struct {
+	service GitHubLicensesService
+}
+
+// NewAdapter creates a new *Adapter for service.
+func NewAdapter(service GitHubLicensesService) *Adapter {
+	return &Adapter{
+		service: service,
+	}
+}
+
+// Get fetches the info for the license with name. Will return
+// ErrLicenseNotFound if the license is not recognized.
+func (f *Adapter) Get(name string) (*Info, error) {
+	license, resp, err := f.service.Get(context.Background(), name)
+	if err != nil {
+		if resp != nil && resp.StatusCode == 404 {
+			return nil, ErrLicenseNotFound
+		}
+
+		return nil, err
+	}
+
+	return toInfo(license), nil
+}
+
+// List lists the infos for all available licenses. These do not include the
+// license body but only the metadata. Use Get to fetch the body of a
+// particular license.
+func (f *Adapter) List() ([]*Info, error) {
+	licenses, _, err := f.service.List(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	return &info, nil
-}
-
-func List() ([]*Info, error) {
-	infos := []*Info{}
-
-	err := get(licensesURL, &infos)
-	if err != nil {
-		return nil, err
+	infos := make([]*Info, len(licenses))
+	for i, license := range licenses {
+		infos[i] = toInfo(license)
 	}
 
 	return infos, nil
 }
 
-func get(url string, into interface{}) error {
-	r, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
+// Get fetches the info for the license with name using the DefaultAdapter.
+// Will return ErrLicenseNotFound if the license is not recognized.
+func Get(name string) (*Info, error) {
+	return DefaultAdapter.Get(name)
+}
 
-	r.Header.Add("Accept", "application/vnd.github.v3+json")
-
-	resp, err := http.DefaultClient.Do(r)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	buf, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(buf, into)
+// List lists the infos for all available licenses using the DefaultAdapter.
+// These do not include the license body but only the metadata. Use Get to
+// fetch the body of a particular license.
+func List() ([]*Info, error) {
+	return DefaultAdapter.List()
 }

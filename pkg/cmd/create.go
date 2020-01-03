@@ -16,9 +16,9 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/martinohmann/skeleton-go/pkg/config"
 	"github.com/martinohmann/skeleton-go/pkg/file"
-	"github.com/martinohmann/skeleton-go/pkg/git"
 	"github.com/martinohmann/skeleton-go/pkg/license"
 	"github.com/spf13/cobra"
+	git "gopkg.in/src-d/go-git.v4"
 )
 
 func NewCreateCmd() *cobra.Command {
@@ -108,21 +108,24 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 }
 
 func (o *CreateOptions) Validate() error {
-	_, err := os.Stat(o.OutputDir)
-	if !os.IsNotExist(err) && !o.Force {
+	if file.Exists(o.OutputDir) && !o.Force {
 		return fmt.Errorf("output-dir %q already exists, add --force to overwrite", o.OutputDir)
+	}
+
+	ok, err := file.IsDirectory(o.InputDir)
+	if err != nil {
+		return fmt.Errorf("failed to stat input directory: %v", err)
+	}
+
+	if !ok {
+		return fmt.Errorf("invalid skeleton: %s is not a directory", o.InputDir)
 	}
 
 	if o.OutputDir == "" {
 		return errors.New("output-dir must not be an empty string")
 	}
 
-	err = o.Config.Validate()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return o.Config.Validate()
 }
 
 func (o *CreateOptions) Run() error {
@@ -144,9 +147,9 @@ func (o *CreateOptions) Run() error {
 }
 
 func (o *CreateOptions) fetchLicenseInfo(name string) (*license.Info, error) {
-	info, err := license.Lookup(name)
-	if errors.Is(err, license.ErrLicenseNotFound) {
-		return nil, fmt.Errorf("license %q not found, use the `list-licenses` command to get a list of available licenses", name)
+	info, err := license.Get(name)
+	if err == license.ErrLicenseNotFound {
+		return nil, fmt.Errorf("license %q not found, use the `licenses` subcommand to get a list of available licenses", name)
 	} else if err != nil {
 		return nil, err
 	}
@@ -270,8 +273,9 @@ func (o *CreateOptions) writeLicenseFile(outputPath string) error {
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {
-	if git.IsRepository(path) {
-		return nil
+	_, err := git.PlainOpen(path)
+	if err != nil && err != git.ErrRepositoryNotExists {
+		return err
 	}
 
 	log.WithField("path", path).Info("initializing git repository")
@@ -280,5 +284,7 @@ func (o *CreateOptions) initGitRepository(path string) error {
 		return nil
 	}
 
-	return git.Init(path)
+	_, err = git.PlainInit(path, false)
+
+	return err
 }
