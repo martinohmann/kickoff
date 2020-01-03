@@ -9,7 +9,9 @@ import (
 	"strings"
 )
 
-const licensesURL = "https://api.github.com/licenses"
+const (
+	licensesURL = "https://api.github.com/licenses"
+)
 
 var (
 	ErrLicenseNotFound = errors.New("license not found")
@@ -41,7 +43,7 @@ func Lookup(name string) (*Info, error) {
 func Get(key string) (*Info, error) {
 	info := Info{}
 
-	err := request(fmt.Sprintf("%s/%s", licensesURL, key), &info)
+	err := get(fmt.Sprintf("%s/%s", licensesURL, key), &info)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +54,7 @@ func Get(key string) (*Info, error) {
 func List() ([]*Info, error) {
 	infos := []*Info{}
 
-	err := request(licensesURL, &infos)
+	err := get(licensesURL, &infos)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,7 @@ func List() ([]*Info, error) {
 	return infos, nil
 }
 
-func request(url string, into interface{}) error {
+func get(url string, into interface{}) error {
 	r, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err

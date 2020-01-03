@@ -1,0 +1,38 @@
+---
+# The config file provides defaults which can be explicitly overriden via CLI
+# flags.
+
+## Project name
+#
+# projectName: foobar
+
+## Author configuration
+author:
+  fullname: martinohmann
+  email: foo@bar.baz
+
+## Repository configuration
+#
+# repository:
+#   user: martinohmann
+#   name: myawesomeproject
+
+## Skeleton configuration
+#
+# skeleton:
+#   path: /path/to/my/default/project/skeleton
+
+## License configuration
+#
+# A LICENSE file will be automatically generated if a license is specified.
+#
+# Check out the `licenses` subcommand of skeleton-go for a list a available
+# licenses.
+license: MIT
+
+## Custom configuration
+#
+# Custom config is made available in *.skel template under {{ .Custom }}. E.g.
+# the example below can be used in templates as {{ .Custom.withCodeCov }}.
+custom:
+  withCodeCov: true

@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newListLicensesCommand() *cobra.Command {
+func NewLicensesCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list-licenses <output-dir>",
+		Use:   "licenses",
 		Short: "List available licenses",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

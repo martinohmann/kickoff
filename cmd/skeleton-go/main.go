@@ -1,31 +1,16 @@
 package main
 
 import (
-	"os"
-
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/cli"
-	"github.com/spf13/cobra"
+	"github.com/martinohmann/skeleton-go/pkg/cmd"
 )
 
-func newRootCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:           "skeleton-go",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
-}
-
 func main() {
-	logHandler := cli.New(os.Stdout)
-	logHandler.Padding = 0
+	rootCmd := cmd.NewRootCmd()
 
-	log.SetHandler(logHandler)
-
-	rootCmd := newRootCommand()
-
-	rootCmd.AddCommand(newCreateCommand())
-	rootCmd.AddCommand(newListLicensesCommand())
+	rootCmd.AddCommand(cmd.NewCreateCmd())
+	rootCmd.AddCommand(cmd.NewLicensesCmd())
+	rootCmd.AddCommand(cmd.NewVersionCmd())
 
 	err := rootCmd.Execute()
 	if err != nil {
