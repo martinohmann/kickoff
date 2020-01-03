@@ -2,6 +2,7 @@
 
 GOLANGCI_LINT_VERSION ?= v1.19.1
 TEST_FLAGS ?= -race
+PKG_BASE ?= $(shell go list .)
 PKGS ?= $(shell go list ./... | grep -v /vendor/)
 
 .PHONY: help
@@ -10,11 +11,16 @@ help:
 
 .PHONY: build
 build: ## build skeleton-go
-	go build ./cmd/skeleton-go
+	go build \
+		-ldflags "-s -w \
+			-X $(PKG_BASE)/pkg/version.gitVersion=$(shell git describe --tags 2>/dev/null || echo v0.0.0-master) \
+			-X $(PKG_BASE)/pkg/version.gitCommit=$(shell git rev-parse HEAD) \
+			-X $(PKG_BASE)/pkg/version.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+		./cmd/skeleton-go
 
 .PHONY: install
-install: ## install skeleton-go
-	go install ./cmd/skeleton-go
+install: build ## install skeleton-go
+	cp skeleton-go $(GOPATH)/bin
 
 .PHONY: test
 test: ## run tests

@@ -260,7 +260,7 @@ func (o *CreateOptions) writeLicenseFile(outputPath string) error {
 
 	outputPath = filepath.Join(outputPath, "LICENSE")
 
-	log.WithField("path", outputPath).Info("writing LICENSE file")
+	log.WithField("path", outputPath).Infof("writing %s", o.LicenseInfo.Name)
 
 	if o.DryRun {
 		return nil

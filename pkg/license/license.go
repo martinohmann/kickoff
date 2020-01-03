@@ -68,9 +68,10 @@ func NewAdapter(service GitHubLicensesService) *Adapter {
 // Get fetches the info for the license with name. Will return
 // ErrLicenseNotFound if the license is not recognized.
 func (f *Adapter) Get(name string) (*Info, error) {
-	license, resp, err := f.service.Get(context.Background(), name)
+	license, _, err := f.service.Get(context.Background(), name)
 	if err != nil {
-		if resp != nil && resp.StatusCode == 404 {
+		errResp, ok := err.(*github.ErrorResponse)
+		if ok && errResp.Response.StatusCode == 404 {
 			return nil, ErrLicenseNotFound
 		}
 
