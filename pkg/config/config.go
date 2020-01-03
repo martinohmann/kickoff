@@ -6,23 +6,35 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
+	"github.com/kirsle/configdir"
 	"github.com/martinohmann/skeleton-go/pkg/file"
 	"github.com/martinohmann/skeleton-go/pkg/git"
 	"github.com/spf13/cobra"
 )
 
 const (
-	DefaultSkeletonPath = ".skeleton-go"
-	DefaultConfigPath   = ".skeleton-go.yaml"
+	DefaultSkeleton = "default"
+)
+
+var (
+	DefaultSkeletonsDir = configdir.LocalConfig("skeleton-go", "skeletons")
+	DefaultConfigPath   = configdir.LocalConfig("skeleton-go", "config.yaml")
 )
 
 type Config struct {
-	ProjectName string
-	License     string
-	Author      AuthorConfig
-	Repository  RepositoryConfig
-	Skeleton    SkeletonConfig
-	Custom      map[string]interface{}
+	ProjectName  string
+	License      string
+	Author       AuthorConfig
+	Repository   RepositoryConfig
+	Skeleton     string
+	SkeletonsDir string
+	Custom       map[string]interface{}
+}
+
+func NewDefaultConfig() *Config {
+	return &Config{
+		Skeleton: DefaultSkeleton,
+	}
 }
 
 func (c *Config) AddFlags(cmd *cobra.Command) {
@@ -30,9 +42,14 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.Author.Email, "author-email", c.Author.Email, "Project author's e-mail")
 	cmd.Flags().StringVar(&c.ProjectName, "project-name", c.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&c.License, "license", c.License, "License to use for the project. If set this will automatically populate the LICENSE file")
-	cmd.Flags().StringVar(&c.Skeleton.Path, "skeleton-path", c.Skeleton.Path, fmt.Sprintf("Path to the skeleton. (defaults to %q if the directory exists)", DefaultSkeletonPath))
+	cmd.Flags().StringVar(&c.Skeleton, "skeleton", c.Skeleton, "Name of the skeleton to create the project from")
+	cmd.Flags().StringVar(&c.SkeletonsDir, "skeletons-dir", c.SkeletonsDir, fmt.Sprintf("Path to the skeletons directory. (defaults to %q if the directory exists)", DefaultSkeletonsDir))
 	cmd.Flags().StringVar(&c.Repository.User, "repository-user", c.Repository.User, "Repository username")
 	cmd.Flags().StringVar(&c.Repository.Name, "repository-name", c.Repository.Name, "Repository name (defaults to the project name)")
+}
+
+func (c *Config) SkeletonDir() string {
+	return filepath.Join(c.SkeletonsDir, c.Skeleton)
 }
 
 func (c *Config) Complete(outputDir string) (err error) {
@@ -58,12 +75,16 @@ func (c *Config) Complete(outputDir string) (err error) {
 		c.Repository.Name = c.ProjectName
 	}
 
-	if c.Skeleton.Path == "" && file.Exists(DefaultSkeletonPath) {
-		c.Skeleton.Path = DefaultSkeletonPath
+	if c.Skeleton == "" {
+		c.Skeleton = DefaultSkeleton
 	}
 
-	if c.Skeleton.Path != "" {
-		c.Skeleton.Path, err = filepath.Abs(c.Skeleton.Path)
+	if c.SkeletonsDir == "" && file.Exists(DefaultSkeletonsDir) {
+		c.SkeletonsDir = DefaultSkeletonsDir
+	}
+
+	if c.SkeletonsDir != "" {
+		c.SkeletonsDir, err = filepath.Abs(c.SkeletonsDir)
 		if err != nil {
 			return err
 		}
@@ -73,8 +94,12 @@ func (c *Config) Complete(outputDir string) (err error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Skeleton.Path == "" {
-		return fmt.Errorf("--skeleton-path path must be provided")
+	if c.Skeleton == "" {
+		return fmt.Errorf("--skeleton must be provided")
+	}
+
+	if c.SkeletonsDir == "" {
+		return fmt.Errorf("--skeletons-dir must be provided")
 	}
 
 	if c.Repository.User == "" {
@@ -96,10 +121,6 @@ func (c AuthorConfig) String() string {
 type RepositoryConfig struct {
 	User string
 	Name string
-}
-
-type SkeletonConfig struct {
-	Path string
 }
 
 func Load(filePath string) (*Config, error) {

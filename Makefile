@@ -8,6 +8,14 @@ PKGS ?= $(shell go list ./... | grep -v /vendor/)
 help:
 	@grep -E '^[a-zA-Z0-9-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "[32m%-10s[0m %s\n", $$1, $$2}'
 
+.PHONY: build
+build: ## build skeleton-go
+	go build ./cmd/skeleton-go
+
+.PHONY: install
+install: ## install skeleton-go
+	go install ./cmd/skeleton-go
+
 .PHONY: test
 test: ## run tests
 	go test $(TEST_FLAGS) $(PKGS)

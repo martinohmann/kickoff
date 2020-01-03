@@ -47,6 +47,7 @@ func NewCreateCmd() *cobra.Command {
 }
 
 type CreateOptions struct {
+	InputDir  string
 	OutputDir string
 	DryRun    bool
 	Force     bool
@@ -94,6 +95,8 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		return err
 	}
 
+	o.InputDir = o.Config.SkeletonDir()
+
 	if o.Config.License != "" {
 		o.LicenseInfo, err = o.fetchLicenseInfo(o.Config.License)
 		if err != nil {
@@ -127,7 +130,7 @@ func (o *CreateOptions) Run() error {
 		log.Warn("DRY RUN: no changes will be made")
 	}
 
-	err := o.processFiles(o.Config.Skeleton.Path, o.OutputDir)
+	err := o.processFiles(o.InputDir, o.OutputDir)
 	if err != nil {
 		return err
 	}
@@ -152,7 +155,7 @@ func (o *CreateOptions) fetchLicenseInfo(name string) (*license.Info, error) {
 }
 
 func (o *CreateOptions) processFiles(srcPath, dstPath string) error {
-	log.WithField("skeleton", o.Config.Skeleton.Path).Info("creating project from skeleton")
+	log.WithField("skeleton", o.Config.Skeleton).Info("creating project from skeleton")
 
 	log.Debugf("using config: %#v", o.Config)
 

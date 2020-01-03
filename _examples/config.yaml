@@ -19,8 +19,8 @@ author:
 
 ## Skeleton configuration
 #
-# skeleton:
-#   path: /path/to/my/default/project/skeleton
+# skeleton: default
+# skeletonsDir: /path/to/my/skeletons/dir
 
 ## License configuration
 #
