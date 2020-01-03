@@ -1,7 +1,7 @@
 skeleton-go
 ===========
 
-[![Build Status](https://travis-ci.org/martinohmann/skeleton-go.svg?branch=master)](https://travis-ci.org/martinohmann/skeleton-go)
+[![Build Status](https://travis-ci.com/martinohmann/skeleton-go.svg?branch=master)](https://travis-ci.com/martinohmann/skeleton-go)
 [![GoDoc](https://godoc.org/github.com/martinohmann/skeleton-go?status.svg)](https://godoc.org/github.com/martinohmann/skeleton-go)
 ![GitHub](https://img.shields.io/github/license/martinohmann/skeleton-go?color=orange)
 
