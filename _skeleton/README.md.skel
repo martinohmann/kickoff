@@ -12,8 +12,10 @@ Installation
 go get -u github.com/{{.User}}/{{.Repo}}
 ```
 
+{{ if .License -}}
 License
 -------
 
-The source code of {{.ProjectName}} is released under the MIT License. See the bundled
+The source code of {{.ProjectName}} is released under the {{.License.Name}}. See the bundled
 LICENSE file for details.
+{{- end }}

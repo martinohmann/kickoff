@@ -8,4 +8,5 @@ require (
 	github.com/mattn/go-colorable v0.1.2
 	github.com/spf13/cobra v0.0.5
 	github.com/tcnksm/go-gitconfig v0.1.2
+	gopkg.in/src-d/go-git.v4 v4.13.1
 )

@@ -25,6 +25,7 @@ func main() {
 	rootCmd := newRootCommand()
 
 	rootCmd.AddCommand(newCreateCommand())
+	rootCmd.AddCommand(newListLicensesCommand())
 
 	err := rootCmd.Execute()
 	if err != nil {
