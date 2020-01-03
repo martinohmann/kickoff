@@ -1,3 +1,11 @@
 module github.com/martinohmann/skeleton-go
 
 go 1.13
+
+require (
+	github.com/apex/log v1.1.1
+	github.com/fatih/color v1.7.0
+	github.com/mattn/go-colorable v0.1.2
+	github.com/spf13/cobra v0.0.5
+	github.com/tcnksm/go-gitconfig v0.1.2
+)

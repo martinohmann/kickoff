@@ -1,0 +1,19 @@
+{{.ProjectName}}
+=====
+
+[![Build Status](https://travis-ci.org/{{.User}}/{{.Repo}}.svg?branch=master)](https://travis-ci.org/{{.User}}/{{.Repo}})
+[![GoDoc](https://godoc.org/github.com/{{.User}}/{{.Repo}}?status.svg)](https://godoc.org/github.com/{{.User}}/{{.Repo}})
+![GitHub](https://img.shields.io/github/license/{{.User}}/{{.Repo}}?color=orange)
+
+Installation
+------------
+
+```
+go get -u github.com/{{.User}}/{{.Repo}}
+```
+
+License
+-------
+
+The source code of {{.ProjectName}} is released under the MIT License. See the bundled
+LICENSE file for details.
