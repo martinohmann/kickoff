@@ -21,6 +21,8 @@ const (
 var (
 	DefaultSkeletonsDir = configdir.LocalConfig("skeleton-go", "skeletons")
 	DefaultConfigPath   = configdir.LocalConfig("skeleton-go", "config.yaml")
+
+	SkeletonConfigFile = ".skeleton-go.yaml"
 )
 
 type Config struct {
