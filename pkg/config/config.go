@@ -5,31 +5,31 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"github.com/ghodss/yaml"
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/skeleton-go/pkg/file"
 	"github.com/spf13/cobra"
-	gitconfig "github.com/tcnksm/go-gitconfig"
 	"helm.sh/helm/pkg/strvals"
 )
 
 const (
 	DefaultSkeleton = "default"
+
+	SkeletonConfigFile = ".skeleton-go.yaml"
 )
 
 var (
-	DefaultSkeletonsDir = configdir.LocalConfig("skeleton-go", "skeletons")
-	DefaultConfigPath   = configdir.LocalConfig("skeleton-go", "config.yaml")
+	LocalDir = configdir.LocalConfig("skeleton-go")
 
-	SkeletonConfigFile = ".skeleton-go.yaml"
+	DefaultSkeletonsDir = filepath.Join(LocalDir, "skeletons")
+	DefaultConfigPath   = filepath.Join(LocalDir, "config.yaml")
 )
 
 type Config struct {
 	ProjectName  string
 	License      string
-	Author       AuthorConfig
-	Repository   RepositoryConfig
+	Author       *AuthorConfig
+	Repository   *RepositoryConfig
 	Skeleton     string
 	SkeletonsDir string
 	Custom       map[string]interface{}
@@ -39,54 +39,34 @@ type Config struct {
 
 func NewDefaultConfig() *Config {
 	return &Config{
-		Skeleton: DefaultSkeleton,
+		Author:     &AuthorConfig{},
+		Repository: NewDefaultRepositoryConfig(),
+		Skeleton:   DefaultSkeleton,
 	}
 }
 
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&c.Author.Fullname, "author-fullname", c.Author.Fullname, "Project author's fullname")
-	cmd.Flags().StringVar(&c.Author.Email, "author-email", c.Author.Email, "Project author's e-mail")
 	cmd.Flags().StringVar(&c.ProjectName, "project-name", c.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&c.License, "license", c.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 	cmd.Flags().StringVar(&c.Skeleton, "skeleton", c.Skeleton, "Name of the skeleton to create the project from")
 	cmd.Flags().StringVar(&c.SkeletonsDir, "skeletons-dir", c.SkeletonsDir, fmt.Sprintf("Path to the skeletons directory. (defaults to %q if the directory exists)", DefaultSkeletonsDir))
-	cmd.Flags().StringVar(&c.Repository.User, "repository-user", c.Repository.User, "Repository username")
-	cmd.Flags().StringVar(&c.Repository.Name, "repository-name", c.Repository.Name, "Repository name (defaults to the project name)")
 	cmd.Flags().StringArrayVar(&c.rawCustomValues, "set", c.rawCustomValues, "Set custom config values of the form key1=value1,key2=value2,deeply.nested.key3=value")
+
+	c.Author.AddFlags(cmd)
+	c.Repository.AddFlags(cmd)
 }
 
 func (c *Config) SkeletonDir() string {
 	return filepath.Join(c.SkeletonsDir, c.Skeleton)
 }
 
+func (c *Config) SkeletonConfigPath() string {
+	return filepath.Join(c.SkeletonDir(), SkeletonConfigFile)
+}
+
 func (c *Config) Complete(outputDir string) (err error) {
-	if c.Author.Fullname == "" {
-		c.Author.Fullname, err = gitconfig.Global("user.name")
-		if err != nil {
-			log.Warn("user.name not found in git config, set it to automatically populate author fullname")
-		}
-	}
-
-	if c.Author.Email == "" {
-		c.Author.Email, err = gitconfig.Global("user.email")
-		if err != nil {
-			log.Warn("user.email not found in git config, set it to automatically populate author email")
-		}
-	}
-
-	if c.Repository.User == "" {
-		c.Repository.User, err = gitconfig.Global("github.user")
-		if err != nil {
-			log.Warn("github.user not found in git config, set it to automatically populate repository user")
-		}
-	}
-
 	if c.ProjectName == "" {
 		c.ProjectName = filepath.Base(outputDir)
-	}
-
-	if c.Repository.Name == "" {
-		c.Repository.Name = c.ProjectName
 	}
 
 	if c.Skeleton == "" {
@@ -113,7 +93,12 @@ func (c *Config) Complete(outputDir string) (err error) {
 		}
 	}
 
-	return nil
+	err = c.Repository.Complete(c.ProjectName)
+	if err != nil {
+		return err
+	}
+
+	return c.Author.Complete()
 }
 
 func (c *Config) Validate() error {
@@ -125,25 +110,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("--skeletons-dir must be provided")
 	}
 
-	if c.Repository.User == "" {
-		return fmt.Errorf("--repository-user needs to be set")
-	}
-
-	return nil
-}
-
-type AuthorConfig struct {
-	Fullname string
-	Email    string
-}
-
-func (c AuthorConfig) String() string {
-	return fmt.Sprintf("%s <%s>", c.Fullname, c.Email)
-}
-
-type RepositoryConfig struct {
-	User string
-	Name string
+	return c.Repository.Validate()
 }
 
 func Load(filePath string) (*Config, error) {

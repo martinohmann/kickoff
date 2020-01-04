@@ -6,20 +6,20 @@ import (
 )
 
 func NewRootCmd() *cobra.Command {
-	debug := false
+	verbose := false
 
 	cmd := &cobra.Command{
 		Use:           "skeleton-go",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-			if debug {
+			if verbose {
 				log.SetLevel(log.DebugLevel)
 			}
 		},
 	}
 
-	cmd.PersistentFlags().BoolVar(&debug, "debug", debug, "Enable debug log")
+	cmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Enable verbose log output")
 
 	return cmd
 }
