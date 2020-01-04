@@ -11,6 +11,7 @@ import (
 	"github.com/martinohmann/skeleton-go/pkg/file"
 	"github.com/spf13/cobra"
 	gitconfig "github.com/tcnksm/go-gitconfig"
+	"helm.sh/helm/pkg/strvals"
 )
 
 const (
@@ -30,6 +31,8 @@ type Config struct {
 	Skeleton     string
 	SkeletonsDir string
 	Custom       map[string]interface{}
+
+	rawCustomValues []string
 }
 
 func NewDefaultConfig() *Config {
@@ -47,6 +50,7 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.SkeletonsDir, "skeletons-dir", c.SkeletonsDir, fmt.Sprintf("Path to the skeletons directory. (defaults to %q if the directory exists)", DefaultSkeletonsDir))
 	cmd.Flags().StringVar(&c.Repository.User, "repository-user", c.Repository.User, "Repository username")
 	cmd.Flags().StringVar(&c.Repository.Name, "repository-name", c.Repository.Name, "Repository name (defaults to the project name)")
+	cmd.Flags().StringArrayVar(&c.rawCustomValues, "set", c.rawCustomValues, "Set custom config values of the form key1=value1,key2=value2,deeply.nested.key3=value")
 }
 
 func (c *Config) SkeletonDir() string {
@@ -95,6 +99,15 @@ func (c *Config) Complete(outputDir string) (err error) {
 		c.SkeletonsDir, err = filepath.Abs(c.SkeletonsDir)
 		if err != nil {
 			return err
+		}
+	}
+
+	if len(c.rawCustomValues) > 0 {
+		for _, rawValues := range c.rawCustomValues {
+			err = strvals.ParseInto(rawValues, c.Custom)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
