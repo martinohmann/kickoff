@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/apex/log"
@@ -17,6 +15,7 @@ import (
 	"github.com/martinohmann/skeleton-go/pkg/config"
 	"github.com/martinohmann/skeleton-go/pkg/file"
 	"github.com/martinohmann/skeleton-go/pkg/license"
+	"github.com/martinohmann/skeleton-go/pkg/template"
 	"github.com/spf13/cobra"
 	git "gopkg.in/src-d/go-git.v4"
 )
@@ -226,16 +225,7 @@ func (o *CreateOptions) copyFile(src, dst string) error {
 }
 
 func (o *CreateOptions) writeTemplate(src, dst string, mode os.FileMode, data interface{}) error {
-	name := filepath.Base(src)
-
-	tpl, err := template.New(name).ParseFiles(src)
-	if err != nil {
-		return err
-	}
-
-	var buf bytes.Buffer
-
-	err = tpl.Execute(&buf, data)
+	buf, err := template.Render(src, data)
 	if err != nil {
 		return err
 	}
@@ -250,7 +240,7 @@ func (o *CreateOptions) writeTemplate(src, dst string, mode os.FileMode, data in
 		log.WithFields(log.Fields{"dst": dst}).Warn("file already exists")
 	}
 
-	return ioutil.WriteFile(dst, buf.Bytes(), mode)
+	return ioutil.WriteFile(dst, buf, mode)
 }
 
 func (o *CreateOptions) writeLicenseFile(outputPath string) error {
