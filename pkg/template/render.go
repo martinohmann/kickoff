@@ -16,6 +16,7 @@ func Render(file string, data interface{}) ([]byte, error) {
 	tpl, err := template.New(name).
 		Option("missingkey=error").
 		Funcs(sprig.TxtFuncMap()).
+		Funcs(funcMap).
 		ParseFiles(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare template: %v", err)

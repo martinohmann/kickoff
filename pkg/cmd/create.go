@@ -78,12 +78,12 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	}
 
 	if o.ConfigPath != "" {
-		fileConfig, err := config.Load(o.ConfigPath)
+		config, err := config.Load(o.ConfigPath)
 		if err != nil {
 			return err
 		}
 
-		err = mergo.Merge(&o.Config, fileConfig)
+		err = mergo.Merge(&o.Config, config)
 		if err != nil {
 			return err
 		}
@@ -95,6 +95,22 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	}
 
 	o.InputDir = o.Config.SkeletonDir()
+
+	skeletonConfigFile := filepath.Join(o.InputDir, config.SkeletonConfigFile)
+
+	if file.Exists(skeletonConfigFile) {
+		log.WithField("skeleton", o.Config.Skeleton).Infof("found %s, merging config values", config.SkeletonConfigFile)
+
+		config, err := config.Load(skeletonConfigFile)
+		if err != nil {
+			return err
+		}
+
+		err = mergo.Merge(&o.Config, config)
+		if err != nil {
+			return err
+		}
+	}
 
 	if o.Config.License != "" {
 		o.LicenseInfo, err = o.fetchLicenseInfo(o.Config.License)
@@ -177,6 +193,11 @@ func (o *CreateOptions) processFiles(srcPath, dstPath string) error {
 		relPath, err := filepath.Rel(srcPath, path)
 		if err != nil {
 			return err
+		}
+
+		if relPath == config.SkeletonConfigFile {
+			// ignore skeleton config file
+			return nil
 		}
 
 		outputPath := filepath.Join(dstPath, relPath)
