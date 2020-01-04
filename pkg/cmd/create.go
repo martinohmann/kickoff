@@ -21,7 +21,7 @@ import (
 )
 
 func NewCreateCmd() *cobra.Command {
-	o := &CreateOptions{}
+	o := NewCreateOptions()
 
 	cmd := &cobra.Command{
 		Use:   "create <output-dir>",
@@ -45,6 +45,12 @@ func NewCreateCmd() *cobra.Command {
 	return cmd
 }
 
+type createStats struct {
+	filesCopied       int64
+	dirsCreated       int64
+	templatesRendered int64
+}
+
 type CreateOptions struct {
 	InputDir  string
 	OutputDir string
@@ -52,9 +58,17 @@ type CreateOptions struct {
 	Force     bool
 
 	ConfigPath string
-	Config     config.Config
+	Config     *config.Config
 
 	LicenseInfo *license.Info
+
+	stats createStats
+}
+
+func NewCreateOptions() *CreateOptions {
+	return &CreateOptions{
+		Config: config.NewDefaultConfig(),
+	}
 }
 
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
@@ -78,12 +92,14 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	}
 
 	if o.ConfigPath != "" {
+		log.WithField("path", o.ConfigPath).Debugf("loading config file")
+
 		config, err := config.Load(o.ConfigPath)
 		if err != nil {
 			return err
 		}
 
-		err = mergo.Merge(&o.Config, config)
+		err = mergo.Merge(o.Config, config)
 		if err != nil {
 			return err
 		}
@@ -96,23 +112,25 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 
 	o.InputDir = o.Config.SkeletonDir()
 
-	skeletonConfigFile := filepath.Join(o.InputDir, config.SkeletonConfigFile)
+	skeletonConfigPath := o.Config.SkeletonConfigPath()
 
-	if file.Exists(skeletonConfigFile) {
-		log.WithField("skeleton", o.Config.Skeleton).Infof("found %s, merging config values", config.SkeletonConfigFile)
+	if file.Exists(skeletonConfigPath) {
+		log.WithField("skeleton", o.InputDir).Debugf("found %s, merging config values", config.SkeletonConfigFile)
 
-		config, err := config.Load(skeletonConfigFile)
+		config, err := config.Load(skeletonConfigPath)
 		if err != nil {
 			return err
 		}
 
-		err = mergo.Merge(&o.Config, config)
+		err = mergo.Merge(o.Config, config)
 		if err != nil {
 			return err
 		}
 	}
 
-	if o.Config.License != "" {
+	if o.Config.License != "" && o.Config.License != "none" {
+		log.WithField("license", o.Config.License).Debugf("fetching license info from GitHub")
+
 		o.LicenseInfo, err = o.fetchLicenseInfo(o.Config.License)
 		if err != nil {
 			return err
@@ -124,7 +142,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 
 func (o *CreateOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
-		return fmt.Errorf("output-dir %q already exists, add --force to overwrite", o.OutputDir)
+		return fmt.Errorf("output-dir %s already exists, add --force to overwrite", o.OutputDir)
 	}
 
 	ok, err := file.IsDirectory(o.InputDir)
@@ -145,8 +163,15 @@ func (o *CreateOptions) Validate() error {
 
 func (o *CreateOptions) Run() error {
 	if o.DryRun {
-		log.Warn("DRY RUN: no changes will be made")
+		log.Warn("dry run: no changes will be made")
 	}
+
+	log.WithFields(log.Fields{
+		"skeleton": o.InputDir,
+		"target":   o.OutputDir,
+	}).Info("creating project from skeleton")
+
+	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
 	err := o.processFiles(o.InputDir, o.OutputDir)
 	if err != nil {
@@ -158,7 +183,18 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	return o.initGitRepository(o.OutputDir)
+	err = o.initGitRepository(o.OutputDir)
+	if err != nil {
+		return err
+	}
+
+	log.WithFields(log.Fields{
+		"files.copied":       o.stats.filesCopied,
+		"dirs.created":       o.stats.dirsCreated,
+		"templates.rendered": o.stats.templatesRendered,
+	}).Infof("project created")
+
+	return nil
 }
 
 func (o *CreateOptions) fetchLicenseInfo(name string) (*license.Info, error) {
@@ -173,10 +209,6 @@ func (o *CreateOptions) fetchLicenseInfo(name string) (*license.Info, error) {
 }
 
 func (o *CreateOptions) processFiles(srcPath, dstPath string) error {
-	log.WithField("skeleton", o.Config.Skeleton).Info("creating project from skeleton")
-
-	log.Debugf("using config: %#v", o.Config)
-
 	templateData := map[string]interface{}{
 		"Author":      o.Config.Author,
 		"Custom":      o.Config.Custom,
@@ -203,28 +235,29 @@ func (o *CreateOptions) processFiles(srcPath, dstPath string) error {
 		outputPath := filepath.Join(dstPath, relPath)
 
 		if info.IsDir() {
-			return o.ensureDirectory(outputPath, info.Mode())
+			log.WithField("path", outputPath).Info("creating directory")
+
+			return o.makeDirectory(outputPath, info.Mode())
 		}
 
 		if ext := filepath.Ext(path); ext == ".skel" {
 			outputPath = outputPath[:len(outputPath)-5]
 
+			log.WithField("template", relPath).Info("rendering template")
+
 			return o.writeTemplate(path, outputPath, info.Mode(), templateData)
 		}
+
+		log.WithField("file", relPath).Info("copying file")
 
 		return o.copyFile(path, outputPath)
 	})
 }
 
-func (o *CreateOptions) ensureDirectory(path string, mode os.FileMode) error {
-	log.WithFields(log.Fields{"path": path}).Info("creating directory")
+func (o *CreateOptions) makeDirectory(path string, mode os.FileMode) error {
+	o.stats.dirsCreated++
 
 	if o.DryRun {
-		return nil
-	}
-
-	if file.Exists(path) {
-		log.WithFields(log.Fields{"path": path}).Warn("directory already exists")
 		return nil
 	}
 
@@ -232,14 +265,10 @@ func (o *CreateOptions) ensureDirectory(path string, mode os.FileMode) error {
 }
 
 func (o *CreateOptions) copyFile(src, dst string) error {
-	log.WithFields(log.Fields{"src": src, "dst": dst}).Info("copying file")
+	o.stats.filesCopied++
 
 	if o.DryRun {
 		return nil
-	}
-
-	if file.Exists(dst) {
-		log.WithFields(log.Fields{"dst": dst}).Warn("file already exists")
 	}
 
 	return file.Copy(src, dst)
@@ -251,14 +280,10 @@ func (o *CreateOptions) writeTemplate(src, dst string, mode os.FileMode, data in
 		return err
 	}
 
-	log.WithFields(log.Fields{"src": src, "dst": dst}).Info("writing template")
+	o.stats.templatesRendered++
 
 	if o.DryRun {
 		return nil
-	}
-
-	if file.Exists(dst) {
-		log.WithFields(log.Fields{"dst": dst}).Warn("file already exists")
 	}
 
 	return ioutil.WriteFile(dst, buf, mode)
@@ -271,7 +296,7 @@ func (o *CreateOptions) writeLicenseFile(outputPath string) error {
 
 	outputPath = filepath.Join(outputPath, "LICENSE")
 
-	log.WithField("path", outputPath).Infof("writing %s", o.LicenseInfo.Name)
+	log.WithField("path", "LICENSE").Infof("writing %s", o.LicenseInfo.Name)
 
 	if o.DryRun {
 		return nil
@@ -285,7 +310,7 @@ func (o *CreateOptions) writeLicenseFile(outputPath string) error {
 
 func (o *CreateOptions) initGitRepository(path string) error {
 	_, err := git.PlainOpen(path)
-	if err != nil && err != git.ErrRepositoryNotExists {
+	if err == nil || err != git.ErrRepositoryNotExists {
 		return err
 	}
 
