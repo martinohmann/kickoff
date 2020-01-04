@@ -13,4 +13,5 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/tcnksm/go-gitconfig v0.1.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
+	helm.sh/helm v2.16.1+incompatible
 )
