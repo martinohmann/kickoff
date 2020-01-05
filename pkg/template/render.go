@@ -9,25 +9,42 @@ import (
 	"github.com/Masterminds/sprig/v3"
 )
 
-// Render renders a template file with data.
-func Render(file string, data interface{}) ([]byte, error) {
+// RenderFile renders a template file with data.
+func RenderFile(file string, data interface{}) (string, error) {
 	name := filepath.Base(file)
 
-	tpl, err := template.New(name).
+	tpl, err := newTemplate(name).ParseFiles(file)
+	if err != nil {
+		return "", fmt.Errorf("failed to prepare template: %v", err)
+	}
+
+	return execute(tpl, data)
+}
+
+// Render renders template text with data.
+func RenderText(templateText string, data interface{}) (string, error) {
+	tpl, err := newTemplate("").Parse(templateText)
+	if err != nil {
+		return "", fmt.Errorf("failed to prepare template: %v", err)
+	}
+
+	return execute(tpl, data)
+}
+
+func newTemplate(name string) *template.Template {
+	return template.New(name).
 		Option("missingkey=error").
 		Funcs(sprig.TxtFuncMap()).
-		Funcs(funcMap).
-		ParseFiles(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare template: %v", err)
-	}
+		Funcs(funcMap)
+}
 
+func execute(tpl *template.Template, data interface{}) (string, error) {
 	var buf bytes.Buffer
 
-	err = tpl.Execute(&buf, data)
+	err := tpl.Execute(&buf, data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to render template: %v", err)
+		return "", fmt.Errorf("failed to render template: %v", err)
 	}
 
-	return buf.Bytes(), nil
+	return buf.String(), nil
 }

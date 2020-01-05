@@ -100,35 +100,58 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 			return err
 		}
 
-		relPath, err := filepath.Rel(srcPath, path)
+		srcRelPath, err := filepath.Rel(srcPath, path)
 		if err != nil {
 			return err
 		}
 
-		if relPath == config.SkeletonConfigFile {
+		if srcRelPath == config.SkeletonConfigFile {
 			// ignore skeleton config file
 			return nil
 		}
 
-		outputPath := filepath.Join(dstPath, relPath)
+		srcFilename := filepath.Base(srcRelPath)
+		srcRelDir := filepath.Dir(srcRelPath)
+
+		dstFilename, err := renderDestinationFilename(srcFilename, templateData)
+		if err != nil {
+			return err
+		}
+
+		dstRelPath := filepath.Join(srcRelDir, dstFilename)
+
+		// sanity check
+		if filepath.Dir(dstRelPath) != srcRelDir {
+			return fmt.Errorf("templated filename %q injected illegal directory traversal: %s", srcFilename, dstFilename)
+		}
+
+		outputPath := filepath.Join(dstPath, dstRelPath)
+
+		log := log.WithField("path", srcRelPath)
+		if srcRelPath != dstRelPath {
+			log = log.WithField("path.target", dstRelPath)
+		}
 
 		if info.IsDir() {
-			log.WithField("path", outputPath).Info("creating directory")
+			log.Info("creating directory")
 
 			return k.makeDirectory(outputPath, info.Mode())
 		}
 
-		if ext := filepath.Ext(path); ext == ".skel" {
-			outputPath = outputPath[:len(outputPath)-5]
+		ext := filepath.Ext(path)
+		if ext != ".skel" {
+			log.Info("copying file")
 
-			log.WithField("template", relPath).Info("rendering template")
-
-			return k.writeTemplate(path, outputPath, info.Mode(), templateData)
+			return k.copyFile(path, outputPath)
 		}
 
-		log.WithField("file", relPath).Info("copying file")
+		// strip .skel extension
+		dstRelPath = dstRelPath[:len(dstRelPath)-len(ext)]
+		outputPath = filepath.Join(dstPath, dstRelPath)
 
-		return k.copyFile(path, outputPath)
+		log.WithField("path.target", dstRelPath).Info("rendering template")
+
+		return k.writeTemplate(path, outputPath, info.Mode(), templateData)
 	})
 }
 
@@ -153,7 +176,7 @@ func (k *Kickoff) copyFile(src, dst string) error {
 }
 
 func (k *Kickoff) writeTemplate(src, dst string, mode os.FileMode, data interface{}) error {
-	buf, err := template.Render(src, data)
+	rendered, err := template.RenderFile(src, data)
 	if err != nil {
 		return err
 	}
@@ -164,7 +187,7 @@ func (k *Kickoff) writeTemplate(src, dst string, mode os.FileMode, data interfac
 		return nil
 	}
 
-	return ioutil.WriteFile(dst, buf, mode)
+	return ioutil.WriteFile(dst, []byte(rendered), mode)
 }
 
 func (k *Kickoff) writeLicenseFile(outputPath string) error {
@@ -212,6 +235,19 @@ func fetchLicenseInfo(name string) (*license.Info, error) {
 	}
 
 	return info, nil
+}
+
+func renderDestinationFilename(srcFilename string, data interface{}) (string, error) {
+	dstFilename, err := template.RenderText(srcFilename, data)
+	if err != nil {
+		return "", err
+	}
+
+	if len(dstFilename) == 0 {
+		return "", fmt.Errorf("templated filename %q resolved to an empty string", srcFilename)
+	}
+
+	return dstFilename, nil
 }
 
 type stats struct {
