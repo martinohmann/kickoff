@@ -12,10 +12,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/imdario/mergo"
-	"github.com/martinohmann/skeleton-go/pkg/config"
-	"github.com/martinohmann/skeleton-go/pkg/file"
-	"github.com/martinohmann/skeleton-go/pkg/license"
-	"github.com/martinohmann/skeleton-go/pkg/template"
+	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/license"
+	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/cobra"
 	git "gopkg.in/src-d/go-git.v4"
 )

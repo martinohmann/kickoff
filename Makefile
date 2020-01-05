@@ -10,17 +10,17 @@ help:
 	@grep -E '^[a-zA-Z0-9-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "[32m%-10s[0m %s\n", $$1, $$2}'
 
 .PHONY: build
-build: ## build skeleton-go
+build: ## build kickoff
 	go build \
 		-ldflags "-s -w \
 			-X $(PKG_BASE)/pkg/version.gitVersion=$(shell git describe --tags 2>/dev/null || echo v0.0.0-master) \
 			-X $(PKG_BASE)/pkg/version.gitCommit=$(shell git rev-parse HEAD) \
 			-X $(PKG_BASE)/pkg/version.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-		./cmd/skeleton-go
+		./cmd/kickoff
 
 .PHONY: install
-install: build ## install skeleton-go
-	cp skeleton-go $(GOPATH)/bin
+install: build ## install kickoff
+	cp kickoff $(GOPATH)/bin
 
 .PHONY: test
 test: ## run tests

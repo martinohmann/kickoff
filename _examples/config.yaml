@@ -26,7 +26,7 @@ author:
 #
 # A LICENSE file will be automatically generated if a license is specified.
 #
-# Check out the `licenses` subcommand of skeleton-go for a list a available
+# Check out the `licenses` subcommand of kickoff for a list a available
 # licenses.
 license: MIT
 

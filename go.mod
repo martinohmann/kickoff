@@ -1,4 +1,4 @@
-module github.com/martinohmann/skeleton-go
+module github.com/martinohmann/kickoff
 
 go 1.13
 
