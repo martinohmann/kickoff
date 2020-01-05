@@ -40,3 +40,20 @@ func TestRenderFile(t *testing.T) {
 		t.Fatalf("expected %q, got %q", expected, rendered)
 	}
 }
+
+func TestRenderText(t *testing.T) {
+	templateText := "package {{.path|goPackageName}}"
+
+	data := map[string]interface{}{"path": "github.com/foo/Bar-baz_v1\n"}
+
+	rendered, err := RenderText(templateText, data)
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	expected := `package barbazv1`
+
+	if rendered != expected {
+		t.Fatalf("expected %q, got %q", expected, rendered)
+	}
+}
