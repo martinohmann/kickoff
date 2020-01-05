@@ -60,8 +60,8 @@ func (c *RepositoryConfig) URL() string {
 	return fmt.Sprintf("https://%s/%s/%s", c.Host, c.User, c.Name)
 }
 
-// Package returns a string that can be used as a Golang package name for the
-// project.
-func (c *RepositoryConfig) Package() string {
+// GoPackagePath returns a string that can be used as a Golang package path for
+// the project.
+func (c *RepositoryConfig) GoPackagePath() string {
 	return fmt.Sprintf("%s/%s/%s", c.Host, c.User, c.Name)
 }
