@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/ghodss/yaml"
-	"github.com/martinohmann/skeleton-go/pkg/version"
+	"github.com/martinohmann/kickoff/pkg/version"
 	"github.com/spf13/cobra"
 )
 

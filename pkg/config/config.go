@@ -7,7 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/kirsle/configdir"
-	"github.com/martinohmann/skeleton-go/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
@@ -15,11 +15,11 @@ import (
 const (
 	DefaultSkeleton = "default"
 
-	SkeletonConfigFile = ".skeleton-go.yaml"
+	SkeletonConfigFile = ".kickoff.yaml"
 )
 
 var (
-	LocalDir = configdir.LocalConfig("skeleton-go")
+	LocalDir = configdir.LocalConfig("kickoff")
 
 	DefaultSkeletonsDir = filepath.Join(LocalDir, "skeletons")
 	DefaultConfigPath   = filepath.Join(LocalDir, "config.yaml")

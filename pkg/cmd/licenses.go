@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/martinohmann/skeleton-go/pkg/license"
+	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/spf13/cobra"
 )
 
