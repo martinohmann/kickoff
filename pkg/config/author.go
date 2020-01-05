@@ -9,8 +9,8 @@ import (
 )
 
 type AuthorConfig struct {
-	Fullname string
-	Email    string
+	Fullname string `json:"fullname"`
+	Email    string `json:"email"`
 }
 
 func (c *AuthorConfig) AddFlags(cmd *cobra.Command) {

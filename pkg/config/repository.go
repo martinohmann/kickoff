@@ -11,9 +11,9 @@ import (
 const DefaultRepositoryHost = "github.com"
 
 type RepositoryConfig struct {
-	Host string
-	User string
-	Name string
+	Host string `json:"host"`
+	User string `json:"user"`
+	Name string `json:"name"`
 }
 
 func NewDefaultRepositoryConfig() *RepositoryConfig {

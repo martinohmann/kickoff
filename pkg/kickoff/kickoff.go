@@ -89,7 +89,7 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 	templateData := map[string]interface{}{
 		"Author":      k.config.Author,
-		"Custom":      k.config.Custom,
+		"Custom":      k.config.CustomValues,
 		"License":     k.licenseInfo,
 		"ProjectName": k.config.ProjectName,
 		"Repository":  k.config.Repository,

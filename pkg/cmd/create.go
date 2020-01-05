@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/imdario/mergo"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/kickoff"
@@ -76,59 +75,18 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	if o.ConfigPath != "" {
 		log.WithField("path", o.ConfigPath).Debugf("loading config file")
 
-		config, err := config.Load(o.ConfigPath)
-		if err != nil {
-			return err
-		}
-
-		err = mergo.Merge(o.Config, config)
+		err = o.Config.MergeFromFile(o.ConfigPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.Config.Complete(o.OutputDir)
-	if err != nil {
-		return err
-	}
-
-	skeletonConfigPath := o.Config.SkeletonConfigPath()
-
-	if file.Exists(skeletonConfigPath) {
-		log.WithField("skeleton", o.Config.SkeletonDir()).Debugf("found %s, merging config values", config.SkeletonConfigFile)
-
-		config, err := config.Load(skeletonConfigPath)
-		if err != nil {
-			return err
-		}
-
-		err = mergo.Merge(o.Config, config)
-		if err != nil {
-			return err
-		}
-	}
-
-	if o.Config.License == "none" {
-		o.Config.License = ""
-	}
-
-	return nil
+	return o.Config.Complete(o.OutputDir)
 }
 
 func (o *CreateOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
 		return fmt.Errorf("output-dir %s already exists, add --force to overwrite", o.OutputDir)
-	}
-
-	skeletonDir := o.Config.SkeletonDir()
-
-	ok, err := file.IsDirectory(skeletonDir)
-	if err != nil {
-		return fmt.Errorf("failed to stat skeleton directory: %v", err)
-	}
-
-	if !ok {
-		return fmt.Errorf("invalid skeleton: %s is not a directory", skeletonDir)
 	}
 
 	if o.OutputDir == "" {
