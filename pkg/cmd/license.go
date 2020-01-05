@@ -19,7 +19,7 @@ func NewLicenseCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Println(license.Body)
+			fmt.Fprintln(cmd.OutOrStdout(), license.Body)
 
 			return nil
 		},
