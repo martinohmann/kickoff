@@ -14,6 +14,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewCreateCmd())
 	rootCmd.AddCommand(cmd.NewLicenseCmd())
 	rootCmd.AddCommand(cmd.NewLicensesCmd())
+	rootCmd.AddCommand(cmd.NewListCmd())
 	rootCmd.AddCommand(cmd.NewVersionCmd())
 
 	err := rootCmd.Execute()

@@ -17,7 +17,7 @@ func NewCreateCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "create <output-dir>",
-		Short: "Create project skeletons",
+		Short: "Create a project from a skeleton",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
