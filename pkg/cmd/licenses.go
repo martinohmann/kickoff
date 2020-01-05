@@ -19,9 +19,11 @@ func NewLicensesCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("%-15s NAME\n", "KEY")
+			out := cmd.OutOrStdout()
+
+			fmt.Fprintf(out, "%-15s NAME\n", "KEY")
 			for _, license := range licenses {
-				fmt.Printf("%-15s %s\n", license.Key, license.Name)
+				fmt.Fprintf(out, "%-15s %s\n", license.Key, license.Name)
 			}
 
 			return nil

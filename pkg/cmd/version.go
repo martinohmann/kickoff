@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"io"
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/version"
@@ -32,9 +32,12 @@ func NewVersionCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			return o.Run()
 		},
 	}
+
+	o.Out = cmd.OutOrStdout()
 
 	cmd.Flags().BoolVar(&o.Short, "short", false, "Display short version")
 	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
@@ -45,6 +48,7 @@ func NewVersionCmd() *cobra.Command {
 type VersionOptions struct {
 	Short  bool
 	Output string
+	Out    io.Writer
 }
 
 func (o *VersionOptions) Validate() error {
@@ -63,7 +67,7 @@ func (o *VersionOptions) Run() error {
 	v := version.Get()
 
 	if o.Short {
-		fmt.Fprintln(os.Stdout, v.GitVersion)
+		fmt.Fprintln(o.Out, v.GitVersion)
 		return nil
 	}
 
@@ -74,16 +78,16 @@ func (o *VersionOptions) Run() error {
 			return err
 		}
 
-		fmt.Fprintln(os.Stdout, string(buf))
+		fmt.Fprintln(o.Out, string(buf))
 	case "yaml":
 		buf, err := yaml.Marshal(v)
 		if err != nil {
 			return err
 		}
 
-		fmt.Fprintln(os.Stdout, string(buf))
+		fmt.Fprintln(o.Out, string(buf))
 	default:
-		fmt.Fprintf(os.Stdout, "%#v\n", v)
+		fmt.Fprintf(o.Out, "%#v\n", v)
 	}
 
 	return nil
