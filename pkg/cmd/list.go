@@ -55,9 +55,19 @@ func (o *ListOptions) Run() error {
 	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.SkeletonsDir)
 
 	for _, f := range files {
-		path := filepath.Join(o.SkeletonsDir, f.Name())
-		if !f.IsDir() || !kickoff.IsSkeletonDir(path) {
+		if !f.IsDir() {
 			continue
+		}
+
+		path := filepath.Join(o.SkeletonsDir, f.Name())
+
+		ok, err := kickoff.IsSkeletonDir(path)
+		if !ok {
+			continue
+		}
+
+		if err != nil {
+			return err
 		}
 
 		fmt.Fprintln(o.Out, f.Name())
