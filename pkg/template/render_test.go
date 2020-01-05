@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestRender(t *testing.T) {
+func TestRenderFile(t *testing.T) {
 	content := []byte("foo: {{.foo}}")
 	f, err := ioutil.TempFile("", "example")
 	if err != nil {
@@ -29,14 +29,14 @@ func TestRender(t *testing.T) {
 
 	data := map[string]interface{}{"foo": "bar"}
 
-	buf, err := Render(filename, data)
+	rendered, err := RenderFile(filename, data)
 	if err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
 	}
 
 	expected := `foo: bar`
 
-	if string(buf) != expected {
-		t.Fatalf("expected %q, got %q", expected, string(buf))
+	if rendered != expected {
+		t.Fatalf("expected %q, got %q", expected, rendered)
 	}
 }
