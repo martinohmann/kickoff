@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/kickoff"
@@ -47,30 +45,15 @@ func NewListOptions() *ListOptions {
 }
 
 func (o *ListOptions) Run() error {
-	files, err := ioutil.ReadDir(o.SkeletonsDir)
+	skeletons, err := kickoff.FindSkeletons(o.SkeletonsDir)
 	if err != nil {
 		return err
 	}
 
 	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.SkeletonsDir)
 
-	for _, f := range files {
-		if !f.IsDir() {
-			continue
-		}
-
-		path := filepath.Join(o.SkeletonsDir, f.Name())
-
-		ok, err := kickoff.IsSkeletonDir(path)
-		if !ok {
-			continue
-		}
-
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(o.Out, f.Name())
+	for _, skeleton := range skeletons {
+		fmt.Fprintln(o.Out, skeleton)
 	}
 
 	return nil
