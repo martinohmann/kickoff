@@ -11,7 +11,6 @@ import (
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/pkg/strvals"
 )
 
 const (
@@ -27,38 +26,35 @@ var (
 )
 
 type Config struct {
-	ProjectName  string                 `json:"projectName"`
-	License      string                 `json:"license"`
-	Author       *AuthorConfig          `json:"author"`
-	Repository   *RepositoryConfig      `json:"repository"`
-	Skeleton     string                 `json:"skeleton"`
-	SkeletonsDir string                 `json:"skeletonsDir"`
-	CustomValues map[string]interface{} `json:"customValues"`
-
-	rawCustomValues []string
+	ProjectName  string            `json:"projectName"`
+	From         string            `json:"from"`
+	SkeletonsDir string            `json:"skeletonsDir"`
+	Author       *AuthorConfig     `json:"author"`
+	Repository   *RepositoryConfig `json:"repository"`
+	Skeleton     *SkeletonConfig   `json:"skeleton"`
 }
 
 func NewDefaultConfig() *Config {
 	return &Config{
 		Author:     &AuthorConfig{},
 		Repository: NewDefaultRepositoryConfig(),
-		Skeleton:   DefaultSkeleton,
+		Skeleton:   &SkeletonConfig{},
+		From:       DefaultSkeleton,
 	}
 }
 
 func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.ProjectName, "project-name", c.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
-	cmd.Flags().StringVar(&c.License, "license", c.License, "License to use for the project. If set this will automatically populate the LICENSE file")
-	cmd.Flags().StringVar(&c.Skeleton, "skeleton", c.Skeleton, "Name of the skeleton to create the project from")
+	cmd.Flags().StringVar(&c.From, "from", c.From, "Name of the skeleton to create the project from")
 	cmd.Flags().StringVar(&c.SkeletonsDir, "skeletons-dir", c.SkeletonsDir, fmt.Sprintf("Path to the skeletons directory. (defaults to %q if the directory exists)", DefaultSkeletonsDir))
-	cmd.Flags().StringArrayVar(&c.rawCustomValues, "set-custom", c.rawCustomValues, "Set custom config values of the form key1=value1,key2=value2,deeply.nested.key3=value")
 
 	c.Author.AddFlags(cmd)
 	c.Repository.AddFlags(cmd)
+	c.Skeleton.AddFlags(cmd)
 }
 
 func (c *Config) SkeletonDir() string {
-	return filepath.Join(c.SkeletonsDir, c.Skeleton)
+	return filepath.Join(c.SkeletonsDir, c.From)
 }
 
 func (c *Config) Complete(outputDir string) (err error) {
@@ -66,8 +62,8 @@ func (c *Config) Complete(outputDir string) (err error) {
 		c.ProjectName = filepath.Base(outputDir)
 	}
 
-	if c.Skeleton == "" {
-		c.Skeleton = DefaultSkeleton
+	if c.From == "" {
+		c.From = DefaultSkeleton
 	}
 
 	if c.SkeletonsDir == "" && file.Exists(DefaultSkeletonsDir) {
@@ -78,15 +74,6 @@ func (c *Config) Complete(outputDir string) (err error) {
 		c.SkeletonsDir, err = filepath.Abs(c.SkeletonsDir)
 		if err != nil {
 			return err
-		}
-	}
-
-	if len(c.rawCustomValues) > 0 {
-		for _, rawValues := range c.rawCustomValues {
-			err = strvals.ParseInto(rawValues, c.CustomValues)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -106,17 +93,18 @@ func (c *Config) Complete(outputDir string) (err error) {
 	if file.Exists(skeletonConfigPath) {
 		log.WithField("skeleton", c.SkeletonDir()).Debugf("found %s, merging config values", SkeletonConfigFile)
 
-		err = c.MergeFromFile(skeletonConfigPath)
+		err = c.Skeleton.MergeFromFile(skeletonConfigPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	if c.License == "none" {
-		c.License = "" // sanitize as "none" and empty string are treated the same
+	err = c.Repository.Complete(c.ProjectName)
+	if err != nil {
+		return err
 	}
 
-	err = c.Repository.Complete(c.ProjectName)
+	err = c.Skeleton.Complete()
 	if err != nil {
 		return err
 	}
@@ -125,8 +113,8 @@ func (c *Config) Complete(outputDir string) (err error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Skeleton == "" {
-		return fmt.Errorf("--skeleton must be provided")
+	if c.From == "" {
+		return fmt.Errorf("--from must be provided")
 	}
 
 	if c.SkeletonsDir == "" {

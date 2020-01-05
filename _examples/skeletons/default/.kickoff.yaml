@@ -1,0 +1,17 @@
+---
+## License configuration
+#
+# A LICENSE file will be automatically generated if a license is specified.
+#
+# Check out the `licenses` subcommand of kickoff for a list a available
+# licenses.
+license: MIT
+
+## Custom configuration values
+#
+# Custom config is made available in *.skel template under {{ .Values }}. E.g.
+# the example below can be used in templates as
+# {{ .Values.travis.publishCodeCov }}.
+values:
+  travis:
+    publishCodeCov: false
