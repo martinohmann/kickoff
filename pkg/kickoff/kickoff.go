@@ -95,6 +95,8 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 		"Repository":  k.config.Repository,
 	}
 
+	dirMap := make(map[string]string)
+
 	return filepath.Walk(srcPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -118,10 +120,19 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 			return err
 		}
 
-		dstRelPath := filepath.Join(srcRelDir, dstFilename)
+		dstRelDir := srcRelDir
 
-		// sanity check
-		if filepath.Dir(dstRelPath) != srcRelDir {
+		// If the src dir's name was templated, lookup the resolved name and
+		// use that as destination.
+		if dir, ok := dirMap[srcRelDir]; ok {
+			dstRelDir = dir
+		}
+
+		dstRelPath := filepath.Join(dstRelDir, dstFilename)
+
+		// Sanity check to guard against malicious injection of directory
+		// traveral (e.g. "../../" in the template string).
+		if filepath.Dir(dstRelPath) != dstRelDir {
 			return fmt.Errorf("templated filename %q injected illegal directory traversal: %s", srcFilename, dstFilename)
 		}
 
@@ -134,6 +145,12 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 
 		if info.IsDir() {
 			log.Info("creating directory")
+
+			// Track potentially templated directory names that need to be
+			// rewritten for all files contained in them.
+			if srcRelPath != dstRelPath {
+				dirMap[srcRelPath] = dstRelPath
+			}
 
 			return k.makeDirectory(outputPath, info.Mode())
 		}
