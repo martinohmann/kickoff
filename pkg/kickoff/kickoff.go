@@ -44,10 +44,10 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 		log.Warn("dry run: no changes will be made")
 	}
 
-	if k.config.License != "" {
-		log.WithField("license", k.config.License).Debugf("fetching license info from GitHub")
+	if k.config.Skeleton.License != "" {
+		log.WithField("license", k.config.Skeleton.License).Debugf("fetching license info from GitHub")
 
-		k.licenseInfo, err = fetchLicenseInfo(k.config.License)
+		k.licenseInfo, err = fetchLicenseInfo(k.config.Skeleton.License)
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 	templateData := map[string]interface{}{
 		"Author":      k.config.Author,
-		"Custom":      k.config.CustomValues,
+		"Values":      k.config.Skeleton.Values,
 		"License":     k.licenseInfo,
 		"ProjectName": k.config.ProjectName,
 		"Repository":  k.config.Repository,

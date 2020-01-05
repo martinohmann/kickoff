@@ -14,7 +14,7 @@ cache:
 script:
   - make coverage
   - make lint
-{{- if .Custom.withCodeCov }}
+{{- if .Values.travis.publishCodeCov }}
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 {{- end }}
