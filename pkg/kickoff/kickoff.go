@@ -13,6 +13,8 @@ import (
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/license"
+	"github.com/martinohmann/kickoff/pkg/repo"
+	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
 	git "gopkg.in/src-d/go-git.v4"
 )
@@ -44,25 +46,43 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 		log.Warn("dry run: no changes will be made")
 	}
 
-	if k.config.Skeleton.License != "" {
-		log.WithField("license", k.config.Skeleton.License).Debugf("fetching license info from GitHub")
+	repo, err := repo.Open(k.config.SkeletonsDir)
+	if err != nil {
+		return err
+	}
 
-		k.licenseInfo, err = fetchLicenseInfo(k.config.Skeleton.License)
+	skeleton, err := repo.Skeleton(k.config.From)
+	if err != nil {
+		return err
+	}
+
+	config, err := skeleton.Config()
+	if err != nil {
+		return err
+	}
+
+	err = config.Merge(k.config.Skeleton.Config)
+	if err != nil {
+		return err
+	}
+
+	if config.License != "none" {
+		log.WithField("license", config.License).Debugf("fetching license info from GitHub")
+
+		k.licenseInfo, err = fetchLicenseInfo(config.License)
 		if err != nil {
 			return err
 		}
 	}
 
-	inputDir := k.config.SkeletonDir()
-
 	log.WithFields(log.Fields{
-		"skeleton": inputDir,
+		"skeleton": skeleton.Path,
 		"target":   outputDir,
 	}).Info("creating project from skeleton")
 
 	log.WithField("config", fmt.Sprintf("%#v", k.config)).Debug("using config")
 
-	err = k.processFiles(inputDir, outputDir)
+	err = k.processFiles(skeleton, outputDir, config.Values)
 	if err != nil {
 		return err
 	}
@@ -86,10 +106,10 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 	return nil
 }
 
-func (k *Kickoff) processFiles(srcPath, dstPath string) error {
+func (k *Kickoff) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}) error {
 	templateData := map[string]interface{}{
 		"Author":      k.config.Author,
-		"Values":      k.config.Skeleton.Values,
+		"Values":      values,
 		"License":     k.licenseInfo,
 		"ProjectName": k.config.ProjectName,
 		"Repository":  k.config.Repository,
@@ -97,7 +117,9 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 
 	dirMap := make(map[string]string)
 
-	return filepath.Walk(srcPath, func(path string, info os.FileInfo, err error) error {
+	srcPath := skeleton.Path
+
+	return skeleton.Walk(func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -105,11 +127,6 @@ func (k *Kickoff) processFiles(srcPath, dstPath string) error {
 		srcRelPath, err := filepath.Rel(srcPath, path)
 		if err != nil {
 			return err
-		}
-
-		if srcRelPath == config.SkeletonConfigFile {
-			// ignore skeleton config file
-			return nil
 		}
 
 		srcFilename := filepath.Base(srcRelPath)

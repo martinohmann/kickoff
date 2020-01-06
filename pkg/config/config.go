@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
 	"github.com/kirsle/configdir"
@@ -38,7 +37,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		Author:     &AuthorConfig{},
 		Repository: NewDefaultRepositoryConfig(),
-		Skeleton:   &SkeletonConfig{},
+		Skeleton:   NewSkeletonConfig(),
 		From:       DefaultSkeleton,
 	}
 }
@@ -72,28 +71,6 @@ func (c *Config) Complete(outputDir string) (err error) {
 
 	if c.SkeletonsDir != "" {
 		c.SkeletonsDir, err = filepath.Abs(c.SkeletonsDir)
-		if err != nil {
-			return err
-		}
-	}
-
-	skeletonDir := c.SkeletonDir()
-
-	ok, err := file.IsDirectory(skeletonDir)
-	if err != nil {
-		return fmt.Errorf("failed to stat skeleton directory: %v", err)
-	}
-
-	if !ok {
-		return fmt.Errorf("invalid skeleton: %s is not a directory", skeletonDir)
-	}
-
-	skeletonConfigPath := filepath.Join(skeletonDir, SkeletonConfigFile)
-
-	if file.Exists(skeletonConfigPath) {
-		log.WithField("skeleton", c.SkeletonDir()).Debugf("found %s, merging config values", SkeletonConfigFile)
-
-		err = c.Skeleton.MergeFromFile(skeletonConfigPath)
 		if err != nil {
 			return err
 		}

@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/kickoff"
+	"github.com/martinohmann/kickoff/pkg/repo"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +45,12 @@ func NewListOptions() *ListOptions {
 }
 
 func (o *ListOptions) Run() error {
-	skeletons, err := kickoff.FindSkeletons(o.SkeletonsDir)
+	repo, err := repo.Open(o.SkeletonsDir)
+	if err != nil {
+		return err
+	}
+
+	skeletons, err := repo.Skeletons()
 	if err != nil {
 		return err
 	}
@@ -53,7 +58,7 @@ func (o *ListOptions) Run() error {
 	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.SkeletonsDir)
 
 	for _, skeleton := range skeletons {
-		fmt.Fprintln(o.Out, skeleton)
+		fmt.Fprintf(o.Out, "%s => %s\n", skeleton.Name, skeleton.Path)
 	}
 
 	return nil

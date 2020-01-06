@@ -1,19 +1,21 @@
 package config
 
 import (
-	"io/ioutil"
-
-	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
+	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
 
 type SkeletonConfig struct {
-	License string                 `json:"license"`
-	Values  map[string]interface{} `json:"values"`
+	*skeleton.Config
 
 	rawValues []string
+}
+
+func NewSkeletonConfig() *SkeletonConfig {
+	return &SkeletonConfig{
+		Config: &skeleton.Config{},
+	}
 }
 
 func (c *SkeletonConfig) AddFlags(cmd *cobra.Command) {
@@ -22,8 +24,8 @@ func (c *SkeletonConfig) AddFlags(cmd *cobra.Command) {
 }
 
 func (c *SkeletonConfig) Complete() (err error) {
-	if c.License == "none" {
-		c.License = "" // sanitize as "none" and empty string are treated the same.
+	if c.License == "" {
+		c.License = "none" // sanitize as "none" and empty string are treated the same.
 	}
 
 	if len(c.rawValues) == 0 {
@@ -38,30 +40,4 @@ func (c *SkeletonConfig) Complete() (err error) {
 	}
 
 	return nil
-}
-
-func (c *SkeletonConfig) MergeFromFile(path string) error {
-	config, err := LoadSkeleton(path)
-	if err != nil {
-		return err
-	}
-
-	return mergo.Merge(c, config)
-}
-
-// LoadSkeleton loads the skeleton config from path and returns it.
-func LoadSkeleton(path string) (*SkeletonConfig, error) {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var config SkeletonConfig
-
-	err = yaml.Unmarshal(buf, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
 }
