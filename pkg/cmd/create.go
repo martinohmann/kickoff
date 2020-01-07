@@ -20,9 +20,9 @@ func NewCreateCmd() *cobra.Command {
 	o := NewCreateOptions()
 
 	cmd := &cobra.Command{
-		Use:   "create <output-dir>",
+		Use:   "create <skeleton-name> <output-dir>",
 		Short: "Create a project from a skeleton",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -44,10 +44,10 @@ func NewCreateCmd() *cobra.Command {
 type CreateOptions struct {
 	ConfigPath string
 	OutputDir  string
+	Skeleton   string
 	DryRun     bool
 	Force      bool
 
-	From string
 	*kickoff.Config
 
 	rawValues []string
@@ -66,7 +66,6 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces overwrite of existing output directory")
 	cmd.Flags().StringVar(&o.ConfigPath, "config", o.ConfigPath, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", kickoff.DefaultConfigPath))
 
-	cmd.Flags().StringVar(&o.From, "from", o.From, "Name of the skeleton to create the project from")
 	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 
 	cmd.Flags().StringVar(&o.Project.Name, "project-name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
@@ -83,7 +82,9 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
-	if args[0] != "" {
+	o.Skeleton = args[0]
+
+	if args[1] != "" {
 		o.OutputDir, err = filepath.Abs(args[0])
 		if err != nil {
 			return err
@@ -130,8 +131,8 @@ func (o *CreateOptions) Validate() error {
 		return errors.New("output-dir must not be an empty string")
 	}
 
-	if o.From == "" {
-		return fmt.Errorf("--from must be provided")
+	if o.Skeleton == "" {
+		return fmt.Errorf("skeleton name must be provided")
 	}
 
 	if o.Git.User == "" {
@@ -149,7 +150,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repo.Skeleton(o.From)
+	skeleton, err := repo.Skeleton(o.Skeleton)
 	if err != nil {
 		return err
 	}
