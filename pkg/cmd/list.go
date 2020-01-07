@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/repo"
 	"github.com/spf13/cobra"
 )
 
 func NewListCmd() *cobra.Command {
-	o := NewListOptions()
+	o := &ListOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -18,9 +17,7 @@ func NewListCmd() *cobra.Command {
 		Long:  "Lists all skeletons available in the skeletons-dir",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(""); err != nil {
-				return err
-			}
+			o.ApplyDefaults()
 
 			return o.Run()
 		},
@@ -28,24 +25,18 @@ func NewListCmd() *cobra.Command {
 
 	o.Out = cmd.OutOrStdout()
 
-	cmd.Flags().StringVar(&o.SkeletonsDir, "skeletons-dir", o.SkeletonsDir, fmt.Sprintf("Path to the skeletons directory. (defaults to %q if the directory exists)", config.DefaultSkeletonsDir))
+	cmd.Flags().StringVar(&o.URL, "repository-url", o.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
 
 	return cmd
 }
 
 type ListOptions struct {
-	*config.Config
+	repo.Config
 	Out io.Writer
 }
 
-func NewListOptions() *ListOptions {
-	return &ListOptions{
-		Config: config.NewDefaultConfig(),
-	}
-}
-
 func (o *ListOptions) Run() error {
-	repo, err := repo.Open(o.SkeletonsDir)
+	repo, err := repo.Open(o.URL)
 	if err != nil {
 		return err
 	}
@@ -55,7 +46,7 @@ func (o *ListOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.SkeletonsDir)
+	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.URL)
 
 	for _, skeleton := range skeletons {
 		fmt.Fprintf(o.Out, "%s => %s\n", skeleton.Name, skeleton.Path)

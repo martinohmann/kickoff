@@ -1,4 +1,4 @@
-package kickoff
+package project
 
 import (
 	"fmt"
@@ -10,50 +10,41 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/git"
 	"github.com/martinohmann/kickoff/pkg/license"
-	"github.com/martinohmann/kickoff/pkg/repo"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
-	git "gopkg.in/src-d/go-git.v4"
+	gogit "gopkg.in/src-d/go-git.v4"
 )
 
-// Kickoff implements the core functionality for bootstrapping projects from
-// skeletons.
-type Kickoff struct {
-	config      *config.Config
-	licenseInfo *license.Info
-	dryRun      bool
-	stats       *stats
+type CreateOptions struct {
+	DryRun  bool
+	License *license.Info
+	Git     git.Config
+	Values  template.Values
 }
 
-// New creates a new *Kickoff value with given config. If dryRun is set to
-// true, all actions that would be carried out will just be printed but not
-// actually executed.
-func New(config *config.Config, dryRun bool) *Kickoff {
-	return &Kickoff{
-		config: config,
-		dryRun: dryRun,
-		stats:  &stats{},
+type Creator struct {
+	config      Config
+	createStats *createStats
+}
+
+func NewCreator(config Config) *Creator {
+	return &Creator{
+		config:      config,
+		createStats: &createStats{},
 	}
 }
 
-// Create creates a new project in outputDir based on the config passed to New.
-// Returns any error that occurs along the way.
-func (k *Kickoff) Create(outputDir string) (err error) {
-	if k.dryRun {
+// Create creates the project with given options.
+func (c *Creator) Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) error {
+	if options == nil {
+		options = &CreateOptions{}
+	}
+
+	if options.DryRun {
 		log.Warn("dry run: no changes will be made")
-	}
-
-	repo, err := repo.Open(k.config.SkeletonsDir)
-	if err != nil {
-		return err
-	}
-
-	skeleton, err := repo.Skeleton(k.config.From)
-	if err != nil {
-		return err
 	}
 
 	config, err := skeleton.Config()
@@ -61,58 +52,51 @@ func (k *Kickoff) Create(outputDir string) (err error) {
 		return err
 	}
 
-	err = config.Merge(k.config.Skeleton.Config)
+	err = config.Values.Merge(options.Values)
 	if err != nil {
 		return err
 	}
 
-	if config.License != "none" {
-		log.WithField("license", config.License).Debugf("fetching license info from GitHub")
-
-		k.licenseInfo, err = fetchLicenseInfo(config.License)
-		if err != nil {
-			return err
-		}
-	}
+	log.WithField("values", fmt.Sprintf("%#v", config.Values)).Debug("merged values")
 
 	log.WithFields(log.Fields{
 		"skeleton": skeleton.Path,
 		"target":   outputDir,
 	}).Info("creating project from skeleton")
 
-	log.WithField("config", fmt.Sprintf("%#v", k.config)).Debug("using config")
-
-	err = k.processFiles(skeleton, outputDir, config.Values)
+	err = c.processFiles(skeleton, outputDir, config.Values, options)
 	if err != nil {
 		return err
 	}
 
-	err = k.writeLicenseFile(outputDir)
-	if err != nil {
-		return err
+	if options.License != nil {
+		err = c.writeLicenseFile(outputDir, options)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = k.initializeRepository(outputDir)
+	err = c.initializeRepository(outputDir, options.DryRun)
 	if err != nil {
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"files.copied":       k.stats.filesCopied,
-		"dirs.created":       k.stats.dirsCreated,
-		"templates.rendered": k.stats.templatesRendered,
+		"files.copied":       c.createStats.filesCopied,
+		"dirs.created":       c.createStats.dirsCreated,
+		"templates.rendered": c.createStats.templatesRendered,
 	}).Infof("project created")
 
 	return nil
 }
 
-func (k *Kickoff) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}) error {
+func (c *Creator) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}, options *CreateOptions) error {
 	templateData := map[string]interface{}{
-		"Author":      k.config.Author,
+		"ProjectName": c.config.Name, // left here for backwards compat
+		"Project":     &c.config,
 		"Values":      values,
-		"License":     k.licenseInfo,
-		"ProjectName": k.config.ProjectName,
-		"Repository":  k.config.Repository,
+		"License":     options.License,
+		"Git":         &options.Git,
 	}
 
 	dirMap := make(map[string]string)
@@ -169,14 +153,14 @@ func (k *Kickoff) processFiles(skeleton *skeleton.Info, dstPath string, values m
 				dirMap[srcRelPath] = dstRelPath
 			}
 
-			return k.makeDirectory(outputPath, info.Mode())
+			return c.makeDirectory(outputPath, info.Mode(), options.DryRun)
 		}
 
 		ext := filepath.Ext(path)
 		if ext != ".skel" {
 			log.Info("copying file")
 
-			return k.copyFile(path, outputPath)
+			return c.copyFile(path, outputPath, options.DryRun)
 		}
 
 		// strip .skel extension
@@ -185,90 +169,75 @@ func (k *Kickoff) processFiles(skeleton *skeleton.Info, dstPath string, values m
 
 		log.WithField("path.target", dstRelPath).Info("rendering template")
 
-		return k.writeTemplate(path, outputPath, info.Mode(), templateData)
+		return c.writeTemplate(path, outputPath, info.Mode(), templateData, options.DryRun)
 	})
 }
 
-func (k *Kickoff) makeDirectory(path string, mode os.FileMode) error {
-	k.stats.dirsCreated++
+func (c *Creator) makeDirectory(path string, mode os.FileMode, dryRun bool) error {
+	c.createStats.dirsCreated++
 
-	if k.dryRun {
+	if dryRun {
 		return nil
 	}
 
 	return os.MkdirAll(path, mode)
 }
 
-func (k *Kickoff) copyFile(src, dst string) error {
-	k.stats.filesCopied++
+func (c *Creator) copyFile(src, dst string, dryRun bool) error {
+	c.createStats.filesCopied++
 
-	if k.dryRun {
+	if dryRun {
 		return nil
 	}
 
 	return file.Copy(src, dst)
 }
 
-func (k *Kickoff) writeTemplate(src, dst string, mode os.FileMode, data interface{}) error {
+func (c *Creator) writeTemplate(src, dst string, mode os.FileMode, data interface{}, dryRun bool) error {
 	rendered, err := template.RenderFile(src, data)
 	if err != nil {
 		return err
 	}
 
-	k.stats.templatesRendered++
+	c.createStats.templatesRendered++
 
-	if k.dryRun {
+	if dryRun {
 		return nil
 	}
 
 	return ioutil.WriteFile(dst, []byte(rendered), mode)
 }
 
-func (k *Kickoff) writeLicenseFile(outputPath string) error {
-	if k.licenseInfo == nil {
-		return nil
-	}
-
+func (c *Creator) writeLicenseFile(outputPath string, options *CreateOptions) error {
 	outputPath = filepath.Join(outputPath, "LICENSE")
 
-	log.WithField("path", "LICENSE").Infof("writing %s", k.licenseInfo.Name)
+	log.WithField("path", "LICENSE").Infof("writing %s", options.License.Name)
 
-	if k.dryRun {
+	if options.DryRun {
 		return nil
 	}
 
-	body := strings.ReplaceAll(k.licenseInfo.Body, "[fullname]", k.config.Author.String())
+	body := strings.ReplaceAll(options.License.Body, "[fullname]", c.config.AuthorString())
 	body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
 
 	return ioutil.WriteFile(outputPath, []byte(body), 0644)
 }
 
-func (k *Kickoff) initializeRepository(path string) error {
-	_, err := git.PlainOpen(path)
-	if err == nil || err != git.ErrRepositoryNotExists {
+func (c *Creator) initializeRepository(path string, dryRun bool) error {
+	_, err := gogit.PlainOpen(path)
+	if err == nil || err != gogit.ErrRepositoryNotExists {
 		return err
 	}
 
 	log.WithField("path", path).Info("initializing git repository")
 
-	if k.dryRun {
+	if dryRun {
 		return nil
 	}
 
-	_, err = git.PlainInit(path, false)
+	_, err = gogit.PlainInit(path, false)
 
 	return err
-}
-
-func fetchLicenseInfo(name string) (*license.Info, error) {
-	info, err := license.Get(name)
-	if err == license.ErrLicenseNotFound {
-		return nil, fmt.Errorf("license %q not found, use the `licenses` subcommand to get a list of available licenses", name)
-	} else if err != nil {
-		return nil, err
-	}
-
-	return info, nil
 }
 
 func renderDestinationFilename(srcFilename string, data interface{}) (string, error) {
@@ -284,7 +253,7 @@ func renderDestinationFilename(srcFilename string, data interface{}) (string, er
 	return dstFilename, nil
 }
 
-type stats struct {
+type createStats struct {
 	filesCopied       int64
 	dirsCreated       int64
 	templatesRendered int64

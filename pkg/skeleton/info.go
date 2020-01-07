@@ -1,12 +1,8 @@
 package skeleton
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 )
 
 const (
@@ -37,33 +33,4 @@ func (i *Info) Walk(walkFn filepath.WalkFunc) error {
 
 		return walkFn(path, info, err)
 	})
-}
-
-// Config defines the structure of a ConfigFile.
-type Config struct {
-	License string                 `json:"license"`
-	Values  map[string]interface{} `json:"values"`
-}
-
-// Merge merges other on top of c. Non-zero fields in other will override the
-// same fields in c.
-func (c *Config) Merge(other *Config) error {
-	return mergo.Merge(c, other, mergo.WithOverride)
-}
-
-// LoadConfig loads the skeleton config from path and returns it.
-func LoadConfig(path string) (*Config, error) {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var config Config
-
-	err = yaml.Unmarshal(buf, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
 }
