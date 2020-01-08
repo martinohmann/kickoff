@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 )
 
@@ -41,7 +42,13 @@ func findSkeletons(dir string) ([]*skeleton.Info, error) {
 		path := filepath.Join(dir, info.Name())
 
 		ok, err := isSkeletonDir(path)
+		if os.IsPermission(err) {
+			log.Warnf("permission error, skipping dir: %v", err)
+			continue
+		}
+
 		if err != nil {
+
 			return nil, err
 		}
 

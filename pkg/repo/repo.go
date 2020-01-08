@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/pkg/file"
@@ -138,10 +139,19 @@ func newRemoteRepo(info *Info) *remoteRepo {
 }
 
 func (r *remoteRepo) init() error {
-	repo, err := git.PlainOpen(r.info.LocalPath())
+	localPath := r.info.LocalPath()
+
+	repo, err := git.PlainOpen(localPath)
 	if err == git.ErrRepositoryNotExists {
+		parentDir := filepath.Dir(localPath)
+
+		err = os.MkdirAll(parentDir, 0755)
+		if err != nil {
+			return err
+		}
+
 		var clonedRepo *git.Repository
-		clonedRepo, err = git.PlainClone(r.info.LocalPath(), false, &git.CloneOptions{
+		clonedRepo, err = git.PlainClone(localPath, false, &git.CloneOptions{
 			URL: r.info.String(),
 		})
 		repo = clonedRepo

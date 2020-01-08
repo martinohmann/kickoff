@@ -12,7 +12,9 @@ func NewSkeletonCmd() *cobra.Command {
 		Short:   "Manage skeletons",
 	}
 
+	cmd.AddCommand(skeleton.NewInitCmd())
 	cmd.AddCommand(skeleton.NewListCmd())
+	cmd.AddCommand(skeleton.NewShowCmd())
 
 	return cmd
 }

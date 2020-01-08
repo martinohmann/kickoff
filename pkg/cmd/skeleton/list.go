@@ -15,7 +15,7 @@ func NewListCmd() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List available skeletons",
-		Long:    "Lists all skeletons available in the skeletons-dir",
+		Long:    "Lists all skeletons available in the repository",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.ApplyDefaults()
