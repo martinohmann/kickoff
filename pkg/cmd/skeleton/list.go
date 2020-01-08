@@ -1,4 +1,4 @@
-package cmd
+package skeleton
 
 import (
 	"fmt"
@@ -12,10 +12,11 @@ func NewListCmd() *cobra.Command {
 	o := &ListOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List available skeletons",
-		Long:  "Lists all skeletons available in the skeletons-dir",
-		Args:  cobra.NoArgs,
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List available skeletons",
+		Long:    "Lists all skeletons available in the skeletons-dir",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.ApplyDefaults()
 

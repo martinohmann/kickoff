@@ -44,7 +44,7 @@ kickoff version
 Quick example:
 
 ```
-kickoff create ~/path/to/my/new/project --license mit
+kickoff project create myskeleton ~/path/to/my/new/project --license mit
 ```
 
 ## Project Skeletons

@@ -1,4 +1,4 @@
-package cmd
+package license
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewLicensesCmd() *cobra.Command {
+func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "licenses",
-		Short: "List available licenses",
-		Long:  "Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).",
-		Args:  cobra.NoArgs,
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List available licenses",
+		Long:    "Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			licenses, err := license.List()
 			if err != nil {

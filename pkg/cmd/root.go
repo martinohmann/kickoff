@@ -12,7 +12,7 @@ func NewRootCmd() *cobra.Command {
 		Use:           "kickoff",
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			if verbose {
 				log.SetLevel(log.DebugLevel)
 			}
@@ -20,6 +20,11 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Enable verbose log output")
+
+	cmd.AddCommand(NewProjectCmd())
+	cmd.AddCommand(NewLicenseCmd())
+	cmd.AddCommand(NewSkeletonCmd())
+	cmd.AddCommand(NewVersionCmd())
 
 	return cmd
 }

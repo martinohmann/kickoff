@@ -11,12 +11,6 @@ func main() {
 
 	rootCmd := cmd.NewRootCmd()
 
-	rootCmd.AddCommand(cmd.NewCreateCmd())
-	rootCmd.AddCommand(cmd.NewLicenseCmd())
-	rootCmd.AddCommand(cmd.NewLicensesCmd())
-	rootCmd.AddCommand(cmd.NewListCmd())
-	rootCmd.AddCommand(cmd.NewVersionCmd())
-
 	err := rootCmd.Execute()
 	if err != nil {
 		log.Fatal(err.Error())
