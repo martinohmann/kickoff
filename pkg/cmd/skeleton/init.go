@@ -15,6 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ErrEmptyOutputDir = errors.New("output-dir must not be an empty string")
+)
+
 func NewInitCmd() *cobra.Command {
 	o := &InitOptions{}
 
@@ -66,7 +70,7 @@ func (o *InitOptions) Validate() error {
 	}
 
 	if o.OutputDir == "" {
-		return errors.New("output-dir must not be an empty string")
+		return ErrEmptyOutputDir
 	}
 
 	return nil
