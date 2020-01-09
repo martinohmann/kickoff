@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	verbose := false
 
 	cmd := &cobra.Command{
@@ -21,10 +22,11 @@ func NewRootCmd() *cobra.Command {
 
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Enable verbose log output")
 
+	cmd.AddCommand(NewConfigCmd(streams))
 	cmd.AddCommand(NewProjectCmd())
-	cmd.AddCommand(NewLicenseCmd())
-	cmd.AddCommand(NewSkeletonCmd())
-	cmd.AddCommand(NewVersionCmd())
+	cmd.AddCommand(NewLicenseCmd(streams))
+	cmd.AddCommand(NewSkeletonCmd(streams))
+	cmd.AddCommand(NewVersionCmd(streams))
 
 	return cmd
 }

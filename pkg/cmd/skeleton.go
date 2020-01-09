@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmd/skeleton"
 	"github.com/spf13/cobra"
 )
 
-func NewSkeletonCmd() *cobra.Command {
+func NewSkeletonCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "skeleton",
 		Aliases: []string{"skel", "skeletons"},
@@ -13,8 +14,8 @@ func NewSkeletonCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(skeleton.NewInitCmd())
-	cmd.AddCommand(skeleton.NewListCmd())
-	cmd.AddCommand(skeleton.NewShowCmd())
+	cmd.AddCommand(skeleton.NewListCmd(streams))
+	cmd.AddCommand(skeleton.NewShowCmd(streams))
 
 	return cmd
 }

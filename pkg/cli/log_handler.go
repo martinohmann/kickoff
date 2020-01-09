@@ -11,9 +11,6 @@ import (
 	colorable "github.com/mattn/go-colorable"
 )
 
-// Default handler outputting to stdout.
-var Default = New(os.Stdout)
-
 var bold = color.New(color.Bold)
 
 // Colors mapping.

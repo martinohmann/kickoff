@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ghodss/yaml"
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/version"
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ var (
 	ErrInvalidOutputFormat = errors.New("--output must be 'yaml' or 'json'")
 )
 
-func NewVersionCmd() *cobra.Command {
-	o := &VersionOptions{}
+func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
+	o := &VersionOptions{IOStreams: streams}
 
 	cmd := &cobra.Command{
 		Use:   "version",
@@ -37,8 +37,6 @@ func NewVersionCmd() *cobra.Command {
 		},
 	}
 
-	o.Out = cmd.OutOrStdout()
-
 	cmd.Flags().BoolVar(&o.Short, "short", false, "Display short version")
 	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
 
@@ -46,9 +44,9 @@ func NewVersionCmd() *cobra.Command {
 }
 
 type VersionOptions struct {
+	cli.IOStreams
 	Short  bool
 	Output string
-	Out    io.Writer
 }
 
 func (o *VersionOptions) Validate() error {

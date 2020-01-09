@@ -2,14 +2,14 @@ package skeleton
 
 import (
 	"fmt"
-	"io"
 
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/repo"
 	"github.com/spf13/cobra"
 )
 
-func NewListCmd() *cobra.Command {
-	o := &ListOptions{}
+func NewListCmd(streams cli.IOStreams) *cobra.Command {
+	o := &ListOptions{IOStreams: streams}
 
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -24,16 +24,14 @@ func NewListCmd() *cobra.Command {
 		},
 	}
 
-	o.Out = cmd.OutOrStdout()
-
 	cmd.Flags().StringVar(&o.URL, "repository-url", o.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
 
 	return cmd
 }
 
 type ListOptions struct {
+	cli.IOStreams
 	repo.Config
-	Out io.Writer
 }
 
 func (o *ListOptions) Run() error {

@@ -3,11 +3,12 @@ package license
 import (
 	"fmt"
 
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/spf13/cobra"
 )
 
-func NewListCmd() *cobra.Command {
+func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -20,11 +21,9 @@ func NewListCmd() *cobra.Command {
 				return err
 			}
 
-			out := cmd.OutOrStdout()
-
-			fmt.Fprintf(out, "%-15s NAME\n", "KEY")
+			fmt.Fprintf(streams.Out, "%-15s NAME\n", "KEY")
 			for _, license := range licenses {
-				fmt.Fprintf(out, "%-15s %s\n", license.Key, license.Name)
+				fmt.Fprintf(streams.Out, "%-15s %s\n", license.Key, license.Name)
 			}
 
 			return nil

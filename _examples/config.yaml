@@ -2,35 +2,100 @@
 # The config file provides defaults which can be explicitly overriden via CLI
 # flags.
 
-## Project configuration
+# Project configuration
+# =====================
+#
+# Configures the author and email address that are automatically injected in
+# license texts and are also available in *.skel templates.
+#
+# If empty, kickoff will try to populate project.author and project.email from
+# the user.fullname and user.email git config attributes (if they exist).
+#
+# Example:
+# --------
+#
+#   project:
+#     author: John Doe
+#     email: john@example.com
+#
 project:
-  author: martinohmann
-  email: foo@bar.baz
+  author: ""
+  email: ""
 
-## License configuration
+# License configuration
+# =====================
 #
-# A LICENSE file will be automatically generated if a license is specified.
+# A LICENSE file will be automatically generated if a license is specified. All
+# licenses available via the GitHub Licenses API are supported.
 #
-# Check out the `licenses` subcommand of kickoff for a list a available
+# Check out the 'kickoff licenses list' for a list a available
 # licenses.
-license: MIT
-
-## Git configuration
 #
-# git:
-#   user: martinohmann
-#   repoName: myawesomeproject
-
-## Skeleton configuration
+# Example:
+# --------
 #
-# repository
-#   url: /path/to/my/skeletons/dir
+#   license: mit
+#
+license: ""
 
-## Custom configuration values
+# Git configuration
+# =================
+#
+# The git configuration is made available to *.skel templates so you can build
+# links related to your project, e.g. for CI badges or documentation links.
+#
+# If empty, kickoff will attempt to fetch the git user from the github.user git
+# config (if present).
+#
+# Example:
+# --------
+#
+#   git:
+#     host: github.com (this is the default if the field is empty)
+#     user: johndoe
+#
+git:
+  user: ""
+
+# Skeleton configuration
+# ======================
+#
+# The repository.url specifies the location of the skeleton repository. This
+# can be a local dir or a local/remote git repository.
+#
+# Local dir example:
+# ------------------
+#
+#   repository
+#     url: /path/to/my/skeletons/dir
+#
+# Local repo (with branch) example:
+# ---------------------------------
+#
+#   repository
+#     url: /path/to/my/skeletons/repo?branch=develop
+#
+# Remote repo (with branch) example:
+# ----------------------------------
+#
+#   repository
+#     url: https://github.com/myuser/myskeletonrepo?branch=develop
+#
+repository:
+  url: ""
+
+# Custom configuration values
+# ===========================
 #
 # Custom config is made available in *.skel template under {{ .Values }}. E.g.
 # the example below can be used in templates as
 # {{ .Values.travis.publishCodeCov }}.
-values:
-  travis:
-    publishCodeCov: true
+#
+# Example:
+# --------
+#
+#   values:
+#     travis:
+#       publishCodeCov: true
+#
+values: {}

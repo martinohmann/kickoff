@@ -12,7 +12,7 @@ const DefaultHost = "github.com"
 type Config struct {
 	Host     string `json:"host"`
 	User     string `json:"user"`
-	RepoName string `json:"repoName"`
+	RepoName string `json:"-"`
 }
 
 func (c *Config) ApplyDefaults(defaultRepoName string) {

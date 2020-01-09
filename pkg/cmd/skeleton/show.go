@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ghodss/yaml"
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/repo"
 	"github.com/spf13/cobra"
 )
@@ -17,8 +17,8 @@ var (
 	ErrInvalidOutputFormat = errors.New("--output must be 'yaml' or 'json'")
 )
 
-func NewShowCmd() *cobra.Command {
-	o := &ShowOptions{Output: "yaml"}
+func NewShowCmd(streams cli.IOStreams) *cobra.Command {
+	o := &ShowOptions{IOStreams: streams, Output: "yaml"}
 
 	cmd := &cobra.Command{
 		Use:   "show <name>",
@@ -39,8 +39,6 @@ func NewShowCmd() *cobra.Command {
 		},
 	}
 
-	o.Out = cmd.OutOrStdout()
-
 	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
 	cmd.Flags().StringVar(&o.URL, "repository-url", o.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
 
@@ -48,10 +46,10 @@ func NewShowCmd() *cobra.Command {
 }
 
 type ShowOptions struct {
+	cli.IOStreams
 	repo.Config
 	Skeleton string
 	Output   string
-	Out      io.Writer
 }
 
 func (o *ShowOptions) Validate() error {

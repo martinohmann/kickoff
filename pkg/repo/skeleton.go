@@ -48,7 +48,6 @@ func findSkeletons(dir string) ([]*skeleton.Info, error) {
 		}
 
 		if err != nil {
-
 			return nil, err
 		}
 

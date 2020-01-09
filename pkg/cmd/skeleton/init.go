@@ -3,7 +3,6 @@ package skeleton
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -40,8 +39,6 @@ func NewInitCmd() *cobra.Command {
 		},
 	}
 
-	o.Out = cmd.OutOrStdout()
-
 	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces overwrite of existing output directory")
 
 	return cmd
@@ -50,7 +47,6 @@ func NewInitCmd() *cobra.Command {
 type InitOptions struct {
 	OutputDir string
 	Force     bool
-	Out       io.Writer
 }
 
 func (o *InitOptions) Complete(args []string) (err error) {
@@ -88,7 +84,7 @@ func (o *InitOptions) Run() error {
 
 	log.WithField("path", readmeSkelPath).Info("writing README.md.skel")
 
-	err = ioutil.WriteFile(readmeSkelPath, boilerplate.DefaultReadme(), 0644)
+	err = ioutil.WriteFile(readmeSkelPath, boilerplate.DefaultReadmeBytes(), 0644)
 	if err != nil {
 		return err
 	}
@@ -97,7 +93,7 @@ func (o *InitOptions) Run() error {
 
 	log.WithField("path", configPath).Infof("writing %s", skeleton.ConfigFile)
 
-	err = ioutil.WriteFile(configPath, boilerplate.DefaultConfig(), 0644)
+	err = ioutil.WriteFile(configPath, boilerplate.DefaultSkeletonConfigBytes(), 0644)
 	if err != nil {
 		return err
 	}

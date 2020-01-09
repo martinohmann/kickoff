@@ -3,11 +3,12 @@ package license
 import (
 	"fmt"
 
+	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/spf13/cobra"
 )
 
-func NewShowCmd() *cobra.Command {
+func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show <key>",
 		Short: "Fetch a license text",
@@ -19,7 +20,7 @@ func NewShowCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), license.Body)
+			fmt.Fprintln(streams.Out, license.Body)
 
 			return nil
 		},
