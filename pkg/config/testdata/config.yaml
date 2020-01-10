@@ -1,0 +1,7 @@
+---
+git:
+  user: johndoe
+skeletons:
+  repositoryURL: https://git.john.doe/johndoe/kickoff-skeletons
+values:
+  foo: bar
