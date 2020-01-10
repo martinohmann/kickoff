@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
@@ -81,7 +82,7 @@ func (o *ShowOptions) Run() error {
 
 	switch o.Output {
 	case "json":
-		buf, err = json.Marshal(config)
+		buf, err = json.MarshalIndent(config, "", "  ")
 	default:
 		buf, err = yaml.Marshal(config)
 	}
@@ -90,7 +91,7 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintln(o.Out, string(buf))
+	fmt.Fprintln(o.Out, strings.TrimSpace(string(buf)))
 
 	return nil
 }
