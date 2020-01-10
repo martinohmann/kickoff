@@ -1,4 +1,4 @@
-package repo
+package skeleton
 
 import (
 	"os"
@@ -7,15 +7,15 @@ import (
 	"testing"
 )
 
-func TestInfo_LocalPath(t *testing.T) {
+func TestRepositoryInfo_LocalPath(t *testing.T) {
 	var tests = []struct {
 		name     string
-		given    *Info
+		given    *RepositoryInfo
 		expected string
 	}{
 		{
 			name: "local",
-			given: &Info{
+			given: &RepositoryInfo{
 				Local: true,
 				Path:  "/tmp/myrepo",
 			},
@@ -23,7 +23,7 @@ func TestInfo_LocalPath(t *testing.T) {
 		},
 		{
 			name: "remote",
-			given: &Info{
+			given: &RepositoryInfo{
 				Scheme: "https",
 				Host:   "github.com",
 				Path:   "user/repo",
@@ -32,7 +32,7 @@ func TestInfo_LocalPath(t *testing.T) {
 		},
 		{
 			name: "remote with user",
-			given: &Info{
+			given: &RepositoryInfo{
 				Scheme: "ssh",
 				User:   "git",
 				Host:   "github.com",
@@ -52,15 +52,15 @@ func TestInfo_LocalPath(t *testing.T) {
 	}
 }
 
-func TestInfo_String(t *testing.T) {
+func TestRepositoryInfo_String(t *testing.T) {
 	var tests = []struct {
 		name     string
-		given    *Info
+		given    *RepositoryInfo
 		expected string
 	}{
 		{
 			name: "local",
-			given: &Info{
+			given: &RepositoryInfo{
 				Local: true,
 				Path:  "/tmp/myrepo",
 			},
@@ -68,7 +68,7 @@ func TestInfo_String(t *testing.T) {
 		},
 		{
 			name: "remote",
-			given: &Info{
+			given: &RepositoryInfo{
 				Scheme: "https",
 				Host:   "github.com",
 				Path:   "user/repo",
@@ -77,7 +77,7 @@ func TestInfo_String(t *testing.T) {
 		},
 		{
 			name: "remote with user",
-			given: &Info{
+			given: &RepositoryInfo{
 				Scheme: "ssh",
 				User:   "git",
 				Host:   "github.com",
@@ -102,13 +102,13 @@ func TestParseURL(t *testing.T) {
 	var tests = []struct {
 		name        string
 		given       string
-		expected    *Info
+		expected    *RepositoryInfo
 		expectedErr error
 	}{
 		{
 			name:  "local",
 			given: "my/repo",
-			expected: &Info{
+			expected: &RepositoryInfo{
 				Local: true,
 				Path:  pwd + "/my/repo",
 			},
@@ -116,7 +116,7 @@ func TestParseURL(t *testing.T) {
 		{
 			name:  "local with branch",
 			given: "my/repo?branch=develop",
-			expected: &Info{
+			expected: &RepositoryInfo{
 				Local:  true,
 				Path:   pwd + "/my/repo",
 				Branch: "develop",
@@ -125,7 +125,7 @@ func TestParseURL(t *testing.T) {
 		{
 			name:  "remote https",
 			given: "https://github.com/martinohmann/kickoff-skeletons",
-			expected: &Info{
+			expected: &RepositoryInfo{
 				Local:  false,
 				Scheme: "https",
 				Host:   "github.com",
@@ -135,7 +135,7 @@ func TestParseURL(t *testing.T) {
 		{
 			name:  "remote ssh with branch",
 			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?branch=v1.1.1",
-			expected: &Info{
+			expected: &RepositoryInfo{
 				Local:  false,
 				Scheme: "ssh",
 				User:   "git",
@@ -147,7 +147,7 @@ func TestParseURL(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual, err := ParseURL(test.given)
+			actual, err := ParseRepositoryURL(test.given)
 			switch {
 			case test.expectedErr != nil && err == nil:
 				t.Fatalf("expected error %#v but got nil", test.expectedErr)

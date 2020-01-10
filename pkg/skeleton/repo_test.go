@@ -1,4 +1,4 @@
-package repo
+package skeleton
 
 import (
 	"os"
@@ -7,12 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func TestOpen_LocalRepo(t *testing.T) {
+func TestOpenRepository_LocalRepo(t *testing.T) {
 	r, err := git.PlainInit("testdata/local-repo", false)
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +39,7 @@ func TestOpen_LocalRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, err := Open("testdata/local-repo?branch=master")
+	repo, err := OpenRepository("testdata/local-repo?branch=master")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
@@ -52,7 +51,7 @@ func TestOpen_LocalRepo(t *testing.T) {
 
 	pwd, _ := os.Getwd()
 
-	expected := &skeleton.Info{
+	expected := &Info{
 		Name: "b-skeleton",
 		Path: filepath.Join(pwd, "testdata/local-repo/b-skeleton"),
 	}
@@ -62,15 +61,15 @@ func TestOpen_LocalRepo(t *testing.T) {
 	}
 }
 
-func TestOpen_LocalRepoError(t *testing.T) {
-	_, err := Open("testdata/not-a-local-repo?branch=master")
+func TestOpenRepository_LocalRepoError(t *testing.T) {
+	_, err := OpenRepository("testdata/not-a-local-repo?branch=master")
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
 }
 
-func TestOpen_LocalDir(t *testing.T) {
-	repo, err := Open("testdata/local-dir")
+func TestOpenRepository_LocalDir(t *testing.T) {
+	repo, err := OpenRepository("testdata/local-dir")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
@@ -82,7 +81,7 @@ func TestOpen_LocalDir(t *testing.T) {
 
 	pwd, _ := os.Getwd()
 
-	expected := &skeleton.Info{
+	expected := &Info{
 		Name: "a-skeleton",
 		Path: filepath.Join(pwd, "testdata/local-dir/a-skeleton"),
 	}
@@ -92,8 +91,8 @@ func TestOpen_LocalDir(t *testing.T) {
 	}
 }
 
-func TestOpen_LocalDirError(t *testing.T) {
-	_, err := Open("testdata/not-a-local-dir")
+func TestOpenRepository_LocalDirError(t *testing.T) {
+	_, err := OpenRepository("testdata/not-a-local-dir")
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}

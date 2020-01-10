@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/repo"
+	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
 
@@ -24,18 +25,18 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&o.URL, "repository-url", o.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
+	cmd.Flags().StringVar(&o.RepositoryURL, "repository-url", o.RepositoryURL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", config.DefaultSkeletonRepositoryURL))
 
 	return cmd
 }
 
 type ListOptions struct {
 	cli.IOStreams
-	repo.Config
+	config.Skeletons
 }
 
 func (o *ListOptions) Run() error {
-	repo, err := repo.Open(o.URL)
+	repo, err := skeleton.OpenRepository(o.RepositoryURL)
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func (o *ListOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.URL)
+	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.RepositoryURL)
 
 	for _, skeleton := range skeletons {
 		fmt.Fprintf(o.Out, "%s => %s\n", skeleton.Name, skeleton.Path)

@@ -1,4 +1,4 @@
-package repo
+package skeleton
 
 import (
 	"fmt"
@@ -6,37 +6,37 @@ import (
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// Repo is the interface for a skeleton repository.
-type Repo interface {
+// Repository is the interface for a skeleton repository.
+type Repository interface {
 	// Skeleton obtains the info for the skeleton with name or an error if the
 	// skeleton does not exist within the repository.
-	Skeleton(name string) (*skeleton.Info, error)
+	Skeleton(name string) (*Info, error)
 
 	// Skeletons returns infos for all skeletons available in the repository.
 	// Returns any error that may occur while traversing the directory.
-	Skeletons() ([]*skeleton.Info, error)
+	Skeletons() ([]*Info, error)
 
 	// init is called after opening the repository.
 	init() error
 }
 
-// Open opens a repository and returns it. If url points to a remote repository
-// it will be looked up in the local cache and reused if possible. If the
-// repository is not in the cache it will be cloned. Open will automatically
-// checkout branches provided in the url. Returns any errors that occur while
-// parsing the url opening the repository directory or during git actions.
-func Open(url string) (Repo, error) {
-	info, err := ParseURL(url)
+// OpenRepository opens a repository and returns it. If url points to a remote
+// repository it will be looked up in the local cache and reused if possible.
+// If the repository is not in the cache it will be cloned. Open will
+// automatically checkout branches provided in the url. Returns any errors that
+// occur while parsing the url opening the repository directory or during git
+// actions.
+func OpenRepository(url string) (Repository, error) {
+	info, err := ParseRepositoryURL(url)
 	if err != nil {
 		return nil, err
 	}
 
-	var r Repo
+	var r Repository
 
 	switch {
 	case info.Local && info.Branch == "":
@@ -56,10 +56,10 @@ func Open(url string) (Repo, error) {
 }
 
 type localDir struct {
-	info *Info
+	info *RepositoryInfo
 }
 
-func newLocalDir(info *Info) *localDir {
+func newLocalDir(info *RepositoryInfo) *localDir {
 	return &localDir{
 		info: info,
 	}
@@ -80,7 +80,7 @@ func (r *localDir) init() error {
 	return nil
 }
 
-func (r *localDir) Skeleton(name string) (*skeleton.Info, error) {
+func (r *localDir) Skeleton(name string) (*Info, error) {
 	path := filepath.Join(r.info.LocalPath(), name)
 
 	ok, err := isSkeletonDir(path)
@@ -92,7 +92,7 @@ func (r *localDir) Skeleton(name string) (*skeleton.Info, error) {
 		return nil, fmt.Errorf("skeleton %q not found in %s", name, r.info)
 	}
 
-	info := &skeleton.Info{
+	info := &Info{
 		Name: name,
 		Path: path,
 	}
@@ -100,7 +100,7 @@ func (r *localDir) Skeleton(name string) (*skeleton.Info, error) {
 	return info, nil
 }
 
-func (r *localDir) Skeletons() ([]*skeleton.Info, error) {
+func (r *localDir) Skeletons() ([]*Info, error) {
 	return findSkeletons(r.info.LocalPath())
 }
 
@@ -108,7 +108,7 @@ type localRepo struct {
 	*localDir
 }
 
-func newLocalRepo(info *Info) *localRepo {
+func newLocalRepo(info *RepositoryInfo) *localRepo {
 	return &localRepo{
 		localDir: &localDir{info},
 	}
@@ -132,7 +132,7 @@ type remoteRepo struct {
 	*localRepo
 }
 
-func newRemoteRepo(info *Info) *remoteRepo {
+func newRemoteRepo(info *RepositoryInfo) *remoteRepo {
 	return &remoteRepo{
 		localRepo: newLocalRepo(info),
 	}

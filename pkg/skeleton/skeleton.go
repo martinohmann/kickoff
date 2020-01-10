@@ -1,4 +1,4 @@
-package repo
+package skeleton
 
 import (
 	"io/ioutil"
@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
+	"github.com/martinohmann/kickoff/pkg/config"
 )
 
 // IsSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
 // detected by the fact that they contain a .kickoff.yaml file.
 func isSkeletonDir(dir string) (bool, error) {
-	configPath := filepath.Join(dir, skeleton.ConfigFile)
+	configPath := filepath.Join(dir, config.SkeletonConfigFile)
 
 	info, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
@@ -26,8 +26,8 @@ func isSkeletonDir(dir string) (bool, error) {
 
 // findSkeletons recursively finds all skeletons in dir. Returns any error that
 // may occur while traversing dir.
-func findSkeletons(dir string) ([]*skeleton.Info, error) {
-	skeletons := make([]*skeleton.Info, 0)
+func findSkeletons(dir string) ([]*Info, error) {
+	skeletons := make([]*Info, 0)
 
 	fileInfos, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -57,7 +57,7 @@ func findSkeletons(dir string) ([]*skeleton.Info, error) {
 				return nil, err
 			}
 
-			skeletons = append(skeletons, &skeleton.Info{
+			skeletons = append(skeletons, &Info{
 				Name: info.Name(),
 				Path: abspath,
 			})
@@ -70,7 +70,7 @@ func findSkeletons(dir string) ([]*skeleton.Info, error) {
 		}
 
 		for _, s := range skels {
-			skeletons = append(skeletons, &skeleton.Info{
+			skeletons = append(skeletons, &Info{
 				Name: filepath.Join(info.Name(), s.Name),
 				Path: s.Path,
 			})

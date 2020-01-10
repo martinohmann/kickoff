@@ -10,8 +10,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/boilerplate"
+	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/kickoff"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ var (
 )
 
 func NewEditCmd() *cobra.Command {
-	o := &EditOptions{ConfigPath: kickoff.DefaultConfigPath}
+	o := &EditOptions{ConfigPath: config.DefaultConfigPath}
 
 	cmd := &cobra.Command{
 		Use:   "edit",
@@ -48,7 +48,7 @@ type EditOptions struct {
 
 func (o *EditOptions) Complete() (err error) {
 	if o.ConfigPath == "" {
-		o.ConfigPath = kickoff.DefaultConfigPath
+		o.ConfigPath = config.DefaultConfigPath
 	}
 
 	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
@@ -59,7 +59,7 @@ func (o *EditOptions) Complete() (err error) {
 func (o *EditOptions) Run() (err error) {
 	var create bool
 	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath == kickoff.DefaultConfigPath {
+		if o.ConfigPath == config.DefaultConfigPath {
 			create = true
 		} else {
 			return fmt.Errorf("file %q does not exist", o.ConfigPath)
@@ -105,7 +105,7 @@ func (o *EditOptions) Run() (err error) {
 
 	// Sanity check: if we fail to load the config from the tmpfile, we
 	// consider it invalid and abort without copying it back.
-	_, err = kickoff.LoadConfig(tmpfilePath)
+	_, err = config.Load(tmpfilePath)
 	if err != nil {
 		return fmt.Errorf("invalid kickoff config: %v", err)
 	}

@@ -80,29 +80,29 @@ git:
 # Skeleton configuration
 # ======================
 #
-# The repository.url specifies the location of the skeleton repository. This
-# can be a local dir or a local/remote git repository.
+# The skeletons.repositoryURL specifies the location of the skeleton
+# repository. This can be a local dir or a local/remote git repository.
 #
 # Local dir example:
 # ------------------
 #
-#   repository
-#     url: /path/to/my/skeletons/dir
+#   skeletons:
+#     repositoryURL: /path/to/my/skeletons/dir
 #
 # Local repo (with branch) example:
 # ---------------------------------
 #
-#   repository
-#     url: /path/to/my/skeletons/repo?branch=develop
+#   skeletons
+#     repositoryURL: /path/to/my/skeletons/repo?branch=develop
 #
 # Remote repo (with branch) example:
 # ----------------------------------
 #
-#   repository
-#     url: https://github.com/myuser/myskeletonrepo?branch=develop
+#   skeletons:
+#     repositoryURL: https://github.com/myuser/myskeletonrepo?branch=develop
 #
-repository:
-  url: ""
+skeletons:
+  repositoryURL: ""
 
 # Custom configuration values
 # ===========================
@@ -122,16 +122,19 @@ values: {}
 `
 
 	DefaultSkeletonConfigText = `---
-## Custom configuration values
+# Custom configuration values
+# ===========================
 #
 # Custom config is made available in *.skel template under {{ .Values }}. The
 # values can be overridden on project creation.
 #
 # Example:
+# --------
 #
 #   values:
 #     travis:
 #       enabled: false
+#
 values: {}
 `
 )

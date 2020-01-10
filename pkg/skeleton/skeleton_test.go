@@ -1,11 +1,10 @@
-package repo
+package skeleton
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +16,7 @@ func TestFindSkeletons(t *testing.T) {
 
 	pwd, _ := os.Getwd()
 
-	expected := []*skeleton.Info{
+	expected := []*Info{
 		{Name: "bar", Path: filepath.Join(pwd, "testdata/skeletons/bar")},
 		{Name: "foo/bar", Path: filepath.Join(pwd, "testdata/skeletons/foo/bar")},
 		{Name: "nested", Path: filepath.Join(pwd, "testdata/skeletons/nested")},
