@@ -155,7 +155,7 @@ func (r *remoteRepo) init() error {
 			return err
 		}
 
-		log.WithField("localPath", localPath).Infof("cloning %s", r.info)
+		log.WithField("localPath", localPath).Info("cloning remote skeleton repository")
 
 		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
 			URL: r.info.String(),

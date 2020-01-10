@@ -42,6 +42,10 @@ var (
 	LocalCache = configdir.LocalCache("kickoff", "repositories")
 )
 
+const (
+	defaultBranch = "master"
+)
+
 // RepositoryInfo holds information about a skeleton repository.
 type RepositoryInfo struct {
 	Local  bool
@@ -117,6 +121,10 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 		info.User = u.User.String()
 		info.Host = u.Host
 		info.Path = u.Path[1:]
+
+		if info.Branch == "" {
+			info.Branch = defaultBranch
+		}
 	}
 
 	return info, nil

@@ -130,6 +130,7 @@ func TestParseURL(t *testing.T) {
 				Scheme: "https",
 				Host:   "github.com",
 				Path:   "martinohmann/kickoff-skeletons",
+				Branch: "master",
 			},
 		},
 		{
