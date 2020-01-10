@@ -1,0 +1,19 @@
+---
+# Custom configuration values
+# ===========================
+#
+# Custom config is made available in *.skel template under {{ .Values }}. The
+# values can be overridden on project creation.
+#
+# Example:
+# --------
+#
+#   values:
+#     travis:
+#       enabled: false
+#
+values:
+  somekey: somevalue
+  filename: foobar
+  travis:
+    enabled: false

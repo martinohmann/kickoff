@@ -18,11 +18,17 @@ import (
 	gogit "gopkg.in/src-d/go-git.v4"
 )
 
+// CreateOptions provide optional configuration for the project creator. If
+// DryRun is set to true, actions will only be logged, but nothing will be
+// written to the project output dir.
 type CreateOptions struct {
 	DryRun bool
 	Config config.Config
 }
 
+// Create creates a new project in outputDir using the provided skeleton.
+// Options provide additional configuration for the project creation behaviour.
+// Returns an error if project creation fails.
 func Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) error {
 	if options == nil {
 		options = &CreateOptions{}
