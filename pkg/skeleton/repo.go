@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/file"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -115,9 +116,11 @@ func newLocalRepo(info *RepositoryInfo) *localRepo {
 }
 
 func (r *localRepo) init() error {
-	repo, err := git.PlainOpen(r.info.LocalPath())
+	localPath := r.info.LocalPath()
+
+	repo, err := git.PlainOpen(localPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open local repository %s: %v", localPath, err)
 	}
 
 	wt, err := repo.Worktree()
@@ -141,6 +144,8 @@ func newRemoteRepo(info *RepositoryInfo) *remoteRepo {
 func (r *remoteRepo) init() error {
 	localPath := r.info.LocalPath()
 
+	log.WithField("url", r.info.String()).Info("using remote skeleton repository")
+
 	repo, err := git.PlainOpen(localPath)
 	if err == git.ErrRepositoryNotExists {
 		parentDir := filepath.Dir(localPath)
@@ -150,15 +155,16 @@ func (r *remoteRepo) init() error {
 			return err
 		}
 
-		var clonedRepo *git.Repository
-		clonedRepo, err = git.PlainClone(localPath, false, &git.CloneOptions{
+		log.WithField("localPath", localPath).Infof("cloning %s", r.info)
+
+		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
 			URL: r.info.String(),
 		})
-		repo = clonedRepo
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to clone repository %s: %v", r.info, err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to open local repository %s: %v", localPath, err)
 	}
 
 	wt, err := repo.Worktree()
@@ -166,9 +172,18 @@ func (r *remoteRepo) init() error {
 		return err
 	}
 
-	err = wt.Clean(&git.CleanOptions{})
+	status, err := wt.Status()
 	if err != nil {
 		return err
+	}
+
+	if !status.IsClean() {
+		log.WithField("localPath", localPath).Debug("cleaning repository")
+
+		err = wt.Clean(&git.CleanOptions{Dir: true})
+		if err != nil {
+			return fmt.Errorf("failed to clean repository at %s: %v", localPath, err)
+		}
 	}
 
 	err = checkoutBranch(wt, r.info.Branch)
@@ -176,11 +191,28 @@ func (r *remoteRepo) init() error {
 		return err
 	}
 
-	return wt.Pull(&git.PullOptions{})
+	log.WithField("branch", r.info.Branch).Debug("pulling branch")
+
+	err = wt.Pull(&git.PullOptions{
+		SingleBranch: true,
+		Depth:        1,
+	})
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return fmt.Errorf("failed to pull branch %q: %v", r.info.Branch, err)
+	}
+
+	return nil
 }
 
 func checkoutBranch(wt *git.Worktree, branch string) error {
-	return wt.Checkout(&git.CheckoutOptions{
+	log.WithField("branch", branch).Info("checking out branch")
+
+	err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to checkout branch %q: %v", branch, err)
+	}
+
+	return nil
 }

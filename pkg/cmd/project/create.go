@@ -84,7 +84,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	o.Skeleton = args[0]
 
 	if args[1] != "" {
-		o.OutputDir, err = filepath.Abs(args[0])
+		o.OutputDir, err = filepath.Abs(args[1])
 		if err != nil {
 			return err
 		}

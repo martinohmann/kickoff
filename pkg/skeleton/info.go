@@ -1,6 +1,7 @@
 package skeleton
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -90,6 +91,10 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(u.Path) == 0 {
+		return nil, fmt.Errorf("unable to parse path from raw url %s", rawurl)
 	}
 
 	info := &RepositoryInfo{}
