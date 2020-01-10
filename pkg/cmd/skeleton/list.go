@@ -46,11 +46,14 @@ func (o *ListOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Skeletons available in %s:\n\n", o.RepositoryURL)
+	tw := cli.NewTableWriter(o.Out)
+	tw.SetHeader("Name", "Path")
 
 	for _, skeleton := range skeletons {
-		fmt.Fprintf(o.Out, "%s => %s\n", skeleton.Name, skeleton.Path)
+		tw.Append(skeleton.Name, skeleton.Path)
 	}
+
+	tw.Render()
 
 	return nil
 }

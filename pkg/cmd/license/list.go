@@ -1,8 +1,6 @@
 package license
 
 import (
-	"fmt"
-
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/spf13/cobra"
@@ -21,10 +19,14 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(streams.Out, "%-15s NAME\n", "KEY")
+			tw := cli.NewTableWriter(streams.Out)
+			tw.SetHeader("Key", "Name")
+
 			for _, license := range licenses {
-				fmt.Fprintf(streams.Out, "%-15s %s\n", license.Key, license.Name)
+				tw.Append(license.Key, license.Name)
 			}
+
+			tw.Render()
 
 			return nil
 		},

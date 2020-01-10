@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"reflect"
 	"testing"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestShowCmd_Execute_NonexistantConfig(t *testing.T) {
-	streams, _, _, _ := cli.NewTestIOStreams()
+	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{"--config", "nonexistent"})
 
@@ -23,7 +24,7 @@ func TestShowCmd_Execute_NonexistantConfig(t *testing.T) {
 }
 
 func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
-	streams, _, _, _ := cli.NewTestIOStreams()
+	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{"--output", "enterprise-xml"})
 
@@ -34,7 +35,7 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 }
 
 func TestShowCmd_Execute(t *testing.T) {
-	streams, _, out, _ := cli.NewTestIOStreams()
+	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{"--config", "testdata/config.yaml"})
 
@@ -43,7 +44,7 @@ func TestShowCmd_Execute(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	output := out.String()
+	output := streams.Out.(*bytes.Buffer).String()
 
 	expected := `values:
   foo: bar`

@@ -31,30 +31,30 @@ var Strings = [...]string{
 	log.FatalLevel: "⨯",
 }
 
-// Handler implementation.
-type Handler struct {
+// LogHandler implementation.
+type LogHandler struct {
 	mu      sync.Mutex
 	Writer  io.Writer
 	Padding int
 }
 
-// New handler.
-func New(w io.Writer) *Handler {
+// NewLogHandler creates a new LogHandler which writes to w.
+func NewLogHandler(w io.Writer) *LogHandler {
 	if f, ok := w.(*os.File); ok {
-		return &Handler{
+		return &LogHandler{
 			Writer:  colorable.NewColorable(f),
 			Padding: 0,
 		}
 	}
 
-	return &Handler{
+	return &LogHandler{
 		Writer:  w,
 		Padding: 0,
 	}
 }
 
 // HandleLog implements log.Handler.
-func (h *Handler) HandleLog(e *log.Entry) error {
+func (h *LogHandler) HandleLog(e *log.Entry) error {
 	color := Colors[e.Level]
 	level := Strings[e.Level]
 	names := e.Fields.Names()

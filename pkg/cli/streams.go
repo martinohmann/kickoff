@@ -20,14 +20,10 @@ func DefaultIOStreams() IOStreams {
 	}
 }
 
-func NewTestIOStreams() (IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
-	in := &bytes.Buffer{}
-	out := &bytes.Buffer{}
-	errOut := &bytes.Buffer{}
-
+func NewTestIOStreams() IOStreams {
 	return IOStreams{
-		In:     in,
-		Out:    out,
-		ErrOut: errOut,
-	}, in, out, errOut
+		In:     &bytes.Buffer{},
+		Out:    &bytes.Buffer{},
+		ErrOut: &bytes.Buffer{},
+	}
 }
