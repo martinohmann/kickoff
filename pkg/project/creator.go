@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/git"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
@@ -19,31 +19,49 @@ import (
 )
 
 type CreateOptions struct {
-	DryRun  bool
-	License *license.Info
-	Git     git.Config
-	Values  template.Values
+	DryRun bool
+	Config config.Config
 }
 
-type Creator struct {
-	config      Config
-	createStats *createStats
-}
-
-func NewCreator(config Config) *Creator {
-	return &Creator{
-		config:      config,
-		createStats: &createStats{},
-	}
-}
-
-// Create creates the project with given options.
-func (c *Creator) Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) error {
+func Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) error {
 	if options == nil {
 		options = &CreateOptions{}
 	}
 
-	if options.DryRun {
+	c := &creator{
+		dryRun: options.DryRun,
+		config: options.Config,
+		stats:  &createStats{},
+	}
+
+	if options.Config.HasLicense() {
+		var err error
+		c.license, err = license.Get(options.Config.License)
+		if err == license.ErrLicenseNotFound {
+			return fmt.Errorf("license %q not found, use the `licenses` subcommand to get a list of available licenses", options.Config.License)
+		} else if err != nil {
+			return err
+		}
+	}
+
+	return c.create(skeleton, outputDir)
+}
+
+type createStats struct {
+	dirsCreated       int
+	filesCopied       int
+	templatesRendered int
+}
+
+type creator struct {
+	dryRun  bool
+	license *license.Info
+	config  config.Config
+	stats   *createStats
+}
+
+func (c *creator) create(skeleton *skeleton.Info, outputDir string) error {
+	if c.dryRun {
 		log.Warn("dry run: no changes will be made")
 	}
 
@@ -52,7 +70,9 @@ func (c *Creator) Create(skeleton *skeleton.Info, outputDir string, options *Cre
 		return err
 	}
 
-	err = config.Values.Merge(options.Values)
+	log.WithField("values", fmt.Sprintf("%#v", config.Values)).Debug("skeleton values")
+
+	err = config.Values.Merge(c.config.Values)
 	if err != nil {
 		return err
 	}
@@ -64,39 +84,37 @@ func (c *Creator) Create(skeleton *skeleton.Info, outputDir string, options *Cre
 		"target":   outputDir,
 	}).Info("creating project from skeleton")
 
-	err = c.processFiles(skeleton, outputDir, config.Values, options)
+	err = c.processFiles(skeleton, outputDir, config.Values)
 	if err != nil {
 		return err
 	}
 
-	if options.License != nil {
-		err = c.writeLicenseFile(outputDir, options)
-		if err != nil {
-			return err
-		}
+	err = c.writeLicenseFile(outputDir)
+	if err != nil {
+		return err
 	}
 
-	err = c.initializeRepository(outputDir, options.DryRun)
+	err = c.initializeRepository(outputDir)
 	if err != nil {
 		return err
 	}
 
 	log.WithFields(log.Fields{
-		"files.copied":       c.createStats.filesCopied,
-		"dirs.created":       c.createStats.dirsCreated,
-		"templates.rendered": c.createStats.templatesRendered,
+		"files.copied":       c.stats.filesCopied,
+		"dirs.created":       c.stats.dirsCreated,
+		"templates.rendered": c.stats.templatesRendered,
 	}).Infof("project created")
 
 	return nil
 }
 
-func (c *Creator) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}, options *CreateOptions) error {
+func (c *creator) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}) error {
 	templateData := map[string]interface{}{
-		"ProjectName": c.config.Name, // left here for backwards compat
-		"Project":     &c.config,
+		"ProjectName": c.config.Project.Name, // left here for backwards compat
+		"Project":     &c.config.Project,
 		"Values":      values,
-		"License":     options.License,
-		"Git":         &options.Git,
+		"License":     c.license,
+		"Git":         &c.config.Git,
 	}
 
 	dirMap := make(map[string]string)
@@ -116,7 +134,7 @@ func (c *Creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 		srcFilename := filepath.Base(srcRelPath)
 		srcRelDir := filepath.Dir(srcRelPath)
 
-		dstFilename, err := renderDestinationFilename(srcFilename, templateData)
+		dstFilename, err := renderFilename(srcFilename, templateData)
 		if err != nil {
 			return err
 		}
@@ -153,14 +171,14 @@ func (c *Creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 				dirMap[srcRelPath] = dstRelPath
 			}
 
-			return c.makeDirectory(outputPath, info.Mode(), options.DryRun)
+			return c.makeDirectory(outputPath, info.Mode())
 		}
 
 		ext := filepath.Ext(path)
 		if ext != ".skel" {
 			log.Info("copying file")
 
-			return c.copyFile(path, outputPath, options.DryRun)
+			return c.copyFile(path, outputPath)
 		}
 
 		// strip .skel extension
@@ -169,61 +187,65 @@ func (c *Creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 
 		log.WithField("path.target", dstRelPath).Info("rendering template")
 
-		return c.writeTemplate(path, outputPath, info.Mode(), templateData, options.DryRun)
+		return c.writeTemplate(path, outputPath, info.Mode(), templateData)
 	})
 }
 
-func (c *Creator) makeDirectory(path string, mode os.FileMode, dryRun bool) error {
-	c.createStats.dirsCreated++
+func (c *creator) makeDirectory(path string, mode os.FileMode) error {
+	c.stats.dirsCreated++
 
-	if dryRun {
+	if c.dryRun {
 		return nil
 	}
 
 	return os.MkdirAll(path, mode)
 }
 
-func (c *Creator) copyFile(src, dst string, dryRun bool) error {
-	c.createStats.filesCopied++
+func (c *creator) copyFile(src, dst string) error {
+	c.stats.filesCopied++
 
-	if dryRun {
+	if c.dryRun {
 		return nil
 	}
 
 	return file.Copy(src, dst)
 }
 
-func (c *Creator) writeTemplate(src, dst string, mode os.FileMode, data interface{}, dryRun bool) error {
+func (c *creator) writeTemplate(src, dst string, mode os.FileMode, data interface{}) error {
 	rendered, err := template.RenderFile(src, data)
 	if err != nil {
 		return err
 	}
 
-	c.createStats.templatesRendered++
+	c.stats.templatesRendered++
 
-	if dryRun {
+	if c.dryRun {
 		return nil
 	}
 
 	return ioutil.WriteFile(dst, []byte(rendered), mode)
 }
 
-func (c *Creator) writeLicenseFile(outputPath string, options *CreateOptions) error {
-	outputPath = filepath.Join(outputPath, "LICENSE")
-
-	log.WithField("path", "LICENSE").Infof("writing %s", options.License.Name)
-
-	if options.DryRun {
+func (c *creator) writeLicenseFile(outputPath string) error {
+	if c.license == nil {
 		return nil
 	}
 
-	body := strings.ReplaceAll(options.License.Body, "[fullname]", c.config.AuthorString())
+	outputPath = filepath.Join(outputPath, "LICENSE")
+
+	log.WithField("path", "LICENSE").Infof("writing %s", c.license.Name)
+
+	if c.dryRun {
+		return nil
+	}
+
+	body := strings.ReplaceAll(c.license.Body, "[fullname]", c.config.Project.AuthorString())
 	body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
 
 	return ioutil.WriteFile(outputPath, []byte(body), 0644)
 }
 
-func (c *Creator) initializeRepository(path string, dryRun bool) error {
+func (c *creator) initializeRepository(path string) error {
 	_, err := gogit.PlainOpen(path)
 	if err == nil || err != gogit.ErrRepositoryNotExists {
 		return err
@@ -231,7 +253,7 @@ func (c *Creator) initializeRepository(path string, dryRun bool) error {
 
 	log.WithField("path", path).Info("initializing git repository")
 
-	if dryRun {
+	if c.dryRun {
 		return nil
 	}
 
@@ -240,21 +262,15 @@ func (c *Creator) initializeRepository(path string, dryRun bool) error {
 	return err
 }
 
-func renderDestinationFilename(srcFilename string, data interface{}) (string, error) {
-	dstFilename, err := template.RenderText(srcFilename, data)
+func renderFilename(filenameTemplate string, data interface{}) (string, error) {
+	filename, err := template.RenderText(filenameTemplate, data)
 	if err != nil {
 		return "", err
 	}
 
-	if len(dstFilename) == 0 {
-		return "", fmt.Errorf("templated filename %q resolved to an empty string", srcFilename)
+	if len(filename) == 0 {
+		return "", fmt.Errorf("templated filename %q resolved to an empty string", filenameTemplate)
 	}
 
-	return dstFilename, nil
-}
-
-type createStats struct {
-	filesCopied       int64
-	dirsCreated       int64
-	templatesRendered int64
+	return filename, nil
 }

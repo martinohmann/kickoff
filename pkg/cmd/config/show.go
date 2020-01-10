@@ -7,8 +7,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
+	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/kickoff"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var (
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ShowOptions{IOStreams: streams, Output: "yaml", ConfigPath: kickoff.DefaultConfigPath}
+	o := &ShowOptions{IOStreams: streams, Output: "yaml", ConfigPath: config.DefaultConfigPath}
 
 	cmd := &cobra.Command{
 		Use:   "show",
@@ -53,7 +53,7 @@ type ShowOptions struct {
 
 func (o *ShowOptions) Complete() error {
 	if o.ConfigPath == "" {
-		o.ConfigPath = kickoff.DefaultConfigPath
+		o.ConfigPath = config.DefaultConfigPath
 	}
 
 	return nil
@@ -68,30 +68,28 @@ func (o *ShowOptions) Validate() error {
 }
 
 func (o *ShowOptions) Run() (err error) {
-	var config *kickoff.Config
+	var cfg config.Config
 
 	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath == kickoff.DefaultConfigPath {
-			config = &kickoff.Config{}
-		} else {
+		if o.ConfigPath != config.DefaultConfigPath {
 			return fmt.Errorf("file %q does not exist", o.ConfigPath)
 		}
 	} else {
-		config, err = kickoff.LoadConfig(o.ConfigPath)
+		cfg, err = config.Load(o.ConfigPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	config.ApplyDefaults("")
+	cfg.ApplyDefaults("")
 
 	var buf []byte
 
 	switch o.Output {
 	case "json":
-		buf, err = json.Marshal(config)
+		buf, err = json.Marshal(cfg)
 	default:
-		buf, err = yaml.Marshal(config)
+		buf, err = yaml.Marshal(cfg)
 	}
 
 	if err != nil {

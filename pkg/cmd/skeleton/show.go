@@ -7,7 +7,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/repo"
+	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
 
@@ -40,14 +41,14 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
-	cmd.Flags().StringVar(&o.URL, "repository-url", o.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
+	cmd.Flags().StringVar(&o.RepositoryURL, "repository-url", o.RepositoryURL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", config.DefaultSkeletonRepositoryURL))
 
 	return cmd
 }
 
 type ShowOptions struct {
 	cli.IOStreams
-	repo.Config
+	config.Skeletons
 	Skeleton string
 	Output   string
 }
@@ -61,7 +62,7 @@ func (o *ShowOptions) Validate() error {
 }
 
 func (o *ShowOptions) Run() error {
-	repo, err := repo.Open(o.URL)
+	repo, err := skeleton.OpenRepository(o.RepositoryURL)
 	if err != nil {
 		return err
 	}

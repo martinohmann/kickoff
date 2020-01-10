@@ -9,8 +9,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/boilerplate"
+	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
 
@@ -89,9 +89,9 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
-	configPath := filepath.Join(o.OutputDir, skeleton.ConfigFile)
+	configPath := filepath.Join(o.OutputDir, config.SkeletonConfigFile)
 
-	log.WithField("path", configPath).Infof("writing %s", skeleton.ConfigFile)
+	log.WithField("path", configPath).Infof("writing %s", config.SkeletonConfigFile)
 
 	err = ioutil.WriteFile(configPath, boilerplate.DefaultSkeletonConfigBytes(), 0644)
 	if err != nil {

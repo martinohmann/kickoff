@@ -6,11 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/kickoff"
-	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/project"
-	"github.com/martinohmann/kickoff/pkg/repo"
+	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
@@ -48,14 +47,14 @@ type CreateOptions struct {
 	DryRun     bool
 	Force      bool
 
-	*kickoff.Config
+	config.Config
 
 	rawValues []string
 }
 
 func NewCreateOptions() *CreateOptions {
 	return &CreateOptions{
-		Config: &kickoff.Config{
+		Config: config.Config{
 			Values: template.Values{},
 		},
 	}
@@ -64,7 +63,7 @@ func NewCreateOptions() *CreateOptions {
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces overwrite of existing output directory")
-	cmd.Flags().StringVar(&o.ConfigPath, "config", o.ConfigPath, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", kickoff.DefaultConfigPath))
+	cmd.Flags().StringVar(&o.ConfigPath, "config", o.ConfigPath, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", config.DefaultConfigPath))
 
 	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 
@@ -76,7 +75,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Git.RepoName, "git-repo-name", o.Git.RepoName, "Git repository name for the project (defaults to the project name)")
 	cmd.Flags().StringVar(&o.Git.Host, "git-host", o.Git.Host, "Git repository host")
 
-	cmd.Flags().StringVar(&o.Repo.URL, "repository-url", o.Repo.URL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", repo.DefaultRepositoryURL))
+	cmd.Flags().StringVar(&o.Skeletons.RepositoryURL, "repository-url", o.Skeletons.RepositoryURL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", config.DefaultSkeletonRepositoryURL))
 
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 }
@@ -91,8 +90,8 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		}
 	}
 
-	if o.ConfigPath == "" && file.Exists(kickoff.DefaultConfigPath) {
-		o.ConfigPath = kickoff.DefaultConfigPath
+	if o.ConfigPath == "" && file.Exists(config.DefaultConfigPath) {
+		o.ConfigPath = config.DefaultConfigPath
 	}
 
 	if o.ConfigPath != "" {
@@ -106,9 +105,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 
 	defaultProjectName := filepath.Base(o.OutputDir)
 
-	o.Project.ApplyDefaults(defaultProjectName)
-	o.Git.ApplyDefaults(o.Project.Name)
-	o.Repo.ApplyDefaults()
+	o.ApplyDefaults(defaultProjectName)
 
 	if len(o.rawValues) > 0 {
 		for _, rawValues := range o.rawValues {
@@ -145,7 +142,7 @@ func (o *CreateOptions) Validate() error {
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
-	repo, err := repo.Open(o.Repo.URL)
+	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
 	if err != nil {
 		return err
 	}
@@ -155,24 +152,8 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	var licenseInfo *license.Info
-	if o.License != "none" {
-		log.WithField("license", o.License).Debugf("fetching license info from GitHub")
-
-		licenseInfo, err = license.Get(o.License)
-		if err == license.ErrLicenseNotFound {
-			return fmt.Errorf("license %q not found, use the `licenses` subcommand to get a list of available licenses", o.License)
-		} else if err != nil {
-			return err
-		}
-	}
-
-	projectCreator := project.NewCreator(o.Project)
-
-	return projectCreator.Create(skeleton, o.OutputDir, &project.CreateOptions{
-		License: licenseInfo,
-		DryRun:  o.DryRun,
-		Git:     o.Git,
-		Values:  o.Values,
+	return project.Create(skeleton, o.OutputDir, &project.CreateOptions{
+		Config: o.Config,
+		DryRun: o.DryRun,
 	})
 }

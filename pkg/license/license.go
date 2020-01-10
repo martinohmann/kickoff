@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/apex/log"
 	"github.com/google/go-github/v28/github"
 )
 
@@ -68,6 +69,8 @@ func NewAdapter(service GitHubLicensesService) *Adapter {
 // Get fetches the info for the license with name. Will return
 // ErrLicenseNotFound if the license is not recognized.
 func (f *Adapter) Get(name string) (*Info, error) {
+	log.WithField("license", name).Debugf("fetching license info from GitHub")
+
 	license, _, err := f.service.Get(context.Background(), name)
 	if err != nil {
 		errResp, ok := err.(*github.ErrorResponse)
@@ -85,6 +88,8 @@ func (f *Adapter) Get(name string) (*Info, error) {
 // license body but only the metadata. Use Get to fetch the body of a
 // particular license.
 func (f *Adapter) List() ([]*Info, error) {
+	log.Debug("fetching license infos from GitHub")
+
 	licenses, _, err := f.service.List(context.Background())
 	if err != nil {
 		return nil, err
