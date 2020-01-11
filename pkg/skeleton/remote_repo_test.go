@@ -5,14 +5,17 @@ package skeleton
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOpenRepository_RemoteRepo(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "kickoff-repos-")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	oldCache := LocalCache
 	LocalCache = tmpdir
 	defer func() {
@@ -21,7 +24,7 @@ func TestOpenRepository_RemoteRepo(t *testing.T) {
 	}()
 
 	_, err = OpenRepository("https://github.com/martinohmann/kickoff-skeletons?branch=master")
-	if err != nil {
-		t.Fatalf("expected nil error but got: %v", err)
-	}
+	require.NoError(t, err)
+
+	assert.DirExists(t, filepath.Join(LocalCache, "github.com/martinohmann/kickoff-skeletons/.git"))
 }

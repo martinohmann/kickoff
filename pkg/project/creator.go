@@ -16,7 +16,7 @@ import (
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
-	gogit "gopkg.in/src-d/go-git.v4"
+	git "gopkg.in/src-d/go-git.v4"
 )
 
 // CreateOptions provide optional configuration for the project creator. If
@@ -45,7 +45,7 @@ func Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) e
 		var err error
 		c.license, err = license.Get(options.Config.License)
 		if err == license.ErrLicenseNotFound {
-			return fmt.Errorf("license %q not found, use the `licenses` subcommand to get a list of available licenses", options.Config.License)
+			return fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", options.Config.License)
 		} else if err != nil {
 			return err
 		}
@@ -253,8 +253,8 @@ func (c *creator) writeLicenseFile(outputPath string) error {
 }
 
 func (c *creator) initializeRepository(path string) error {
-	_, err := gogit.PlainOpen(path)
-	if err == nil || err != gogit.ErrRepositoryNotExists {
+	_, err := git.PlainOpen(path)
+	if err == nil || err != git.ErrRepositoryNotExists {
 		return err
 	}
 
@@ -264,7 +264,7 @@ func (c *creator) initializeRepository(path string) error {
 		return nil
 	}
 
-	_, err = gogit.PlainInit(path, false)
+	_, err = git.PlainInit(path, false)
 
 	return err
 }
