@@ -1,10 +1,12 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetEditCmdArgs(t *testing.T) {
@@ -59,4 +61,35 @@ func TestGetEditCmdArgs(t *testing.T) {
 			assert.Equal(t, test.expected, actual)
 		})
 	}
+}
+
+func TestEditCmd_Run_InvalidEditor(t *testing.T) {
+	oldEditor := os.Getenv("EDITOR")
+	oldShell := os.Getenv("SHELL")
+
+	defer func() {
+		os.Setenv("EDITOR", oldEditor)
+		os.Setenv("SHELL", oldShell)
+	}()
+
+	os.Setenv("EDITOR", "./nonexistent")
+	os.Setenv("SHELL", "sh")
+
+	configBuf, err := ioutil.ReadFile("testdata/config.yaml")
+	require.NoError(t, err)
+
+	cmd := NewEditCmd()
+	cmd.SetArgs([]string{"--config", "testdata/config.yaml"})
+
+	expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
+
+	err = cmd.Execute()
+	require.Error(t, err)
+
+	assert.Regexp(t, expectedErrPattern, err)
+
+	configBuf2, err := ioutil.ReadFile("testdata/config.yaml")
+	require.NoError(t, err)
+
+	assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")
 }
