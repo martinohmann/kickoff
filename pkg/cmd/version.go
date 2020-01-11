@@ -71,7 +71,7 @@ func (o *VersionOptions) Run() error {
 
 	switch o.Output {
 	case "json":
-		buf, err := json.Marshal(v)
+		buf, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {
 			return err
 		}
