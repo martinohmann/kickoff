@@ -7,9 +7,10 @@ import (
 )
 
 func main() {
-	streams := cli.DefaultIOStreams()
+	streams := cli.DefaultIOStreams
+	handler := cli.NewLogHandler(streams.ErrOut)
 
-	log.SetHandler(cli.NewLogHandler(streams.ErrOut))
+	log.SetHandler(handler)
 
 	rootCmd := cmd.NewRootCmd(streams)
 

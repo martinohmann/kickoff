@@ -100,7 +100,7 @@ func (o *EditOptions) Run() (err error) {
 
 	err = launchEditor(tmpfilePath)
 	if err != nil {
-		return fmt.Errorf("error while launching editor: %v", err)
+		return err
 	}
 
 	// Sanity check: if we fail to load the config from the tmpfile, we
@@ -126,14 +126,21 @@ func (o *EditOptions) Run() (err error) {
 func launchEditor(path string) error {
 	args := getEditCmdArgs(path)
 
-	log.WithField("command", strings.Join(args, " ")).Debug("launching editor")
+	commandLine := strings.Join(args, " ")
+
+	log.WithField("commandLine", commandLine).Debug("launching editor")
 
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("error while launching editor command %q: %v", commandLine, err)
+	}
+
+	return nil
 }
 
 func getEditCmdArgs(path string) []string {
@@ -144,11 +151,11 @@ func getEditCmdArgs(path string) []string {
 
 func detectEditor() string {
 	editor := os.Getenv("EDITOR")
-	if editor != "" {
-		return editor
+	if editor == "" {
+		editor = defaultEditor
 	}
 
-	return defaultEditor
+	return editor
 }
 
 func detectShell() []string {
