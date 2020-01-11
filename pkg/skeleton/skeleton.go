@@ -1,3 +1,6 @@
+// Package skeleton provides functionality to interact with local and remote
+// skeleton repositories and to fetch the configuration values of any given
+// skeleton.
 package skeleton
 
 import (

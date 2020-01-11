@@ -1,3 +1,4 @@
+// Package project contains the core logic to create a project from a skeleton.
 package project
 
 import (

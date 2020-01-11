@@ -1,3 +1,5 @@
+// Package cli contains utilities to work with IO streams and to improve CLI
+// output, such as a custom log handler and a table writer.
 package cli
 
 import (

@@ -1,3 +1,6 @@
+// Package boilerplate contains the string representations of the default
+// kickoff config, the default skeleton config and an example README template
+// for initializing a new skeleton.
 package boilerplate
 
 const (

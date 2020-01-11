@@ -1,3 +1,5 @@
+// Package template provides tools to render template strings and template
+// files.
 package template
 
 import (
