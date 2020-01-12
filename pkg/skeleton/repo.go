@@ -144,7 +144,7 @@ func newRemoteRepo(info *RepositoryInfo) *remoteRepo {
 func (r *remoteRepo) init() error {
 	localPath := r.info.LocalPath()
 
-	log.WithField("url", r.info.String()).Info("using remote skeleton repository")
+	log.WithField("url", r.info.String()).Debug("using remote skeleton repository")
 
 	repo, err := git.PlainOpen(localPath)
 	if err == git.ErrRepositoryNotExists {
@@ -155,7 +155,7 @@ func (r *remoteRepo) init() error {
 			return err
 		}
 
-		log.WithField("localPath", localPath).Info("cloning remote skeleton repository")
+		log.WithField("localPath", localPath).Debug("cloning remote skeleton repository")
 
 		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
 			URL: r.info.String(),
@@ -205,7 +205,7 @@ func (r *remoteRepo) init() error {
 }
 
 func checkoutBranch(wt *git.Worktree, branch string) error {
-	log.WithField("branch", branch).Info("checking out branch")
+	log.WithField("branch", branch).Debug("checking out branch")
 
 	err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch),

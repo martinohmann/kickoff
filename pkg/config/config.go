@@ -26,6 +26,8 @@ var (
 	// DefaultSkeletonRepositoryURL is the default lookup path for the user's
 	// local skeleton directory.
 	DefaultSkeletonRepositoryURL = filepath.Join(LocalConfigDir, "repository")
+
+	DefaultSkeletonRepositoryName = "default"
 )
 
 const (
@@ -168,7 +170,8 @@ func (g *Git) GoPackagePath() string {
 // Skeletons contains configuration of the skeleton repository that should be
 // used for creating projects.
 type Skeletons struct {
-	RepositoryURL string `json:"repositoryURL"`
+	RepositoryURL string       `json:"repositoryURL"`
+	Repositories  Repositories `json:"repositories"`
 }
 
 // ApplyDefaults applies defaults for the skeleton repository.
@@ -176,7 +179,18 @@ func (s *Skeletons) ApplyDefaults() {
 	if s.RepositoryURL == "" {
 		s.RepositoryURL = DefaultSkeletonRepositoryURL
 	}
+
+	if s.Repositories == nil {
+		s.Repositories = make(map[string]string)
+	}
+
+	_, ok := s.Repositories[DefaultSkeletonRepositoryName]
+	if !ok {
+		s.Repositories[DefaultSkeletonRepositoryName] = DefaultSkeletonRepositoryURL
+	}
 }
+
+type Repositories map[string]string
 
 // Skeleton holds the configuration of a skeleton (.kickoff.yaml).
 type Skeleton struct {

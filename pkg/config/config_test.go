@@ -35,6 +35,9 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 		},
 		Skeletons: Skeletons{
 			RepositoryURL: DefaultSkeletonRepositoryURL,
+			Repositories: map[string]string{
+				DefaultSkeletonRepositoryName: DefaultSkeletonRepositoryURL,
+			},
 		},
 	}
 

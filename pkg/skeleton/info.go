@@ -13,8 +13,9 @@ import (
 
 // Info holds information about a skeleton.
 type Info struct {
-	Name string
-	Path string
+	Name      string
+	Path      string
+	RepoAlias string
 }
 
 // Config loads the skeleton config for the info.
