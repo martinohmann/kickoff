@@ -10,6 +10,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/boilerplate"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
@@ -37,7 +38,7 @@ func NewEditCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&o.ConfigPath, "config", o.ConfigPath, "Path to config file")
+	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }

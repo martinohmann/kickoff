@@ -2,25 +2,18 @@ package skeleton
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
 
-var (
-	// ErrInvalidOutputFormat is returned if the output format flag contains an
-	// invalid value.
-	ErrInvalidOutputFormat = errors.New("--output must be 'yaml' or 'json'")
-)
-
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ShowOptions{IOStreams: streams, Output: "yaml"}
+	o := &ShowOptions{IOStreams: streams}
 
 	cmd := &cobra.Command{
 		Use:   "show <name>",
@@ -28,12 +21,11 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		Long:  "Show the config of a single skeleton",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o.Skeleton = args[0]
+			if err := o.Complete(args); err != nil {
+				return err
+			}
 
-			o.ApplyDefaults()
-
-			err := o.Validate()
-			if err != nil {
+			if err := o.Validate(); err != nil {
 				return err
 			}
 
@@ -41,29 +33,29 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
-	cmd.Flags().StringVar(&o.RepositoryURL, "repository-url", o.RepositoryURL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", config.DefaultSkeletonRepositoryURL))
+	o.OutputFlags.AddFlags(cmd)
+	o.ConfigFlags.AddFlags(cmd)
+	cmdutil.AddRepositoryURLFlag(cmd, &o.Skeletons.RepositoryURL)
 
 	return cmd
 }
 
 type ShowOptions struct {
 	cli.IOStreams
-	config.Skeletons
+	cmdutil.ConfigFlags
+	cmdutil.OutputFlags
+
 	Skeleton string
-	Output   string
 }
 
-func (o *ShowOptions) Validate() error {
-	if o.Output != "yaml" && o.Output != "json" {
-		return ErrInvalidOutputFormat
-	}
+func (o *ShowOptions) Complete(args []string) error {
+	o.Skeleton = args[0]
 
-	return nil
+	return o.ConfigFlags.Complete("")
 }
 
 func (o *ShowOptions) Run() error {
-	repo, err := skeleton.OpenRepository(o.RepositoryURL)
+	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
 	if err != nil {
 		return err
 	}
