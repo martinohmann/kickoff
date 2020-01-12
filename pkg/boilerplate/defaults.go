@@ -80,32 +80,42 @@ license: ""
 git:
   user: ""
 
-# Skeleton configuration
-# ======================
+# Skeleton repository configuration
+# =================================
 #
-# The skeletons.repositoryURL specifies the location of the skeleton
-# repository. This can be a local dir or a local/remote git repository.
+# The repositories config key is a map of repository name to location of the
+# skeleton repository. This can be a local dir or a local/remote git
+# repository. If no repository with the name "default" is specified, it will be
+# automatically added and pointed to <local-config-dir>/kickoff/repository, if
+# that directory exists.
 #
 # Local dir example:
 # ------------------
 #
-#   skeletons:
-#     repositoryURL: /path/to/my/skeletons/dir
+#   repositories:
+#     my-local-dir: /path/to/my/skeletons/dir
 #
 # Local repo (with branch) example:
 # ---------------------------------
 #
-#   skeletons
-#     repositoryURL: /path/to/my/skeletons/repo?branch=develop
+#   repositories:
+#     my-local-repo: /path/to/my/skeletons/repo?branch=develop
 #
 # Remote repo (with branch) example:
 # ----------------------------------
 #
-#   skeletons:
-#     repositoryURL: https://github.com/myuser/myskeletonrepo?branch=develop
+#   repositories:
+#     my-remote-repo: https://github.com/myuser/myskeletonrepo?branch=develop
 #
-skeletons:
-  repositoryURL: ""
+# Multiple repos example:
+# -----------------------
+#
+#   repositories:
+#     my-local-dir: /path/to/my/skeletons/dir
+#     my-local-repo: /path/to/my/skeletons/repo?branch=develop
+#     my-remote-repo: https://github.com/myuser/myskeletonrepo?branch=develop
+#
+repositories: {}
 
 # Custom configuration values
 # ===========================

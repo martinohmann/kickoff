@@ -12,7 +12,7 @@ import (
 func TestShowCmd_Execute_NonexistantRepository(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"myskeleton", "--repository-url", "nonexistent"})
+	cmd.SetArgs([]string{"myskeleton", "--repositories", "default=nonexistent"})
 
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -30,7 +30,7 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 func TestShowCmd_Execute(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"a-skeleton", "--repository-url", "../../skeleton/testdata/local-dir"})
+	cmd.SetArgs([]string{"a-skeleton", "--repositories", "default=../../skeleton/testdata/local-dir"})
 
 	err := cmd.Execute()
 	require.NoError(t, err)

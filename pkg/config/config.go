@@ -23,9 +23,12 @@ var (
 	// local config directory.
 	DefaultConfigPath = filepath.Join(LocalConfigDir, "config.yaml")
 
-	// DefaultSkeletonRepositoryURL is the default lookup path for the user's
+	// DefaultRepositoryURL is the default lookup path for the user's
 	// local skeleton directory.
-	DefaultSkeletonRepositoryURL = filepath.Join(LocalConfigDir, "repository")
+	DefaultRepositoryURL = filepath.Join(LocalConfigDir, "repository")
+
+	// DefaultRepositoryName is the name of the default skeleton repository.
+	DefaultRepositoryName = "default"
 )
 
 const (
@@ -43,11 +46,11 @@ const (
 
 // Config is the type for user-defined configuration.
 type Config struct {
-	License   string          `json:"license"`
-	Project   Project         `json:"project"`
-	Git       Git             `json:"git"`
-	Skeletons Skeletons       `json:"skeletons"`
-	Values    template.Values `json:"values"`
+	License      string            `json:"license"`
+	Project      Project           `json:"project"`
+	Git          Git               `json:"git"`
+	Repositories map[string]string `json:"repositories"`
+	Values       template.Values   `json:"values"`
 }
 
 // ApplyDefaults applies default values to the config. The defaultProjectName
@@ -58,9 +61,17 @@ func (c *Config) ApplyDefaults(defaultProjectName string) {
 		c.License = DefaultLicense
 	}
 
+	if c.Repositories == nil {
+		c.Repositories = make(map[string]string)
+	}
+
+	_, ok := c.Repositories[DefaultRepositoryName]
+	if !ok {
+		c.Repositories[DefaultRepositoryName] = DefaultRepositoryURL
+	}
+
 	c.Project.ApplyDefaults(defaultProjectName)
 	c.Git.ApplyDefaults(c.Project.Name)
-	c.Skeletons.ApplyDefaults()
 }
 
 // MergeFromFile loads the config from path and merges it into c. Returns any
@@ -163,19 +174,6 @@ func (g *Git) URL() string {
 // the project.
 func (g *Git) GoPackagePath() string {
 	return fmt.Sprintf("%s/%s/%s", g.Host, g.User, g.RepoName)
-}
-
-// Skeletons contains configuration of the skeleton repository that should be
-// used for creating projects.
-type Skeletons struct {
-	RepositoryURL string `json:"repositoryURL"`
-}
-
-// ApplyDefaults applies defaults for the skeleton repository.
-func (s *Skeletons) ApplyDefaults() {
-	if s.RepositoryURL == "" {
-		s.RepositoryURL = DefaultSkeletonRepositoryURL
-	}
 }
 
 // Skeleton holds the configuration of a skeleton (.kickoff.yaml).

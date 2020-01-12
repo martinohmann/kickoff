@@ -12,7 +12,7 @@ import (
 func TestListCmd_Execute(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewListCmd(streams)
-	cmd.SetArgs([]string{"--repository-url", "../../skeleton/testdata/local-dir"})
+	cmd.SetArgs([]string{"--repositories", "default=../../skeleton/testdata/local-dir"})
 
 	err := cmd.Execute()
 	require.NoError(t, err)

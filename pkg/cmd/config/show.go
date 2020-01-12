@@ -32,7 +32,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	o.ConfigFlags.AddFlags(cmd)
+	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 	o.OutputFlags.AddFlags(cmd)
 
 	return cmd

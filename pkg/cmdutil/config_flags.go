@@ -14,12 +14,13 @@ import (
 type ConfigFlags struct {
 	config.Config
 
-	configPath string
+	ConfigPath string
 }
 
 // AddFlags adds flags for configuring the config file location to cmd.
 func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
-	AddConfigFlag(cmd, &f.configPath)
+	AddConfigFlag(cmd, &f.ConfigPath)
+	cmd.Flags().StringToStringVar(&f.Repositories, "repositories", f.Repositories, "Skeleton repositories of the form name1=url1,name2=url2. The repository urls can be a local path or a remote git repository.")
 }
 
 // Complete completes the embedded kickoff configuration using the provided
@@ -30,14 +31,14 @@ func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
 // not provide any config file path, the default config file will be loaded
 // instead, if it exists.
 func (f *ConfigFlags) Complete(defaultProjectName string) (err error) {
-	if f.configPath == "" && file.Exists(config.DefaultConfigPath) {
-		f.configPath = config.DefaultConfigPath
+	if f.ConfigPath == "" && file.Exists(config.DefaultConfigPath) {
+		f.ConfigPath = config.DefaultConfigPath
 	}
 
-	if f.configPath != "" {
-		log.WithField("path", f.configPath).Debugf("loading config file")
+	if f.ConfigPath != "" {
+		log.WithField("path", f.ConfigPath).Debugf("loading config file")
 
-		err = f.Config.MergeFromFile(f.configPath)
+		err = f.Config.MergeFromFile(f.ConfigPath)
 		if err != nil {
 			return err
 		}
