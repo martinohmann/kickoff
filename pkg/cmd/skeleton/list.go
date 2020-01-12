@@ -1,10 +1,8 @@
 package skeleton
 
 import (
-	"fmt"
-
 	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -19,24 +17,27 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		Long:    "Lists all skeletons available in the repository",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			o.ApplyDefaults()
+			if err := o.Complete(""); err != nil {
+				return err
+			}
 
 			return o.Run()
 		},
 	}
 
-	cmd.Flags().StringVar(&o.RepositoryURL, "repository-url", o.RepositoryURL, fmt.Sprintf("URL of the skeleton repository. Can be a local path or remote git repository. (defaults to %q if the directory exists)", config.DefaultSkeletonRepositoryURL))
+	o.ConfigFlags.AddFlags(cmd)
+	cmdutil.AddRepositoryURLFlag(cmd, &o.Skeletons.RepositoryURL)
 
 	return cmd
 }
 
 type ListOptions struct {
 	cli.IOStreams
-	config.Skeletons
+	cmdutil.ConfigFlags
 }
 
 func (o *ListOptions) Run() error {
-	repo, err := skeleton.OpenRepository(o.RepositoryURL)
+	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
 	if err != nil {
 		return err
 	}

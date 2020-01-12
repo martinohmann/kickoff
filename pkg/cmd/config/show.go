@@ -2,25 +2,17 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/spf13/cobra"
 )
 
-var (
-	// ErrInvalidOutputFormat is returned if the output format flag contains an
-	// invalid value.
-	ErrInvalidOutputFormat = errors.New("--output must be 'yaml' or 'json'")
-)
-
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ShowOptions{IOStreams: streams, Output: "yaml", ConfigPath: config.DefaultConfigPath}
+	o := &ShowOptions{IOStreams: streams}
 
 	cmd := &cobra.Command{
 		Use:   "show",
@@ -28,7 +20,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		Long:  "Show the kickoff config",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(); err != nil {
+			if err := o.Complete(""); err != nil {
 				return err
 			}
 
@@ -40,57 +32,28 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&o.ConfigPath, "config", o.ConfigPath, "Path to config file")
-	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
+	o.ConfigFlags.AddFlags(cmd)
+	o.OutputFlags.AddFlags(cmd)
 
 	return cmd
 }
 
 type ShowOptions struct {
 	cli.IOStreams
-	ConfigPath string
-	Output     string
-}
+	cmdutil.ConfigFlags
+	cmdutil.OutputFlags
 
-func (o *ShowOptions) Complete() error {
-	if o.ConfigPath == "" {
-		o.ConfigPath = config.DefaultConfigPath
-	}
-
-	return nil
-}
-
-func (o *ShowOptions) Validate() error {
-	if o.Output != "yaml" && o.Output != "json" {
-		return ErrInvalidOutputFormat
-	}
-
-	return nil
+	Output string
 }
 
 func (o *ShowOptions) Run() (err error) {
-	var cfg config.Config
-
-	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath != config.DefaultConfigPath {
-			return fmt.Errorf("file %q does not exist", o.ConfigPath)
-		}
-	} else {
-		cfg, err = config.Load(o.ConfigPath)
-		if err != nil {
-			return err
-		}
-	}
-
-	cfg.ApplyDefaults("")
-
 	var buf []byte
 
 	switch o.Output {
 	case "json":
-		buf, err = json.MarshalIndent(cfg, "", "  ")
+		buf, err = json.MarshalIndent(o.Config, "", "  ")
 	default:
-		buf, err = yaml.Marshal(cfg)
+		buf, err = yaml.Marshal(o.Config)
 	}
 
 	if err != nil {

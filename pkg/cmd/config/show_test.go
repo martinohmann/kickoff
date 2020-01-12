@@ -2,25 +2,21 @@ package config
 
 import (
 	"bytes"
-	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/martinohmann/kickoff/pkg/cli"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestShowCmd_Execute_NonexistantConfig(t *testing.T) {
+func TestShowCmd_Execute_NonexistentConfig(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{"--config", "nonexistent"})
 
-	expectedErr := errors.New(`file "nonexistent" does not exist`)
-
 	err := cmd.Execute()
-	if !reflect.DeepEqual(expectedErr, err) {
-		t.Fatalf("expected error %v, got %v", expectedErr, err)
-	}
+	require.Error(t, err)
 }
 
 func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
@@ -29,8 +25,8 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 	cmd.SetArgs([]string{"--output", "enterprise-xml"})
 
 	err := cmd.Execute()
-	if err != ErrInvalidOutputFormat {
-		t.Fatalf("expected error %v, got %v", ErrInvalidOutputFormat, err)
+	if err != cmdutil.ErrInvalidOutputFormat {
+		t.Fatalf("expected error %v, got %v", cmdutil.ErrInvalidOutputFormat, err)
 	}
 }
 

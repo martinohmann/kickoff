@@ -7,6 +7,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/version"
 	"github.com/spf13/cobra"
 )
@@ -15,10 +16,6 @@ var (
 	// ErrIllegalVersionFlagCombination is returned if mutual exclusive version
 	// format flags are set.
 	ErrIllegalVersionFlagCombination = errors.New("--short and --output can't be used together")
-
-	// ErrInvalidOutputFormat is returned if the output format flag contains an
-	// invalid value.
-	ErrInvalidOutputFormat = errors.New("--output must be 'yaml' or 'json'")
 )
 
 func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
@@ -38,15 +35,17 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&o.Short, "short", false, "Display short version")
-	cmd.Flags().StringVar(&o.Output, "output", o.Output, "Output format")
+
+	o.OutputFlags.AddFlags(cmd)
 
 	return cmd
 }
 
 type VersionOptions struct {
 	cli.IOStreams
-	Short  bool
-	Output string
+	cmdutil.OutputFlags
+
+	Short bool
 }
 
 func (o *VersionOptions) Validate() error {
@@ -54,11 +53,7 @@ func (o *VersionOptions) Validate() error {
 		return ErrIllegalVersionFlagCombination
 	}
 
-	if o.Output != "" && o.Output != "yaml" && o.Output != "json" {
-		return ErrInvalidOutputFormat
-	}
-
-	return nil
+	return o.OutputFlags.Validate()
 }
 
 func (o *VersionOptions) Run() error {

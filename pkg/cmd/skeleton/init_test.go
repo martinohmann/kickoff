@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 )
 
 func TestInitCmd_Execute_EmptyOutputDir(t *testing.T) {
@@ -14,8 +16,8 @@ func TestInitCmd_Execute_EmptyOutputDir(t *testing.T) {
 	cmd.SetArgs([]string{""})
 
 	err := cmd.Execute()
-	if err != ErrEmptyOutputDir {
-		t.Fatalf("expected error %v, got %v", ErrEmptyOutputDir, err)
+	if err != cmdutil.ErrEmptyOutputDir {
+		t.Fatalf("expected error %v, got %v", cmdutil.ErrEmptyOutputDir, err)
 	}
 }
 
@@ -28,7 +30,7 @@ func TestInitCmd_Execute_DirExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedErr := fmt.Errorf("output-dir %s already exists, add --force to overwrite", dir)
+	expectedErr := fmt.Errorf("output dir %s already exists, add --force to overwrite", dir)
 
 	err = cmd.Execute()
 	if !reflect.DeepEqual(expectedErr, err) {

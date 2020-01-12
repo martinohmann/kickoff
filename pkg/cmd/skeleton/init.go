@@ -1,7 +1,6 @@
 package skeleton
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,13 +8,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/boilerplate"
+	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
-)
-
-var (
-	ErrEmptyOutputDir = errors.New("output-dir must not be an empty string")
 )
 
 func NewInitCmd() *cobra.Command {
@@ -39,7 +35,7 @@ func NewInitCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces overwrite of existing output directory")
+	cmdutil.AddForceFlag(cmd, &o.Force)
 
 	return cmd
 }
@@ -62,11 +58,11 @@ func (o *InitOptions) Complete(args []string) (err error) {
 
 func (o *InitOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
-		return fmt.Errorf("output-dir %s already exists, add --force to overwrite", o.OutputDir)
+		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
 	}
 
 	if o.OutputDir == "" {
-		return ErrEmptyOutputDir
+		return cmdutil.ErrEmptyOutputDir
 	}
 
 	return nil
