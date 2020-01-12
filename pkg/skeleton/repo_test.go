@@ -3,10 +3,10 @@ package skeleton
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -54,11 +54,14 @@ func TestOpenRepository_LocalRepo(t *testing.T) {
 	expected := &Info{
 		Name: "b-skeleton",
 		Path: filepath.Join(pwd, "testdata/local-repo/b-skeleton"),
+		Repo: &RepositoryInfo{
+			Local:  true,
+			Path:   filepath.Join(pwd, "testdata/local-repo"),
+			Branch: "master",
+		},
 	}
 
-	if !reflect.DeepEqual(expected, skel) {
-		t.Fatalf("expected skeleton %#v, got %#v", expected, skel)
-	}
+	assert.Equal(t, expected, skel)
 }
 
 func TestOpenRepository_LocalRepoError(t *testing.T) {
@@ -84,11 +87,13 @@ func TestOpenRepository_LocalDir(t *testing.T) {
 	expected := &Info{
 		Name: "a-skeleton",
 		Path: filepath.Join(pwd, "testdata/local-dir/a-skeleton"),
+		Repo: &RepositoryInfo{
+			Local: true,
+			Path:  filepath.Join(pwd, "testdata/local-dir"),
+		},
 	}
 
-	if !reflect.DeepEqual(expected, skel) {
-		t.Fatalf("expected skeleton %#v, got %#v", expected, skel)
-	}
+	assert.Equal(t, expected, skel)
 }
 
 func TestOpenRepository_LocalDirError(t *testing.T) {

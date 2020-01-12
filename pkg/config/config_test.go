@@ -33,11 +33,8 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 			User:     "johndoe",
 			RepoName: "myproject",
 		},
-		Skeletons: Skeletons{
-			RepositoryURL: DefaultSkeletonRepositoryURL,
-			Repositories: map[string]string{
-				DefaultSkeletonRepositoryName: DefaultSkeletonRepositoryURL,
-			},
+		Repositories: map[string]string{
+			DefaultRepositoryName: DefaultRepositoryURL,
 		},
 	}
 
@@ -60,9 +57,6 @@ func TestConfig_MergeFromFile(t *testing.T) {
 		},
 		Git: Git{
 			User: "johndoe",
-		},
-		Skeletons: Skeletons{
-			RepositoryURL: "https://git.john.doe/johndoe/kickoff-skeletons",
 		},
 		Values: template.Values{
 			"foo": "bar",

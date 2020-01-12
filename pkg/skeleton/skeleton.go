@@ -29,7 +29,7 @@ func isSkeletonDir(dir string) (bool, error) {
 
 // findSkeletons recursively finds all skeletons in dir. Returns any error that
 // may occur while traversing dir.
-func findSkeletons(dir string) ([]*Info, error) {
+func findSkeletons(repo *RepositoryInfo, dir string) ([]*Info, error) {
 	skeletons := make([]*Info, 0)
 
 	fileInfos, err := ioutil.ReadDir(dir)
@@ -63,11 +63,12 @@ func findSkeletons(dir string) ([]*Info, error) {
 			skeletons = append(skeletons, &Info{
 				Name: info.Name(),
 				Path: abspath,
+				Repo: repo,
 			})
 			// We do not stop here as we also want to find nested skeletons.
 		}
 
-		skels, err := findSkeletons(path)
+		skels, err := findSkeletons(repo, path)
 		if err != nil {
 			return nil, err
 		}
@@ -76,6 +77,7 @@ func findSkeletons(dir string) ([]*Info, error) {
 			skeletons = append(skeletons, &Info{
 				Name: filepath.Join(info.Name(), s.Name),
 				Path: s.Path,
+				Repo: repo,
 			})
 		}
 	}

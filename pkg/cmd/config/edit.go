@@ -22,7 +22,7 @@ var (
 )
 
 func NewEditCmd() *cobra.Command {
-	o := &EditOptions{ConfigPath: config.DefaultConfigPath}
+	o := &EditOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "edit",

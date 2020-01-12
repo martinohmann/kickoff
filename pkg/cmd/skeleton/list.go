@@ -26,7 +26,6 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
-	cmdutil.AddRepositoryURLFlag(cmd, &o.Skeletons.RepositoryURL)
 
 	return cmd
 }
@@ -37,7 +36,7 @@ type ListOptions struct {
 }
 
 func (o *ListOptions) Run() error {
-	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
+	repo, err := skeleton.NewMultiRepo(o.Repositories)
 	if err != nil {
 		return err
 	}
@@ -48,10 +47,10 @@ func (o *ListOptions) Run() error {
 	}
 
 	tw := cli.NewTableWriter(o.Out)
-	tw.SetHeader("Name", "Path")
+	tw.SetHeader("RepoName", "Name", "Path")
 
 	for _, skeleton := range skeletons {
-		tw.Append(skeleton.Name, skeleton.Path)
+		tw.Append(skeleton.Repo.Name, skeleton.Name, skeleton.Path)
 	}
 
 	tw.Render()

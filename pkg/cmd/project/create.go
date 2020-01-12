@@ -37,7 +37,6 @@ func NewCreateCmd() *cobra.Command {
 	o.AddFlags(cmd)
 	o.ConfigFlags.AddFlags(cmd)
 
-	cmdutil.AddRepositoryURLFlag(cmd, &o.Skeletons.RepositoryURL)
 	cmdutil.AddForceFlag(cmd, &o.Force)
 
 	return cmd
@@ -124,7 +123,7 @@ func (o *CreateOptions) Validate() error {
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
-	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
+	repo, err := skeleton.NewMultiRepo(o.Repositories)
 	if err != nil {
 		return err
 	}

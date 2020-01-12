@@ -35,7 +35,6 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 
 	o.OutputFlags.AddFlags(cmd)
 	o.ConfigFlags.AddFlags(cmd)
-	cmdutil.AddRepositoryURLFlag(cmd, &o.Skeletons.RepositoryURL)
 
 	return cmd
 }
@@ -55,7 +54,7 @@ func (o *ShowOptions) Complete(args []string) error {
 }
 
 func (o *ShowOptions) Run() error {
-	repo, err := skeleton.OpenRepository(o.Skeletons.RepositoryURL)
+	repo, err := skeleton.NewMultiRepo(o.Repositories)
 	if err != nil {
 		return err
 	}

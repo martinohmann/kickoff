@@ -20,8 +20,9 @@ type Repository interface {
 	// Skeletons returns infos for all skeletons available in the repository.
 	// Returns any error that may occur while traversing the directory.
 	Skeletons() ([]*Info, error)
+}
 
-	// init is called after opening the repository.
+type initializer interface {
 	init() error
 }
 
@@ -32,10 +33,16 @@ type Repository interface {
 // occur while parsing the url opening the repository directory or during git
 // actions.
 func OpenRepository(url string) (Repository, error) {
+	return openNamedRepository("", url)
+}
+
+func openNamedRepository(name, url string) (Repository, error) {
 	info, err := ParseRepositoryURL(url)
 	if err != nil {
 		return nil, err
 	}
+
+	info.Name = name
 
 	var r Repository
 
@@ -48,9 +55,11 @@ func OpenRepository(url string) (Repository, error) {
 		r = newRemoteRepo(info)
 	}
 
-	err = r.init()
-	if err != nil {
-		return nil, err
+	if ri, ok := r.(initializer); ok {
+		err = ri.init()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return r, nil
@@ -96,13 +105,14 @@ func (r *localDir) Skeleton(name string) (*Info, error) {
 	info := &Info{
 		Name: name,
 		Path: path,
+		Repo: r.info,
 	}
 
 	return info, nil
 }
 
 func (r *localDir) Skeletons() ([]*Info, error) {
-	return findSkeletons(r.info.LocalPath())
+	return findSkeletons(r.info, r.info.LocalPath())
 }
 
 type localRepo struct {

@@ -13,9 +13,9 @@ import (
 
 // Info holds information about a skeleton.
 type Info struct {
-	Name      string
-	Path      string
-	RepoAlias string
+	Name string
+	Path string
+	Repo *RepositoryInfo
 }
 
 // Config loads the skeleton config for the info.
@@ -50,6 +50,7 @@ const (
 // RepositoryInfo holds information about a skeleton repository.
 type RepositoryInfo struct {
 	Local  bool
+	Name   string
 	Branch string
 	Path   string
 	Scheme string

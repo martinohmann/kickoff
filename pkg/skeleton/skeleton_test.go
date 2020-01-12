@@ -9,7 +9,7 @@ import (
 )
 
 func TestFindSkeletons(t *testing.T) {
-	skeletons, err := findSkeletons("testdata/skeletons")
+	skeletons, err := findSkeletons(nil, "testdata/skeletons")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestFindSkeletons(t *testing.T) {
 }
 
 func TestFindSkeletons_Error(t *testing.T) {
-	_, err := findSkeletons("testdata/nonexistent")
+	_, err := findSkeletons(nil, "testdata/nonexistent")
 	if err == nil {
 		t.Fatalf("expected error but got nil")
 	}
