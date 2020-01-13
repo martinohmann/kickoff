@@ -13,6 +13,7 @@ import (
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/gitignore"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
@@ -41,11 +42,21 @@ func Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) e
 		stats:  &createStats{},
 	}
 
+	var err error
+
 	if options.Config.HasLicense() {
-		var err error
 		c.license, err = license.Get(options.Config.License)
-		if err == license.ErrLicenseNotFound {
+		if err == license.ErrNotFound {
 			return fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", options.Config.License)
+		} else if err != nil {
+			return err
+		}
+	}
+
+	if options.Config.HasGitignore() {
+		c.gitignore, err = gitignore.Get(options.Config.Gitignore)
+		if err == gitignore.ErrNotFound {
+			return fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", options.Config.Gitignore)
 		} else if err != nil {
 			return err
 		}
@@ -61,10 +72,11 @@ type createStats struct {
 }
 
 type creator struct {
-	dryRun  bool
-	license *license.Info
-	config  config.Config
-	stats   *createStats
+	dryRun    bool
+	gitignore string
+	license   *license.Info
+	config    config.Config
+	stats     *createStats
 }
 
 func (c *creator) create(skeleton *skeleton.Info, outputDir string) error {
@@ -97,6 +109,11 @@ func (c *creator) create(skeleton *skeleton.Info, outputDir string) error {
 	}
 
 	err = c.writeLicenseFile(outputDir)
+	if err != nil {
+		return err
+	}
+
+	err = c.writeGitignoreFile(outputDir)
 	if err != nil {
 		return err
 	}
@@ -250,6 +267,22 @@ func (c *creator) writeLicenseFile(outputPath string) error {
 	body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
 
 	return ioutil.WriteFile(outputPath, []byte(body), 0644)
+}
+
+func (c *creator) writeGitignoreFile(outputPath string) error {
+	if c.gitignore == "" {
+		return nil
+	}
+
+	outputPath = filepath.Join(outputPath, ".gitignore")
+
+	log.Info("writing .gitignore")
+
+	if c.dryRun {
+		return nil
+	}
+
+	return ioutil.WriteFile(outputPath, []byte(c.gitignore), 0644)
 }
 
 func (c *creator) initializeRepository(path string) error {

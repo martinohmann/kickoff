@@ -16,11 +16,8 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "kickoff-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir, remove := newTempDir(t)
+	defer remove()
 
 	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
 	if err != nil {
@@ -48,11 +45,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestCreate_DryRun(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "kickoff-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir, remove := newTempDir(t)
+	defer remove()
 
 	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
 	if err != nil {
@@ -75,11 +69,8 @@ func TestCreate_DryRun(t *testing.T) {
 }
 
 func TestCreate_IllegalTemplateFilename(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "kickoff-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir, remove := newTempDir(t)
+	defer remove()
 
 	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
 	if err != nil {
@@ -107,11 +98,8 @@ func TestCreate_IllegalTemplateFilename(t *testing.T) {
 }
 
 func TestCreate_EmptyTemplateFilename(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("", "kickoff-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir, remove := newTempDir(t)
+	defer remove()
 
 	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
 	if err != nil {
@@ -136,4 +124,13 @@ func TestCreate_EmptyTemplateFilename(t *testing.T) {
 	expectedErr := errors.New(`templated filename "{{.Values.filename}}" resolved to an empty string`)
 
 	assert.Equal(t, expectedErr, err)
+}
+
+func newTempDir(t *testing.T) (string, func()) {
+	tmpdir, err := ioutil.TempDir("", "kickoff-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return tmpdir, func() { os.RemoveAll(tmpdir) }
 }

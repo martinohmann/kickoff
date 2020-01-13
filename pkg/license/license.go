@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	// ErrLicenseNotFound is returned by the Adapter if a license cannot be
+	// ErrNotFound is returned by the Adapter if a license cannot be
 	// found via the GitHub Licenses API.
-	ErrLicenseNotFound = errors.New("license not found")
+	ErrNotFound = errors.New("license not found")
 
 	// DefaultAdapter is the default adapter for the GitHub Licenses API.
 	DefaultAdapter = NewAdapter(github.NewClient(nil).Licenses)
@@ -67,7 +67,7 @@ func NewAdapter(service GitHubLicensesService) *Adapter {
 }
 
 // Get fetches the info for the license with name. Will return
-// ErrLicenseNotFound if the license is not recognized.
+// ErrNotFound if the license is not recognized.
 func (f *Adapter) Get(name string) (*Info, error) {
 	log.WithField("license", name).Debugf("fetching license info from GitHub")
 
@@ -75,7 +75,7 @@ func (f *Adapter) Get(name string) (*Info, error) {
 	if err != nil {
 		errResp, ok := err.(*github.ErrorResponse)
 		if ok && errResp.Response.StatusCode == 404 {
-			return nil, ErrLicenseNotFound
+			return nil, ErrNotFound
 		}
 
 		return nil, err
@@ -104,7 +104,7 @@ func (f *Adapter) List() ([]*Info, error) {
 }
 
 // Get fetches the info for the license with name using the DefaultAdapter.
-// Will return ErrLicenseNotFound if the license is not recognized.
+// Will return ErrNotFound if the license is not recognized.
 func Get(name string) (*Info, error) {
 	return DefaultAdapter.Get(name)
 }

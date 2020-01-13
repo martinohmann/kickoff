@@ -36,9 +36,13 @@ const (
 	// that repository related urls can be rendered in files like READMEs.
 	DefaultGitHost = "github.com"
 
-	// The DefaultLicense is "none", which means that no license file will be
-	// generated for a new project.
-	DefaultLicense = "none"
+	// NoLicense means that no license file will be generated for a new
+	// project.
+	NoLicense = "none"
+
+	// NoGitignore means that no .gitignore file will be generated for a new
+	// project.
+	NoGitignore = "none"
 
 	// SkeletonConfigFile is the name of the skeleton's config file.
 	SkeletonConfigFile = ".kickoff.yaml"
@@ -47,6 +51,7 @@ const (
 // Config is the type for user-defined configuration.
 type Config struct {
 	License      string            `json:"license"`
+	Gitignore    string            `json:"gitignore"`
 	Project      Project           `json:"project"`
 	Git          Git               `json:"git"`
 	Repositories map[string]string `json:"repositories"`
@@ -58,7 +63,11 @@ type Config struct {
 // (if they are unset).
 func (c *Config) ApplyDefaults(defaultProjectName string) {
 	if c.License == "" {
-		c.License = DefaultLicense
+		c.License = NoLicense
+	}
+
+	if c.Gitignore == "" {
+		c.Gitignore = NoGitignore
 	}
 
 	if c.Repositories == nil {
@@ -90,7 +99,14 @@ func (c *Config) MergeFromFile(path string) error {
 // config. If true, the project creator will write the text of the provided
 // license into the LICENSE file in the project's output directory.
 func (c *Config) HasLicense() bool {
-	return c.License != "" && c.License != "none"
+	return c.License != "" && c.License != NoLicense
+}
+
+// HasGitignore returns true if a gitignore template is specified in the
+// config. If true, the project creator will write the gitignore template into
+// the .gitignore file in the project's output directory.
+func (c *Config) HasGitignore() bool {
+	return c.Gitignore != "" && c.Gitignore != NoGitignore
 }
 
 // Project contains project specific configuration like author, email address
