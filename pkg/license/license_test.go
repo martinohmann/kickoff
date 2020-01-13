@@ -71,7 +71,7 @@ func TestAdapter_Get_NotFound(t *testing.T) {
 
 	_, err := adapter.Get("foo")
 	require.Error(t, err)
-	assert.Equal(t, ErrLicenseNotFound, err)
+	assert.Equal(t, ErrNotFound, err)
 }
 
 func TestAdapter_List(t *testing.T) {

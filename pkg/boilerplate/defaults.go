@@ -61,6 +61,27 @@ project:
 #
 license: ""
 
+# Gitignore configuration
+# =======================
+#
+# A .gitignore file will be automatically generated if gitignore templates are
+# specified. All gitignore templates available via the gitignore.io API are
+# supported.
+#
+# Check out the 'kickoff gitignore list' for a list a available templates.
+#
+# Example:
+# --------
+#
+#   gitignore: go
+#
+# Multiple gitignore templates:
+# -----------------------------
+#
+#   gitignore: go,helm,hugo
+#
+gitignore: ""
+
 # Git configuration
 # =================
 #

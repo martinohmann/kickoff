@@ -10,7 +10,7 @@ func NewLicenseCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "license",
 		Aliases: []string{"lic", "licenses"},
-		Short:   "Manage licenses",
+		Short:   "Inspect open source licenses",
 	}
 
 	cmd.AddCommand(license.NewListCmd(streams))

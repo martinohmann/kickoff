@@ -22,7 +22,8 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 	config.ApplyDefaults("myproject")
 
 	expected := Config{
-		License: DefaultLicense,
+		License:   NoLicense,
+		Gitignore: NoGitignore,
 		Project: Project{
 			Name:   "myproject",
 			Author: "John Doe",

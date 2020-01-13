@@ -57,6 +57,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 
 	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
+	cmd.Flags().StringVar(&o.Gitignore, "gitignore", o.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
 
 	cmd.Flags().StringVar(&o.Project.Name, "project-name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&o.Project.Author, "project-author", o.Project.Author, "Project author's fullname")
