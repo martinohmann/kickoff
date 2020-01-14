@@ -110,8 +110,6 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		return err
 	}
 
-	o.ApplyDefaults(defaultProjectName)
-
 	if len(o.rawValues) > 0 {
 		for _, rawValues := range o.rawValues {
 			err = strvals.ParseInto(rawValues, o.Values)
