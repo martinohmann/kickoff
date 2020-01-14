@@ -18,8 +18,18 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show <name>",
 		Short: "Show the config of a skeleton",
-		Long:  "Show the config of a single skeleton",
-		Args:  cobra.ExactArgs(1),
+		Long: cmdutil.LongDesc(`
+			Show the config of a single skeleton.`),
+		Example: cmdutil.Examples(`
+			# Show skeleton config
+			kickoff skeleton show myskeleton
+
+			# Show skeleton config in a specific repository
+			kickoff skeleton show myrepo:myskeleton
+
+			# Show skeleton config using different output
+			kickoff skeleton show myskeleton --output json`),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err

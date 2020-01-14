@@ -1,6 +1,8 @@
 package cmdutil
 
 import (
+	"os"
+
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
@@ -31,8 +33,12 @@ func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
 // not provide any config file path, the default config file will be loaded
 // instead, if it exists.
 func (f *ConfigFlags) Complete(defaultProjectName string) (err error) {
-	if f.ConfigPath == "" && file.Exists(config.DefaultConfigPath) {
-		f.ConfigPath = config.DefaultConfigPath
+	if f.ConfigPath == "" {
+		if configPath := os.Getenv("KICKOFF_CONFIG"); configPath != "" {
+			f.ConfigPath = configPath
+		} else if file.Exists(config.DefaultConfigPath) {
+			f.ConfigPath = config.DefaultConfigPath
+		}
 	}
 
 	if f.ConfigPath != "" {

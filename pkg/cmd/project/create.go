@@ -20,7 +20,30 @@ func NewCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <skeleton-name> <output-dir>",
 		Short: "Create a project from a skeleton",
-		Args:  cobra.ExactArgs(2),
+		Long: cmdutil.LongDesc(`
+			Create a project from a skeleton.`),
+		Example: cmdutil.Examples(`
+			# Create project
+			kickoff project create myskeleton ~/repos/myproject
+
+			# Create project from skeleton in specific repo
+			kickoff project create myrepo:myskeleton ~/repos/myproject
+
+			# Create project with license
+			kickoff project create myskeleton ~/repos/myproject --license mit
+
+			# Create project with gitignore
+			kickoff project create myskeleton ~/repos/myproject --gitignore go,helm,hugo
+
+			# Create project with value overrides
+			kickoff project create myskeleton ~/repos/myproject --set travis.enabled=true,mykey=mynewvalue
+
+			# Dry run project creation
+			kickoff project create myskeleton ~/repos/myproject --dry-run
+
+			# Forces overwrite of skeleton files in existing project
+			kickoff project create myskeleton ~/repos/myproject --force`),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -86,8 +109,6 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	if err != nil {
 		return err
 	}
-
-	o.ApplyDefaults(defaultProjectName)
 
 	if len(o.rawValues) > 0 {
 		for _, rawValues := range o.rawValues {

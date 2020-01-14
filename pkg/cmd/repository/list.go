@@ -16,8 +16,12 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List configured skeleton repositories",
-		Long:    "Lists all configured skeleton repositories",
-		Args:    cobra.NoArgs,
+		Long: cmdutil.LongDesc(`
+			Lists all configured skeleton repositories.`),
+		Example: cmdutil.Examples(`
+			# List repositories for different config
+			kickoff repository list --config custom-config.yaml`),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(""); err != nil {
 				return err

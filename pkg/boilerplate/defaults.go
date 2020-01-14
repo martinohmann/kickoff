@@ -156,6 +156,13 @@ values: {}
 `
 
 	DefaultSkeletonConfigText = `---
+# Description
+# ===========
+#
+# Explain what this skeleton is about
+#
+description: ""
+
 # Custom configuration values
 # ===========================
 #

@@ -16,6 +16,8 @@ Bootstrap projects from skeletons. Documentation is currently WIP.
   files or CLI flags.
 - Automatically populate LICENSE file with an open source license obtained from
   the [GitHub Licenses API](https://developer.github.com/v3/licenses/).
+- Automatically add a .gitignore created from templates obtained from
+  [gitignore.io](https://gitignore.io).
 - Set local author, repository and skeleton defaults using custom config file.
 - Dry run for project creation.
 
@@ -54,6 +56,15 @@ Head over to the
 [kickoff-skeletons](https://github.com/martinohmann/kickoff-skeletons)
 repository for ready-to-use skeletons and to get some inspiration to create
 your own.
+
+## Environment variables
+
+The following environment variables can be used to configure kickoff:
+
+| Name             | Description                                                                                          |
+| ---              | ---                                                                                                  |
+| `KICKOFF_CONFIG` | Path to the kickoff config. Can be overridden with the `--config` flag.                              |
+| `KICKOFF_EDITOR` | Editor used by `kickoff config edit`. If unset, `EDITOR` environment will be used. Fallback is `vi`. |
 
 ## License
 

@@ -19,6 +19,8 @@ import (
 var (
 	defaultEditor = "vi"
 	defaultShell  = "sh"
+
+	editorEnvs = []string{"KICKOFF_EDITOR", "EDITOR"}
 )
 
 func NewEditCmd() *cobra.Command {
@@ -27,8 +29,15 @@ func NewEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Edit the kickoff config",
-		Long:  "Edit the kickoff config in the configured $EDITOR",
-		Args:  cobra.NoArgs,
+		Long: cmdutil.LongDesc(`
+			Edit the kickoff config with the editor in the configured the $KICKOFF_EDITOR or $EDITOR environment variable.`),
+		Example: cmdutil.Examples(`
+			# Edit the default config file
+			kickoff config edit
+
+			# Edit custom config file
+			kickoff config edit --config custom-config.yaml`),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(); err != nil {
 				return err
@@ -44,10 +53,15 @@ func NewEditCmd() *cobra.Command {
 }
 
 type EditOptions struct {
-	ConfigPath string
+	cmdutil.ConfigFlags
 }
 
 func (o *EditOptions) Complete() (err error) {
+	err = o.ConfigFlags.Complete("")
+	if err != nil {
+		return err
+	}
+
 	if o.ConfigPath == "" {
 		o.ConfigPath = config.DefaultConfigPath
 	}
@@ -151,12 +165,13 @@ func getEditCmdArgs(path string) []string {
 }
 
 func detectEditor() string {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		editor = defaultEditor
+	for _, env := range editorEnvs {
+		if editor := os.Getenv(env); editor != "" {
+			return editor
+		}
 	}
 
-	return editor
+	return defaultEditor
 }
 
 func detectShell() []string {

@@ -19,8 +19,7 @@ func TestFindSkeletons(t *testing.T) {
 	expected := []*Info{
 		{Name: "bar", Path: filepath.Join(pwd, "testdata/skeletons/bar")},
 		{Name: "foo/bar", Path: filepath.Join(pwd, "testdata/skeletons/foo/bar")},
-		{Name: "nested", Path: filepath.Join(pwd, "testdata/skeletons/nested")},
-		{Name: "nested/skeletons", Path: filepath.Join(pwd, "testdata/skeletons/nested/skeletons")},
+		{Name: "nested/dir", Path: filepath.Join(pwd, "testdata/skeletons/nested/dir")},
 	}
 
 	assert.Equal(t, expected, skeletons)

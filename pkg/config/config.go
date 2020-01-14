@@ -89,7 +89,7 @@ func (c *Config) ApplyDefaults(defaultProjectName string) {
 func (c *Config) MergeFromFile(path string) error {
 	config, err := Load(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config: %v", err)
 	}
 
 	return mergo.Merge(c, config)
@@ -194,39 +194,33 @@ func (g *Git) GoPackagePath() string {
 
 // Skeleton holds the configuration of a skeleton (.kickoff.yaml).
 type Skeleton struct {
-	Values template.Values `json:"values"`
+	Description string          `json:"description,omitempty"`
+	Values      template.Values `json:"values"`
+}
+
+func loadInto(path string, into interface{}) error {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	return yaml.Unmarshal(buf, into)
 }
 
 // Load loads the config from path and returns it.
 func Load(path string) (Config, error) {
 	var config Config
 
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return config, err
-	}
+	err := loadInto(path, &config)
 
-	err = yaml.Unmarshal(buf, &config)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
+	return config, err
 }
 
 // LoadSkeleton loads the skeleton config from path and returns it.
 func LoadSkeleton(path string) (Skeleton, error) {
 	var config Skeleton
 
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return config, err
-	}
+	err := loadInto(path, &config)
 
-	err = yaml.Unmarshal(buf, &config)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
+	return config, err
 }

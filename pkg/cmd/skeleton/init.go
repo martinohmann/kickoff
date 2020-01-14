@@ -20,8 +20,15 @@ func NewInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init <output-dir>",
 		Short: "Initialize a new skeleton directory",
-		Long:  "Initialize a new skeleton directory with some boilerplate to get started",
-		Args:  cobra.ExactArgs(1),
+		Long: cmdutil.LongDesc(`
+			Initialize a new skeleton directory with some boilerplate to get started.`),
+		Example: cmdutil.Examples(`
+			# Initialize a new skeleton
+			kickoff skeleton init /skeleton/output/path
+
+			# Overwrite an existing skeleton
+			kickoff skeleton init /existing/skeleton --force`),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err

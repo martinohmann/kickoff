@@ -65,7 +65,7 @@ func findSkeletons(repo *RepositoryInfo, dir string) ([]*Info, error) {
 				Path: abspath,
 				Repo: repo,
 			})
-			// We do not stop here as we also want to find nested skeletons.
+			continue
 		}
 
 		skels, err := findSkeletons(repo, path)
