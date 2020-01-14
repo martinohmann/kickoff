@@ -17,8 +17,18 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show the kickoff config",
-		Long:  "Show the kickoff config",
-		Args:  cobra.NoArgs,
+		Long: cmdutil.LongDesc(`
+			Show the kickoff config`),
+		Example: cmdutil.Examples(`
+			# Show the default config
+			kickoff config show
+
+			# Show the config using different output
+			kickoff config show --output json
+
+			# Show a custom config file
+			kickoff config show --config custom-config.yaml`),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(""); err != nil {
 				return err

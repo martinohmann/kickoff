@@ -27,8 +27,15 @@ func NewEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Edit the kickoff config",
-		Long:  "Edit the kickoff config in the configured $EDITOR",
-		Args:  cobra.NoArgs,
+		Long: cmdutil.LongDesc(`
+			Edit the kickoff config in the configured $EDITOR.`),
+		Example: cmdutil.Examples(`
+			# Edit the default config file
+			kickoff config edit
+
+			# Edit custom config file
+			kickoff config edit --config custom-config.yaml`),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(); err != nil {
 				return err

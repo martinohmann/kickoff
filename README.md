@@ -16,6 +16,8 @@ Bootstrap projects from skeletons. Documentation is currently WIP.
   files or CLI flags.
 - Automatically populate LICENSE file with an open source license obtained from
   the [GitHub Licenses API](https://developer.github.com/v3/licenses/).
+- Automatically add a .gitignore created from templates obtained from
+  [gitignore.io](https://gitignore.io).
 - Set local author, repository and skeleton defaults using custom config file.
 - Dry run for project creation.
 
