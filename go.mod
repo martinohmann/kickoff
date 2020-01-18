@@ -3,6 +3,7 @@ module github.com/martinohmann/kickoff
 go 1.13
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.0.5
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible

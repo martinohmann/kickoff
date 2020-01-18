@@ -27,7 +27,16 @@ func AddForceFlag(cmd *cobra.Command, val *bool) {
 type ConfigFlags struct {
 	config.Config
 
-	ConfigPath string
+	ConfigPath         string
+	allowMissingConfig bool
+}
+
+// AllowMissingConfig allows the config file at ConfigPath to be absent. A
+// nonexistent config file will not cause errors but is simply ignored. This is
+// useful for initialization commands to be able to specify an alternative
+// config file which may not exist yet.
+func (f *ConfigFlags) AllowMissingConfig() {
+	f.allowMissingConfig = true
 }
 
 // AddFlags adds flags for configuring the config file location to cmd.
@@ -52,7 +61,9 @@ func (f *ConfigFlags) Complete(defaultProjectName string) (err error) {
 		}
 	}
 
-	if f.ConfigPath != "" {
+	loadConfig := f.ConfigPath != "" && (!f.allowMissingConfig || file.Exists(f.ConfigPath))
+
+	if loadConfig {
 		log.WithField("path", f.ConfigPath).Debugf("loading config file")
 
 		err = f.Config.MergeFromFile(f.ConfigPath)

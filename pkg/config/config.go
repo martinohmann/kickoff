@@ -29,6 +29,9 @@ var (
 
 	// DefaultRepositoryName is the name of the default skeleton repository.
 	DefaultRepositoryName = "default"
+
+	// DefaultSkeletonName is the name of the default skeleton in a repository.
+	DefaultSkeletonName = "default"
 )
 
 const (
@@ -214,6 +217,16 @@ func Load(path string) (Config, error) {
 	err := loadInto(path, &config)
 
 	return config, err
+}
+
+// Save saves config to path.
+func Save(config *Config, path string) error {
+	buf, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(path, buf, 0644)
 }
 
 // LoadSkeleton loads the skeleton config from path and returns it.
