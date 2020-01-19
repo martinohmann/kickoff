@@ -37,6 +37,7 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 		Repositories: map[string]string{
 			DefaultRepositoryName: DefaultRepositoryURL,
 		},
+		Values: template.Values{},
 	}
 
 	assert.Equal(t, expected, config)
