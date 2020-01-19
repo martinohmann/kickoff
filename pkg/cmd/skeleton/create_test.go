@@ -11,8 +11,8 @@ import (
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 )
 
-func TestInitCmd_Execute_EmptyOutputDir(t *testing.T) {
-	cmd := NewInitCmd()
+func TestCreateCmd_Execute_EmptyOutputDir(t *testing.T) {
+	cmd := NewCreateCmd()
 	cmd.SetArgs([]string{""})
 
 	err := cmd.Execute()
@@ -21,8 +21,8 @@ func TestInitCmd_Execute_EmptyOutputDir(t *testing.T) {
 	}
 }
 
-func TestInitCmd_Execute_DirExists(t *testing.T) {
-	cmd := NewInitCmd()
+func TestCreateCmd_Execute_DirExists(t *testing.T) {
+	cmd := NewCreateCmd()
 	cmd.SetArgs([]string{"."})
 
 	dir, err := filepath.Abs(".")
@@ -38,7 +38,7 @@ func TestInitCmd_Execute_DirExists(t *testing.T) {
 	}
 }
 
-func TestInitCmd_Execute(t *testing.T) {
+func TestCreateCmd_Execute(t *testing.T) {
 	name, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +47,7 @@ func TestInitCmd_Execute(t *testing.T) {
 
 	outputDir := filepath.Join(name, "myskeleton")
 
-	cmd := NewInitCmd()
+	cmd := NewCreateCmd()
 	cmd.SetArgs([]string{outputDir})
 
 	err = cmd.Execute()
@@ -56,7 +56,7 @@ func TestInitCmd_Execute(t *testing.T) {
 	}
 }
 
-func TestInitCmd_Execute_Force(t *testing.T) {
+func TestCreateCmd_Execute_Force(t *testing.T) {
 	name, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +65,7 @@ func TestInitCmd_Execute_Force(t *testing.T) {
 
 	outputDir := filepath.Join(name, "myskeleton")
 
-	cmd := NewInitCmd()
+	cmd := NewCreateCmd()
 	cmd.SetArgs([]string{outputDir})
 
 	err = cmd.Execute()
@@ -73,7 +73,7 @@ func TestInitCmd_Execute_Force(t *testing.T) {
 		t.Fatalf("expected nil error, got %v", err)
 	}
 
-	cmd = NewInitCmd()
+	cmd = NewCreateCmd()
 	cmd.SetArgs([]string{outputDir, "--force"})
 
 	err = cmd.Execute()
