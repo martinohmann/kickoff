@@ -132,14 +132,14 @@ func (p *Project) ApplyDefaults(defaultName string) {
 	if p.Author == "" {
 		p.Author, err = gitconfig.Global("user.name")
 		if err != nil {
-			log.Warn("user.name not found in git config, set it to automatically populate author fullname")
+			log.Debug("user.name not found in git config, set it to automatically populate author fullname")
 		}
 	}
 
 	if p.Email == "" {
 		p.Email, err = gitconfig.Global("user.email")
 		if err != nil {
-			log.Warn("user.email not found in git config, set it to automatically populate author email")
+			log.Debug("user.email not found in git config, set it to automatically populate author email")
 		}
 	}
 }
@@ -171,7 +171,7 @@ func (g *Git) ApplyDefaults(defaultRepoName string) {
 	if g.User == "" {
 		g.User, err = gitconfig.Global("github.user")
 		if err != nil {
-			log.Warn("github.user not found in git config, set it to automatically populate repository user")
+			log.Debug("github.user not found in git config, set it to automatically populate repository user")
 		}
 	}
 
