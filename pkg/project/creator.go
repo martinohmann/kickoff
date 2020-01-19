@@ -276,7 +276,7 @@ func (c *creator) writeGitignoreFile(outputPath string) error {
 
 	outputPath = filepath.Join(outputPath, ".gitignore")
 
-	log.Info("writing .gitignore")
+	log.WithField("path", ".gitignore").Info("writing .gitignore")
 
 	if c.dryRun {
 		return nil

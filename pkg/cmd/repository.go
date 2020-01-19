@@ -13,8 +13,10 @@ func NewRepositoryCmd(streams cli.IOStreams) *cobra.Command {
 		Short:   "Manage repositories",
 	}
 
+	cmd.AddCommand(repository.NewAddCmd())
 	cmd.AddCommand(repository.NewCreateCmd())
 	cmd.AddCommand(repository.NewListCmd(streams))
+	cmd.AddCommand(repository.NewRemoveCmd())
 
 	return cmd
 }
