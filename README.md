@@ -84,6 +84,20 @@ The following environment variables can be used to configure kickoff:
 | `KICKOFF_CONFIG` | Path to the kickoff config. Can be overridden with the `--config` flag.                              |
 | `KICKOFF_EDITOR` | Editor used by `kickoff config edit`. If unset, `EDITOR` environment will be used. Fallback is `vi`. |
 
+## Shell completion
+
+Add to your `~/.bashrc` for bash completion:
+
+```
+. <(kickoff completion bash)
+```
+
+Add to your `~/.zshrc` for zsh completion:
+
+```
+. <(kickoff completion zsh)
+```
+
 ## License
 
 The source code of kickoff is released under the MIT License. See the bundled
