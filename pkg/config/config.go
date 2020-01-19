@@ -84,6 +84,10 @@ func (c *Config) ApplyDefaults(defaultProjectName string) {
 
 	c.Project.ApplyDefaults(defaultProjectName)
 	c.Git.ApplyDefaults(c.Project.Name)
+
+	if c.Values == nil {
+		c.Values = template.Values{}
+	}
 }
 
 // MergeFromFile loads the config from path and merges it into c. Returns any
