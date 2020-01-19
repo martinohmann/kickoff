@@ -42,12 +42,23 @@ Verify installation by running:
 kickoff version
 ```
 
-## Creating a project from a skeleton
+## Quickstart
 
-Quick example:
+Initialize the kickoff config and create a new project:
 
 ```
-kickoff project create myskeleton ~/path/to/my/new/project --license mit
+kickoff init
+kickoff project create default ~/path/to/my/new/project --license mit --gitignore go,hugo
+```
+
+## Using remote skeleton repositories
+
+Add a remote skeleton repository and create a new project:
+
+```
+kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo
+kickoff repository list
+kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
 ```
 
 ## Project Skeletons
@@ -56,6 +67,13 @@ Head over to the
 [kickoff-skeletons](https://github.com/martinohmann/kickoff-skeletons)
 repository for ready-to-use skeletons and to get some inspiration to create
 your own.
+
+You can add the `kickoff-skeletons` repository to your config to directly
+create projects from the available skeletons:
+
+```
+kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
+```
 
 ## Environment variables
 
