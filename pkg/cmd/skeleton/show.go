@@ -69,7 +69,7 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repo.Skeleton(o.Skeleton)
+	skeleton, err := repo.SkeletonInfo(o.Skeleton)
 	if err != nil {
 		return err
 	}

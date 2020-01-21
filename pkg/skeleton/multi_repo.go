@@ -45,13 +45,13 @@ func NewMultiRepo(repos map[string]string) (Repository, error) {
 	return r, nil
 }
 
-func (f *multiRepo) Skeleton(name string) (*Info, error) {
+func (r *multiRepo) SkeletonInfo(name string) (*Info, error) {
 	repoName, name := splitName(name)
 	if repoName == "" {
-		return f.findSkeleton(name)
+		return r.findSkeleton(name)
 	}
 
-	url, ok := f.repoURLs[repoName]
+	url, ok := r.repoURLs[repoName]
 	if !ok {
 		return nil, fmt.Errorf("no skeleton repository configured with name %q", repoName)
 	}
@@ -61,15 +61,24 @@ func (f *multiRepo) Skeleton(name string) (*Info, error) {
 		return nil, err
 	}
 
-	return repo.Skeleton(name)
+	return repo.SkeletonInfo(name)
 }
 
-func (f *multiRepo) findSkeleton(name string) (*Info, error) {
+func (r *multiRepo) LoadSkeleton(name string) (*Skeleton, error) {
+	info, err := r.SkeletonInfo(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return Load(info)
+}
+
+func (r *multiRepo) findSkeleton(name string) (*Info, error) {
 	candidates := make([]*Info, 0)
 	seenRepos := make([]string, 0)
 
-	err := f.foreachRepository(func(repo Repository) error {
-		skeleton, err := repo.Skeleton(name)
+	err := r.foreachRepository(func(repo Repository) error {
+		skeleton, err := repo.SkeletonInfo(name)
 		if err != nil {
 			// Ignore the error, we will return an error only if the skeleton
 			// was not found in any of the repositories.
@@ -101,11 +110,11 @@ func (f *multiRepo) findSkeleton(name string) (*Info, error) {
 	)
 }
 
-func (f *multiRepo) Skeletons() ([]*Info, error) {
+func (r *multiRepo) SkeletonInfos() ([]*Info, error) {
 	allSkeletons := make([]*Info, 0)
 
-	err := f.foreachRepository(func(repo Repository) error {
-		skeletons, err := repo.Skeletons()
+	err := r.foreachRepository(func(repo Repository) error {
+		skeletons, err := repo.SkeletonInfos()
 		if err != nil {
 			return err
 		}
@@ -121,9 +130,9 @@ func (f *multiRepo) Skeletons() ([]*Info, error) {
 	return allSkeletons, nil
 }
 
-func (f *multiRepo) foreachRepository(fn func(repo Repository) error) error {
-	for _, name := range f.repoNames {
-		url := f.repoURLs[name]
+func (r *multiRepo) foreachRepository(fn func(repo Repository) error) error {
+	for _, name := range r.repoNames {
+		url := r.repoURLs[name]
 
 		repo, err := openNamedRepository(name, url)
 		if err != nil {

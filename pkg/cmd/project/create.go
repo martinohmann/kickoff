@@ -150,7 +150,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repo.Skeleton(o.Skeleton)
+	skeleton, err := repo.LoadSkeleton(o.Skeleton)
 	if err != nil {
 		return err
 	}

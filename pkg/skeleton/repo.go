@@ -13,13 +13,18 @@ import (
 
 // Repository is the interface for a skeleton repository.
 type Repository interface {
-	// Skeleton obtains the info for the skeleton with name or an error if the
+	// SkeletonInfo obtains the info for the skeleton with name or an error if the
 	// skeleton does not exist within the repository.
-	Skeleton(name string) (*Info, error)
+	SkeletonInfo(name string) (*Info, error)
 
-	// Skeletons returns infos for all skeletons available in the repository.
+	// SkeletonInfos returns infos for all skeletons available in the repository.
 	// Returns any error that may occur while traversing the directory.
-	Skeletons() ([]*Info, error)
+	SkeletonInfos() ([]*Info, error)
+
+	// LoadSkeleton loads the skeleton with name from the repository. The
+	// returned skeleton already includes the recursively merged list of files
+	// and values from potential parents.
+	LoadSkeleton(name string) (*Skeleton, error)
 }
 
 type initializer interface {
@@ -90,7 +95,7 @@ func (r *localDir) init() error {
 	return nil
 }
 
-func (r *localDir) Skeleton(name string) (*Info, error) {
+func (r *localDir) SkeletonInfo(name string) (*Info, error) {
 	path := filepath.Join(r.info.LocalPath(), name)
 
 	ok, err := isSkeletonDir(path)
@@ -111,7 +116,16 @@ func (r *localDir) Skeleton(name string) (*Info, error) {
 	return info, nil
 }
 
-func (r *localDir) Skeletons() ([]*Info, error) {
+func (r *localDir) LoadSkeleton(name string) (*Skeleton, error) {
+	info, err := r.SkeletonInfo(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return Load(info)
+}
+
+func (r *localDir) SkeletonInfos() ([]*Info, error) {
 	return findSkeletons(r.info, r.info.LocalPath())
 }
 

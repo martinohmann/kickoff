@@ -26,7 +26,7 @@ func TestMultiRepo_EmptyRepoName_Error(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 }
 
-func TestMultiRepo_Skeleton(t *testing.T) {
+func TestMultiRepo_SkeletonInfo(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	tests := []struct {
@@ -111,7 +111,7 @@ func TestMultiRepo_Skeleton(t *testing.T) {
 			repo, err := NewMultiRepo(repos)
 			require.NoError(t, err)
 
-			info, err := repo.Skeleton(test.skeleton)
+			info, err := repo.SkeletonInfo(test.skeleton)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -124,7 +124,7 @@ func TestMultiRepo_Skeleton(t *testing.T) {
 	}
 }
 
-func TestMultiRepo_Skeletons(t *testing.T) {
+func TestMultiRepo_SkeletonInfos(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	tests := []struct {
@@ -189,7 +189,7 @@ func TestMultiRepo_Skeletons(t *testing.T) {
 			repo, err := NewMultiRepo(repos)
 			require.NoError(t, err)
 
-			infos, err := repo.Skeletons()
+			infos, err := repo.SkeletonInfos()
 
 			if test.expectedErr != nil {
 				require.Error(t, err)

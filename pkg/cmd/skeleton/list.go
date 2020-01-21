@@ -45,7 +45,7 @@ func (o *ListOptions) Run() error {
 		return err
 	}
 
-	skeletons, err := repo.Skeletons()
+	skeletons, err := repo.SkeletonInfos()
 	if err != nil {
 		return err
 	}
