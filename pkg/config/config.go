@@ -201,8 +201,15 @@ func (g *Git) GoPackagePath() string {
 
 // Skeleton holds the configuration of a skeleton (.kickoff.yaml).
 type Skeleton struct {
-	Description string          `json:"description,omitempty"`
-	Values      template.Values `json:"values"`
+	Description string            `json:"description,omitempty"`
+	Parent      *SkeletonLocation `json:"parent,omitempty"`
+	Values      template.Values   `json:"values"`
+}
+
+// SkeletonLocation holds configuration of the location of a parent skeleton.
+type SkeletonLocation struct {
+	RepositoryURL string `json:"repositoryURL"`
+	SkeletonName  string `json:"skeletonName"`
 }
 
 func loadInto(path string, into interface{}) error {

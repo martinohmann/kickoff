@@ -1,0 +1,7 @@
+---
+parent:
+  repositoryURL: ..
+  skeletonName: parent
+values:
+  foo: foo
+  somebool: false

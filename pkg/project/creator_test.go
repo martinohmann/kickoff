@@ -19,14 +19,14 @@ func TestCreate(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
+	repo, err := skeleton.OpenRepository("testdata/skeletons")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton := &skeleton.Info{
-		Name: "test-skeleton",
-		Path: path,
+	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	outputDir := filepath.Join(tmpdir, "myproject")
@@ -48,14 +48,14 @@ func TestCreate_DryRun(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
+	repo, err := skeleton.OpenRepository("testdata/skeletons")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton := &skeleton.Info{
-		Name: "test-skeleton",
-		Path: path,
+	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	err = Create(skeleton, tmpdir, &CreateOptions{
@@ -72,14 +72,14 @@ func TestCreate_IllegalTemplateFilename(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
+	repo, err := skeleton.OpenRepository("testdata/skeletons")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton := &skeleton.Info{
-		Name: "test-skeleton",
-		Path: path,
+	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	err = Create(skeleton, tmpdir, &CreateOptions{
@@ -101,14 +101,14 @@ func TestCreate_EmptyTemplateFilename(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	path, err := filepath.Abs("testdata/skeletons/test-skeleton")
+	repo, err := skeleton.OpenRepository("testdata/skeletons")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton := &skeleton.Info{
-		Name: "test-skeleton",
-		Path: path,
+	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	err = Create(skeleton, tmpdir, &CreateOptions{

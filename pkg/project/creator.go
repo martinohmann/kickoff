@@ -31,7 +31,7 @@ type CreateOptions struct {
 // Create creates a new project in outputDir using the provided skeleton.
 // Options provide additional configuration for the project creation behaviour.
 // Returns an error if project creation fails.
-func Create(skeleton *skeleton.Info, outputDir string, options *CreateOptions) error {
+func Create(skeleton *skeleton.Skeleton, outputDir string, options *CreateOptions) error {
 	if options == nil {
 		options = &CreateOptions{}
 	}
@@ -79,31 +79,26 @@ type creator struct {
 	stats     *createStats
 }
 
-func (c *creator) create(skeleton *skeleton.Info, outputDir string) error {
+func (c *creator) create(skeleton *skeleton.Skeleton, outputDir string) error {
 	if c.dryRun {
 		log.Warn("dry run: no changes will be made")
 	}
 
-	config, err := skeleton.Config()
+	log.WithField("values", fmt.Sprintf("%#v", skeleton.Values)).Debug("skeleton values")
+
+	err := skeleton.Values.Merge(c.config.Values)
 	if err != nil {
 		return err
 	}
 
-	log.WithField("values", fmt.Sprintf("%#v", config.Values)).Debug("skeleton values")
-
-	err = config.Values.Merge(c.config.Values)
-	if err != nil {
-		return err
-	}
-
-	log.WithField("values", fmt.Sprintf("%#v", config.Values)).Debug("merged values")
+	log.WithField("values", fmt.Sprintf("%#v", skeleton.Values)).Debug("merged values")
 
 	log.WithFields(log.Fields{
-		"skeleton": skeleton.Path,
+		"skeleton": skeleton.Info.Path,
 		"target":   outputDir,
 	}).Info("creating project from skeleton")
 
-	err = c.processFiles(skeleton, outputDir, config.Values)
+	err = c.processFiles(skeleton, outputDir)
 	if err != nil {
 		return err
 	}
@@ -132,28 +127,27 @@ func (c *creator) create(skeleton *skeleton.Info, outputDir string) error {
 	return nil
 }
 
-func (c *creator) processFiles(skeleton *skeleton.Info, dstPath string, values map[string]interface{}) error {
+func (c *creator) processFiles(skel *skeleton.Skeleton, dstPath string) error {
 	templateData := map[string]interface{}{
 		"ProjectName": c.config.Project.Name, // left here for backwards compat
 		"Project":     &c.config.Project,
-		"Values":      values,
+		"Values":      skel.Values,
 		"License":     c.license,
 		"Git":         &c.config.Git,
 	}
 
 	dirMap := make(map[string]string)
 
-	srcPath := skeleton.Path
-
-	return skeleton.Walk(func(path string, info os.FileInfo, err error) error {
+	return skel.WalkFiles(func(file *skeleton.File, err error) error {
 		if err != nil {
 			return err
 		}
 
-		srcRelPath, err := filepath.Rel(srcPath, path)
-		if err != nil {
-			return err
+		if file.Inherited {
+			log.WithField("path", file.AbsPath).Debug("processing inherited file")
 		}
+
+		srcRelPath := file.RelPath
 
 		srcFilename := filepath.Base(srcRelPath)
 		srcRelDir := filepath.Dir(srcRelPath)
@@ -186,7 +180,7 @@ func (c *creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 			log = log.WithField("path.target", dstRelPath)
 		}
 
-		if info.IsDir() {
+		if file.Info.IsDir() {
 			log.Info("creating directory")
 
 			// Track potentially templated directory names that need to be
@@ -195,14 +189,14 @@ func (c *creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 				dirMap[srcRelPath] = dstRelPath
 			}
 
-			return c.makeDirectory(outputPath, info.Mode())
+			return c.makeDirectory(outputPath, file.Info.Mode())
 		}
 
-		ext := filepath.Ext(path)
+		ext := filepath.Ext(file.AbsPath)
 		if ext != ".skel" {
 			log.Info("copying file")
 
-			return c.copyFile(path, outputPath)
+			return c.copyFile(file.AbsPath, outputPath)
 		}
 
 		// strip .skel extension
@@ -211,7 +205,7 @@ func (c *creator) processFiles(skeleton *skeleton.Info, dstPath string, values m
 
 		log.WithField("path.target", dstRelPath).Info("rendering template")
 
-		return c.writeTemplate(path, outputPath, info.Mode(), templateData)
+		return c.writeTemplate(file.AbsPath, outputPath, file.Info.Mode(), templateData)
 	})
 }
 

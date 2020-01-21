@@ -5,7 +5,19 @@
 [![GoDoc](https://godoc.org/github.com/martinohmann/kickoff?status.svg)](https://godoc.org/github.com/martinohmann/kickoff)
 ![GitHub](https://img.shields.io/github/license/martinohmann/kickoff?color=orange)
 
-Bootstrap projects from skeletons. Documentation is currently WIP.
+Bootstrap projects from skeletons. **Documentation is currently WIP.**
+
+Contents
+--------
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quickstart](#quickstart)
+- [Using remote skeleton repositories](#using-remote-skeleton-repositories)
+- [Project Skeletons](#project-skeletons)
+- [Environment variables](#environment-variables)
+- [Shell completion](#shell-completion)
+- [Skeleton inheritance](#skeleton-inheritance)
 
 ## Features
 
@@ -20,6 +32,8 @@ Bootstrap projects from skeletons. Documentation is currently WIP.
   [gitignore.io](https://gitignore.io).
 - Set local author, repository and skeleton defaults using custom config file.
 - Dry run for project creation.
+- Skeleton inheritance: skeletons can inherit files and values from an optional
+  parent skeleton.
 
 ## Installation
 
@@ -97,6 +111,20 @@ Add to your `~/.zshrc` for zsh completion:
 ```
 . <(kickoff completion zsh)
 ```
+
+## Skeleton inheritance
+
+Skeletons can inherit from other skeletons. Just add the `parent` configuration
+to the `.kickoff.yaml` of the skeleton like this:
+
+```
+parent:
+  repositoryURL: https://github.com/martinohmann/kickoff-skeletons
+  skeletonName: my-parent-skeleton
+```
+
+If `repositoryURL` is omitted, the same repository as the one of the
+skeleton is assumed. `repositoryURL` can be a remote URL or local path.
 
 ## License
 

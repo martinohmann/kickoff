@@ -44,7 +44,7 @@ func TestOpenRepository_LocalRepo(t *testing.T) {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
 
-	skel, err := repo.Skeleton("b-skeleton")
+	skel, err := repo.SkeletonInfo("b-skeleton")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestOpenRepository_LocalDir(t *testing.T) {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
 
-	skel, err := repo.Skeleton("a-skeleton")
+	skel, err := repo.SkeletonInfo("a-skeleton")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
 	}
