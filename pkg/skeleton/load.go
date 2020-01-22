@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/template"
 )
 
@@ -70,7 +69,7 @@ func (s *Skeleton) WalkFiles(fn func(file *File, err error) error) error {
 // parent skeletons (if any) and merge all parent values and files into the
 // resulting *Skeleton.
 func Load(info *Info) (*Skeleton, error) {
-	visits := make(map[config.SkeletonLocation]struct{})
+	visits := make(map[Reference]struct{})
 
 	s, err := load(info, visits)
 	if err != nil {
@@ -94,8 +93,8 @@ func Load(info *Info) (*Skeleton, error) {
 	return s, nil
 }
 
-func load(info *Info, visits map[config.SkeletonLocation]struct{}) (*Skeleton, error) {
-	config, err := info.Config()
+func load(info *Info, visits map[Reference]struct{}) (*Skeleton, error) {
+	config, err := info.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %v", err)
 	}
@@ -108,8 +107,8 @@ func load(info *Info, visits map[config.SkeletonLocation]struct{}) (*Skeleton, e
 		fileMap: make(map[string]*File),
 	}
 
-	if location := config.Parent; location != nil {
-		s.Parent, err = loadParent(info, location, visits)
+	if ref := config.Parent; ref != nil {
+		s.Parent, err = loadParent(info, ref, visits)
 		if err != nil {
 			return nil, err
 		}
@@ -137,12 +136,12 @@ func load(info *Info, visits map[config.SkeletonLocation]struct{}) (*Skeleton, e
 	return s, nil
 }
 
-func loadParent(info *Info, location *config.SkeletonLocation, visits map[config.SkeletonLocation]struct{}) (*Skeleton, error) {
-	if _, ok := visits[*location]; ok {
-		return nil, fmt.Errorf("dependency cycle detected for parent: %#v", *location)
+func loadParent(info *Info, ref *Reference, visits map[Reference]struct{}) (*Skeleton, error) {
+	if _, ok := visits[*ref]; ok {
+		return nil, fmt.Errorf("dependency cycle detected for parent: %#v", *ref)
 	}
 
-	repoURL := location.RepositoryURL
+	repoURL := ref.RepositoryURL
 
 	if len(repoURL) == 0 {
 		// If no repository url is provided we assume that the parent resides
@@ -167,12 +166,12 @@ func loadParent(info *Info, location *config.SkeletonLocation, visits map[config
 		return nil, err
 	}
 
-	parent, err := repo.SkeletonInfo(location.SkeletonName)
+	parent, err := repo.SkeletonInfo(ref.SkeletonName)
 	if err != nil {
 		return nil, err
 	}
 
-	visits[*location] = struct{}{}
+	visits[*ref] = struct{}{}
 
 	return load(parent, visits)
 }

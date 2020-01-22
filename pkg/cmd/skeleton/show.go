@@ -74,7 +74,7 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
-	config, err := skeleton.Config()
+	config, err := skeleton.LoadConfig()
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 )
 
@@ -76,7 +75,7 @@ func IsInsideSkeletonDir(path string) (bool, error) {
 // IsSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
 // detected by the fact that they contain a .kickoff.yaml file.
 func isSkeletonDir(dir string) (bool, error) {
-	configPath := filepath.Join(dir, config.SkeletonConfigFile)
+	configPath := filepath.Join(dir, ConfigFileName)
 
 	info, err := os.Stat(configPath)
 	if os.IsNotExist(err) {

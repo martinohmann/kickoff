@@ -70,7 +70,7 @@ func TestLoad(t *testing.T) {
 		{
 			name:        "dependency cycle",
 			info:        info("cyclea"),
-			expectedErr: errors.New(`failed to load skeleton: dependency cycle detected for parent: config.SkeletonLocation{RepositoryURL:"..", SkeletonName:"cycleb"}`),
+			expectedErr: errors.New(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"..", SkeletonName:"cycleb"}`),
 		},
 	}
 

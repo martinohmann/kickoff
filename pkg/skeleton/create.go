@@ -8,7 +8,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/boilerplate"
-	"github.com/martinohmann/kickoff/pkg/config"
 )
 
 // Create creates a new skeleton at path. The created skeleton contains an
@@ -31,9 +30,9 @@ func Create(path string) error {
 		return fmt.Errorf("failed to write skeleton README: %v", err)
 	}
 
-	configPath := filepath.Join(path, config.SkeletonConfigFile)
+	configPath := filepath.Join(path, ConfigFileName)
 
-	log.WithField("path", configPath).Infof("writing %s", config.SkeletonConfigFile)
+	log.WithField("path", configPath).Infof("writing %s", ConfigFileName)
 
 	err = ioutil.WriteFile(configPath, boilerplate.DefaultSkeletonConfigBytes(), 0644)
 	if err != nil {

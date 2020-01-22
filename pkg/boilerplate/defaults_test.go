@@ -17,7 +17,9 @@ func TestDefaultConfigBytes_EnsureValidYAML(t *testing.T) {
 }
 
 func TestDefaultSkeletonConfigBytes_EnsureValidYAML(t *testing.T) {
-	var cfg config.Skeleton
+	// @FIXME: probably get rid of the whole package as it causes dependecy
+	// cycles.
+	var cfg map[string]interface{}
 
 	err := yaml.Unmarshal(DefaultSkeletonConfigBytes(), &cfg)
 	if err != nil {

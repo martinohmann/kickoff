@@ -68,19 +68,6 @@ func TestConfig_MergeFromFile(t *testing.T) {
 	assert.Equal(t, expected, config)
 }
 
-func TestLoadSkeleton(t *testing.T) {
-	config, err := LoadSkeleton("testdata/.kickoff.yaml")
-	require.NoError(t, err)
-
-	expected := Skeleton{
-		Values: template.Values{
-			"bar": "baz",
-		},
-	}
-
-	assert.Equal(t, expected, config)
-}
-
 func TestGit_GoPackagePath(t *testing.T) {
 	g := Git{User: "foo", RepoName: "bar", Host: "github.com"}
 	assert.Equal(t, "github.com/foo/bar", g.GoPackagePath())

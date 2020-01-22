@@ -46,9 +46,6 @@ const (
 	// NoGitignore means that no .gitignore file will be generated for a new
 	// project.
 	NoGitignore = "none"
-
-	// SkeletonConfigFile is the name of the skeleton's config file.
-	SkeletonConfigFile = ".kickoff.yaml"
 )
 
 // Config is the type for user-defined configuration.
@@ -199,33 +196,16 @@ func (g *Git) GoPackagePath() string {
 	return fmt.Sprintf("%s/%s/%s", g.Host, g.User, g.RepoName)
 }
 
-// Skeleton holds the configuration of a skeleton (.kickoff.yaml).
-type Skeleton struct {
-	Description string            `json:"description,omitempty"`
-	Parent      *SkeletonLocation `json:"parent,omitempty"`
-	Values      template.Values   `json:"values"`
-}
-
-// SkeletonLocation holds configuration of the location of a parent skeleton.
-type SkeletonLocation struct {
-	RepositoryURL string `json:"repositoryURL"`
-	SkeletonName  string `json:"skeletonName"`
-}
-
-func loadInto(path string, into interface{}) error {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	return yaml.Unmarshal(buf, into)
-}
-
 // Load loads the config from path and returns it.
 func Load(path string) (Config, error) {
 	var config Config
 
-	err := loadInto(path, &config)
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return config, err
+	}
+
+	err = yaml.Unmarshal(buf, &config)
 
 	return config, err
 }
@@ -238,13 +218,4 @@ func Save(config *Config, path string) error {
 	}
 
 	return ioutil.WriteFile(path, buf, 0644)
-}
-
-// LoadSkeleton loads the skeleton config from path and returns it.
-func LoadSkeleton(path string) (Skeleton, error) {
-	var config Skeleton
-
-	err := loadInto(path, &config)
-
-	return config, err
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/kirsle/configdir"
-	"github.com/martinohmann/kickoff/pkg/config"
 )
 
 // Info holds information about a skeleton.
@@ -19,8 +18,10 @@ type Info struct {
 }
 
 // Config loads the skeleton config for the info.
-func (i *Info) Config() (config.Skeleton, error) {
-	return config.LoadSkeleton(filepath.Join(i.Path, config.SkeletonConfigFile))
+func (i *Info) LoadConfig() (Config, error) {
+	configPath := filepath.Join(i.Path, ConfigFileName)
+
+	return LoadConfig(configPath)
 }
 
 // Walk recursively walks all files and directories of the skeleton. This
@@ -28,7 +29,7 @@ func (i *Info) Config() (config.Skeleton, error) {
 // ConfigFile.
 func (i *Info) Walk(walkFn filepath.WalkFunc) error {
 	return filepath.Walk(i.Path, func(path string, info os.FileInfo, err error) error {
-		if info.Name() == config.SkeletonConfigFile {
+		if info.Name() == ConfigFileName {
 			// ignore skeleton config file
 			return err
 		}

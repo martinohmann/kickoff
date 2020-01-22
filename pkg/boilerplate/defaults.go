@@ -138,6 +138,21 @@ git:
 #
 repositories: {}
 
+# Parent skeleton
+# ===============
+#
+# If parent is not null, the references skeleton's files and values will be
+# merged into the skeleton.
+#
+# Example:
+# --------
+#
+#   parent:
+#     repositoryURL: https://github.com/martinohmann/kickoff-skeletons
+#     skeletonName: my-parent-skeleton
+#
+parent: null
+
 # Custom configuration values
 # ===========================
 #
