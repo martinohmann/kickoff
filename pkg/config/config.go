@@ -1,10 +1,11 @@
-// Package config provides configuration for kickoff and kickoff skeletons.
+// Package config provides configuration for kickoff.
 package config
 
 import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/ghodss/yaml"
@@ -26,18 +27,19 @@ var (
 	// DefaultRepositoryURL is the default lookup path for the user's
 	// local skeleton directory.
 	DefaultRepositoryURL = filepath.Join(LocalConfigDir, "repository")
+)
+
+const (
+	// DefaultProjectHost denotes the default git host that is passed to
+	// templates so that project related urls can be rendered in files like
+	// READMEs.
+	DefaultProjectHost = "github.com"
 
 	// DefaultRepositoryName is the name of the default skeleton repository.
 	DefaultRepositoryName = "default"
 
 	// DefaultSkeletonName is the name of the default skeleton in a repository.
 	DefaultSkeletonName = "default"
-)
-
-const (
-	// DefaultGitHost denotes the default git host that is passed to templates so
-	// that repository related urls can be rendered in files like READMEs.
-	DefaultGitHost = "github.com"
 
 	// NoLicense means that no license file will be generated for a new
 	// project.
@@ -50,26 +52,13 @@ const (
 
 // Config is the type for user-defined configuration.
 type Config struct {
-	License      string            `json:"license"`
-	Gitignore    string            `json:"gitignore"`
 	Project      Project           `json:"project"`
-	Git          Git               `json:"git"`
 	Repositories map[string]string `json:"repositories"`
 	Values       template.Values   `json:"values"`
 }
 
-// ApplyDefaults applies default values to the config. The defaultProjectName
-// variable will be used to set the project name and the git repository name
-// (if they are unset).
-func (c *Config) ApplyDefaults(defaultProjectName string) {
-	if c.License == "" {
-		c.License = NoLicense
-	}
-
-	if c.Gitignore == "" {
-		c.Gitignore = NoGitignore
-	}
-
+// ApplyDefaults applies default values to the config.
+func (c *Config) ApplyDefaults() {
 	if c.Repositories == nil {
 		c.Repositories = make(map[string]string)
 	}
@@ -79,8 +68,7 @@ func (c *Config) ApplyDefaults(defaultProjectName string) {
 		c.Repositories[DefaultRepositoryName] = DefaultRepositoryURL
 	}
 
-	c.Project.ApplyDefaults(defaultProjectName)
-	c.Git.ApplyDefaults(c.Project.Name)
+	c.Project.ApplyDefaults()
 
 	if c.Values == nil {
 		c.Values = template.Values{}
@@ -99,101 +87,75 @@ func (c *Config) MergeFromFile(path string) error {
 	return mergo.Merge(c, config)
 }
 
-// HasLicense returns true if an open source license is specified in the
-// config. If true, the project creator will write the text of the provided
-// license into the LICENSE file in the project's output directory.
-func (c *Config) HasLicense() bool {
-	return c.License != "" && c.License != NoLicense
-}
-
-// HasGitignore returns true if a gitignore template is specified in the
-// config. If true, the project creator will write the gitignore template into
-// the .gitignore file in the project's output directory.
-func (c *Config) HasGitignore() bool {
-	return c.Gitignore != "" && c.Gitignore != NoGitignore
-}
-
 // Project contains project specific configuration like author, email address
 // and project name.
 type Project struct {
-	Author string `json:"author"`
-	Email  string `json:"email"`
-	Name   string `json:"-"`
+	Host      string `json:"host"`
+	Owner     string `json:"owner"`
+	Email     string `json:"email"`
+	Name      string `json:"-"`
+	License   string `json:"license"`
+	Gitignore string `json:"gitignore"`
 }
 
-// ApplyDefaults applies defaults to unset fields. If the Author and Email
+// ApplyDefaults applies defaults to unset fields. If the Owner and Email
 // fields are empty ApplyDefaults will attempt to fill them with the git config
-// values of user.name and user.email if they exist.
-func (p *Project) ApplyDefaults(defaultName string) {
-	if p.Name == "" {
-		p.Name = defaultName
+// values of github.user/user.name and user.email if they exist.
+func (p *Project) ApplyDefaults() {
+	if p.Host == "" {
+		p.Host = DefaultProjectHost
 	}
 
-	var err error
-	if p.Author == "" {
-		p.Author, err = gitconfig.Global("user.name")
-		if err != nil {
-			log.Debug("user.name not found in git config, set it to automatically populate author fullname")
-		}
+	if p.Owner == "" {
+		p.Owner = detectProjectOwner()
 	}
 
 	if p.Email == "" {
-		p.Email, err = gitconfig.Global("user.email")
-		if err != nil {
-			log.Debug("user.email not found in git config, set it to automatically populate author email")
-		}
+		p.Email = detectProjectEmail()
+	}
+
+	if p.License == "" {
+		p.License = NoLicense
+	}
+
+	if p.Gitignore == "" {
+		p.Gitignore = NoGitignore
 	}
 }
 
-// AuthorString a string that can be used in licenses. If an email address is
-// configured, this will look like `Author <Email>`. `Author` otherwise.
-func (p *Project) AuthorString() string {
-	if p.Email != "" {
-		return fmt.Sprintf("%s <%s>", p.Author, p.Email)
-	}
-
-	return p.Author
+// HasLicense returns true if an open source license is specified in the
+// project config. If true, the project creator will write the text of the
+// provided license into the LICENSE file in the project's output directory.
+func (p *Project) HasLicense() bool {
+	return p.License != "" && p.License != NoLicense
 }
 
-// Git holds information about the project repository. These values are
-// currently only forwarded to templates so that users can template links
-// related to their project in README files and the like.
-type Git struct {
-	Host     string `json:"host"`
-	User     string `json:"user"`
-	RepoName string `json:"-"`
-}
-
-// ApplyDefaults applies git configuration defaults. If the User field is empty
-// ApplyDefaults will attempt to fill it with the git config values of
-// github.user if it exist.
-func (g *Git) ApplyDefaults(defaultRepoName string) {
-	var err error
-	if g.User == "" {
-		g.User, err = gitconfig.Global("github.user")
-		if err != nil {
-			log.Debug("github.user not found in git config, set it to automatically populate repository user")
-		}
-	}
-
-	if g.RepoName == "" {
-		g.RepoName = defaultRepoName
-	}
-
-	if g.Host == "" {
-		g.Host = DefaultGitHost
-	}
+// HasGitignore returns true if a gitignore template is specified in the
+// project config. If true, the project creator will write the gitignore
+// template into the .gitignore file in the project's output directory.
+func (p *Project) HasGitignore() bool {
+	return p.Gitignore != "" && p.Gitignore != NoGitignore
 }
 
 // URL returns the repository url.
-func (g *Git) URL() string {
-	return fmt.Sprintf("https://%s/%s/%s", g.Host, g.User, g.RepoName)
+func (p *Project) URL() string {
+	return fmt.Sprintf("https://%s/%s/%s", p.Host, p.Owner, p.Name)
 }
 
 // GoPackagePath returns a string that can be used as a Golang package path for
 // the project.
-func (g *Git) GoPackagePath() string {
-	return fmt.Sprintf("%s/%s/%s", g.Host, g.User, g.RepoName)
+func (p *Project) GoPackagePath() string {
+	return fmt.Sprintf("%s/%s/%s", p.Host, p.Owner, p.Name)
+}
+
+// Author returns a string that can be used in licenses. If an email address is
+// configured, this will look like `Owner <Email>`. `Owner` otherwise.
+func (p *Project) Author() string {
+	if p.Email != "" {
+		return fmt.Sprintf("%s <%s>", p.Owner, p.Email)
+	}
+
+	return p.Owner
 }
 
 // Load loads the config from path and returns it.
@@ -218,4 +180,37 @@ func Save(config *Config, path string) error {
 	}
 
 	return ioutil.WriteFile(path, buf, 0644)
+}
+
+func getGitConfigKey(configKeys []string) string {
+	for _, key := range configKeys {
+		val, err := gitconfig.Global(key)
+		if err == nil {
+			return val
+		}
+	}
+
+	return ""
+}
+
+func detectProjectOwner() string {
+	configKeys := []string{"github.user", "user.name"}
+
+	owner := getGitConfigKey(configKeys)
+	if owner == "" {
+		log.Debugf("could not infer project owner from git config, none of these keys found: ", strings.Join(configKeys, ", "))
+	}
+
+	return owner
+}
+
+func detectProjectEmail() string {
+	configKeys := []string{"user.email"}
+
+	email := getGitConfigKey(configKeys)
+	if email == "" {
+		log.Debugf("could not infer project email from git config, none of these keys found: ", strings.Join(configKeys, ", "))
+	}
+
+	return email
 }

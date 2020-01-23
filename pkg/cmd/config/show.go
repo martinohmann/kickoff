@@ -30,7 +30,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff config show --config custom-config.yaml`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(""); err != nil {
+			if err := o.Complete(); err != nil {
 				return err
 			}
 

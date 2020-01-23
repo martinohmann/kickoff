@@ -2,9 +2,9 @@
 =====
 
 {{ if .Values.travis.enabled -}}
-[![Build Status](https://travis-ci.org/{{.Git.User}}/{{.Git.RepoName}}.svg?branch=master)](https://travis-ci.org/{{.Git.User}}/{{.Git.RepoName}})
+[![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
 {{- end }}
-![GitHub](https://img.shields.io/github/license/{{.Git.User}}/{{.Git.RepoName}}?color=orange)
+![GitHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
 
 {{ if .License -}}
 License

@@ -49,7 +49,7 @@ type InitOptions struct {
 }
 
 func (o *InitOptions) Complete() (err error) {
-	err = o.ConfigFlags.Complete("")
+	err = o.ConfigFlags.Complete()
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,6 @@ func (o *InitOptions) Complete() (err error) {
 func (o *InitOptions) Run() error {
 	configureFuncs := []func() error{
 		o.configureProject,
-		o.configureGit,
 		o.configureLicense,
 		o.configureGitignoreTemplates,
 		o.configureDefaultSkeletonRepository,
@@ -86,14 +85,31 @@ func (o *InitOptions) Run() error {
 func (o *InitOptions) configureProject() error {
 	questions := []*survey.Question{
 		{
-			Name: "author",
+			Name: "host",
 			Prompt: &survey.Input{
-				Message: "Project author",
-				Default: o.Project.Author,
+				Message: "Project host",
+				Default: o.Project.Host,
 				Help: cmdutil.LongDesc(`
-					Project author
+					Project host
 
-					The project author is automatically inserted into license texts if enabled.
+					To be able to build nice links that are related to the source code repo, e.g. links to
+					CI or docs, kickoff needs to know the hostname of your SCM platform. You can override
+					that on project creation.
+				`),
+			},
+		},
+		{
+			Name: "owner",
+			Prompt: &survey.Input{
+				Message: "Project owner",
+				Default: o.Project.Owner,
+				Help: cmdutil.LongDesc(`
+					Project owner
+
+					To be able to build nice links that are related to the source code repo, e.g. links to
+					CI or docs, kickoff needs to know the username that you use on your SCM platform. You
+					can override that on project creation. 
+					The project owner is automatically inserted into license texts if enabled.
 				`),
 			},
 		},
@@ -112,41 +128,6 @@ func (o *InitOptions) configureProject() error {
 	}
 
 	return survey.Ask(questions, &o.Project)
-}
-
-func (o *InitOptions) configureGit() error {
-	questions := []*survey.Question{
-		{
-			Name: "host",
-			Prompt: &survey.Input{
-				Message: "Git host",
-				Default: o.Git.Host,
-				Help: cmdutil.LongDesc(`
-					Git host
-
-					To be able to build nice links that are related to the source code repo, e.g. links to
-					CI or docs, kickoff needs to know the hostname of your SCM platform. You can override
-					that on project creation.
-				`),
-			},
-		},
-		{
-			Name: "user",
-			Prompt: &survey.Input{
-				Message: "Git user",
-				Default: o.Git.User,
-				Help: cmdutil.LongDesc(`
-					Git user
-
-					To be able to build nice links that are related to the source code repo, e.g. links to
-					CI or docs, kickoff needs to know the username that you use on your SCM platform. You
-					can override that on project creation.
-				`),
-			},
-		},
-	}
-
-	return survey.Ask(questions, &o.Git)
 }
 
 func (o *InitOptions) configureLicense() error {
@@ -191,7 +172,7 @@ func (o *InitOptions) configureLicense() error {
 	}
 
 	if !chooseLicense {
-		o.License = config.NoLicense
+		o.Project.License = config.NoLicense
 		return nil
 	}
 
@@ -213,7 +194,7 @@ func (o *InitOptions) configureLicense() error {
 		return err
 	}
 
-	o.License = licenseMap[chosenLicense]
+	o.Project.License = licenseMap[chosenLicense]
 
 	return nil
 }
@@ -250,7 +231,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 	}
 
 	if !selectGitignores {
-		o.Gitignore = config.NoGitignore
+		o.Project.Gitignore = config.NoGitignore
 		return nil
 	}
 
@@ -273,7 +254,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 		return err
 	}
 
-	o.Gitignore = strings.Join(selectedGitignores, ",")
+	o.Project.Gitignore = strings.Join(selectedGitignores, ",")
 
 	return nil
 }

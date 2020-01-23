@@ -45,14 +45,13 @@ func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringToStringVar(&f.Repositories, "repositories", f.Repositories, "Skeleton repositories of the form name1=url1,name2=url2. The repository urls can be a local path or a remote git repository.")
 }
 
-// Complete completes the embedded kickoff configuration using the provided
-// defaultProjectName. It will load the config file from the path provided by
-// the user and merge it into the configuration and apply configuration
-// defaults to unset fields. Returns an error if the config file does not
-// exist, could not be read or contains invalid configuration. If the user did
-// not provide any config file path, the default config file will be loaded
-// instead, if it exists.
-func (f *ConfigFlags) Complete(defaultProjectName string) (err error) {
+// Complete completes the embedded kickoff configuration. It will load the
+// config file from the path provided by the user and merge it into the
+// configuration and apply configuration defaults to unset fields. Returns an
+// error if the config file does not exist, could not be read or contains
+// invalid configuration. If the user did not provide any config file path, the
+// default config file will be loaded instead, if it exists.
+func (f *ConfigFlags) Complete() (err error) {
 	if f.ConfigPath == "" {
 		if configPath := os.Getenv("KICKOFF_CONFIG"); configPath != "" {
 			f.ConfigPath = configPath
@@ -72,7 +71,7 @@ func (f *ConfigFlags) Complete(defaultProjectName string) (err error) {
 		}
 	}
 
-	f.ApplyDefaults(defaultProjectName)
+	f.ApplyDefaults()
 
 	return nil
 }

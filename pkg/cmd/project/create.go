@@ -79,16 +79,12 @@ type CreateOptions struct {
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 
-	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
-	cmd.Flags().StringVar(&o.Gitignore, "gitignore", o.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
-
-	cmd.Flags().StringVar(&o.Project.Name, "project-name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
-	cmd.Flags().StringVar(&o.Project.Author, "project-author", o.Project.Author, "Project author's fullname")
-	cmd.Flags().StringVar(&o.Project.Email, "project-email", o.Project.Email, "Project author's e-mail")
-
-	cmd.Flags().StringVar(&o.Git.User, "git-user", o.Git.User, "Git repository user")
-	cmd.Flags().StringVar(&o.Git.RepoName, "git-repo-name", o.Git.RepoName, "Git repository name for the project (defaults to the project name)")
-	cmd.Flags().StringVar(&o.Git.Host, "git-host", o.Git.Host, "Git repository host")
+	cmd.Flags().StringVar(&o.Project.Email, "email", o.Project.Email, "Project owner's e-mail")
+	cmd.Flags().StringVar(&o.Project.Gitignore, "gitignore", o.Project.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
+	cmd.Flags().StringVar(&o.Project.Host, "host", o.Project.Host, "Project repository host")
+	cmd.Flags().StringVar(&o.Project.License, "license", o.Project.License, "License to use for the project. If set this will automatically populate the LICENSE file")
+	cmd.Flags().StringVar(&o.Project.Name, "name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
+	cmd.Flags().StringVar(&o.Project.Owner, "owner", o.Project.Owner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 }
@@ -103,9 +99,11 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		}
 	}
 
-	defaultProjectName := filepath.Base(o.OutputDir)
+	if o.Project.Name == "" {
+		o.Project.Name = filepath.Base(o.OutputDir)
+	}
 
-	err = o.ConfigFlags.Complete(defaultProjectName)
+	err = o.ConfigFlags.Complete()
 	if err != nil {
 		return err
 	}
@@ -135,8 +133,8 @@ func (o *CreateOptions) Validate() error {
 		return cmdutil.ErrEmptySkeletonName
 	}
 
-	if o.Git.User == "" {
-		return errors.New("--git-user needs to be set as it could not be inferred")
+	if o.Project.Owner == "" {
+		return errors.New("--owner needs to be set as it could not be inferred")
 	}
 
 	return nil
@@ -156,7 +154,8 @@ func (o *CreateOptions) Run() error {
 	}
 
 	return project.Create(skeleton, o.OutputDir, &project.CreateOptions{
-		Config: o.Config,
 		DryRun: o.DryRun,
+		Config: o.Project,
+		Values: o.Values,
 	})
 }

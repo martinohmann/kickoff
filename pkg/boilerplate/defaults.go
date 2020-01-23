@@ -38,68 +38,65 @@ LICENSE file for details.
 # --------
 #
 #   project:
-#     author: John Doe
 #     email: john@example.com
 #
 project:
-  author: ""
   email: ""
 
-# License configuration
-# =====================
-#
-# A LICENSE file will be automatically generated if a license is specified. All
-# licenses available via the GitHub Licenses API are supported.
-#
-# Check out the 'kickoff licenses list' for a list a available
-# licenses.
-#
-# Example:
-# --------
-#
-#   license: mit
-#
-license: ""
+  # License configuration
+  # =====================
+  #
+  # A LICENSE file will be automatically generated if a license is specified. All
+  # licenses available via the GitHub Licenses API are supported.
+  #
+  # Check out the 'kickoff licenses list' for a list a available
+  # licenses.
+  #
+  # Example:
+  # --------
+  #
+  #   license: mit
+  #
+  license: ""
 
-# Gitignore configuration
-# =======================
-#
-# A .gitignore file will be automatically generated if gitignore templates are
-# specified. All gitignore templates available via the gitignore.io API are
-# supported.
-#
-# Check out the 'kickoff gitignore list' for a list a available templates.
-#
-# Example:
-# --------
-#
-#   gitignore: go
-#
-# Multiple gitignore templates:
-# -----------------------------
-#
-#   gitignore: go,helm,hugo
-#
-gitignore: ""
+  # Gitignore configuration
+  # =======================
+  #
+  # A .gitignore file will be automatically generated if gitignore templates are
+  # specified. All gitignore templates available via the gitignore.io API are
+  # supported.
+  #
+  # Check out the 'kickoff gitignore list' for a list a available templates.
+  #
+  # Example:
+  # --------
+  #
+  #   gitignore: go
+  #
+  # Multiple gitignore templates:
+  # -----------------------------
+  #
+  #   gitignore: go,helm,hugo
+  #
+  gitignore: ""
 
-# Git configuration
-# =================
-#
-# The git configuration is made available to *.skel templates so you can build
-# links related to your project, e.g. for CI badges or documentation links.
-#
-# If empty, kickoff will attempt to fetch the git user from the github.user git
-# config (if present).
-#
-# Example:
-# --------
-#
-#   git:
-#     host: github.com (this is the default if the field is empty)
-#     user: johndoe
-#
-git:
-  user: ""
+  # Host/owner configuration
+  # ========================
+  #
+  # The host/owner configuration is made available to *.skel templates so you
+  # can build links related to your project, e.g. for CI badges or
+  # documentation links.
+  #
+  # If empty, kickoff will attempt to fetch the SCM owner from the github.user
+  # or user.name git # config (if present).
+  #
+  # Example:
+  # --------
+  #
+  #   host: github.com (this is the default if the field is empty)
+  #   owner: johndoe
+  #
+  owner: ""
 
 # Skeleton repository configuration
 # =================================

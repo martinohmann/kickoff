@@ -58,7 +58,7 @@ func (o *AddOptions) Complete(args []string) error {
 	o.RepoName = args[0]
 	o.RepoURL = args[1]
 
-	return o.ConfigFlags.Complete("")
+	return o.ConfigFlags.Complete()
 }
 
 func (o *AddOptions) Validate() error {

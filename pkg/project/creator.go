@@ -25,7 +25,8 @@ import (
 // written to the project output dir.
 type CreateOptions struct {
 	DryRun bool
-	Config config.Config
+	Config config.Project
+	Values template.Values
 }
 
 // Create creates a new project in outputDir using the provided skeleton.
@@ -39,6 +40,7 @@ func Create(skeleton *skeleton.Skeleton, outputDir string, options *CreateOption
 	c := &creator{
 		dryRun: options.DryRun,
 		config: options.Config,
+		values: options.Values,
 		stats:  &createStats{},
 	}
 
@@ -75,7 +77,8 @@ type creator struct {
 	dryRun    bool
 	gitignore string
 	license   *license.Info
-	config    config.Config
+	config    config.Project
+	values    template.Values
 	stats     *createStats
 }
 
@@ -86,7 +89,7 @@ func (c *creator) create(skeleton *skeleton.Skeleton, outputDir string) error {
 
 	log.WithField("values", fmt.Sprintf("%#v", skeleton.Values)).Debug("skeleton values")
 
-	err := skeleton.Values.Merge(c.config.Values)
+	err := skeleton.Values.Merge(c.values)
 	if err != nil {
 		return err
 	}
@@ -129,11 +132,10 @@ func (c *creator) create(skeleton *skeleton.Skeleton, outputDir string) error {
 
 func (c *creator) processFiles(skel *skeleton.Skeleton, dstPath string) error {
 	templateData := map[string]interface{}{
-		"ProjectName": c.config.Project.Name, // left here for backwards compat
-		"Project":     &c.config.Project,
+		"ProjectName": c.config.Name, // left here for backwards compat
+		"Project":     &c.config,
 		"Values":      skel.Values,
 		"License":     c.license,
-		"Git":         &c.config.Git,
 	}
 
 	dirMap := make(map[string]string)
@@ -257,7 +259,7 @@ func (c *creator) writeLicenseFile(outputPath string) error {
 		return nil
 	}
 
-	body := strings.ReplaceAll(c.license.Body, "[fullname]", c.config.Project.AuthorString())
+	body := strings.ReplaceAll(c.license.Body, "[fullname]", c.config.Author())
 	body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
 
 	return ioutil.WriteFile(outputPath, []byte(body), 0644)

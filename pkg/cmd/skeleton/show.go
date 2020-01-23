@@ -60,7 +60,7 @@ type ShowOptions struct {
 func (o *ShowOptions) Complete(args []string) error {
 	o.Skeleton = args[0]
 
-	return o.ConfigFlags.Complete("")
+	return o.ConfigFlags.Complete()
 }
 
 func (o *ShowOptions) Run() error {
