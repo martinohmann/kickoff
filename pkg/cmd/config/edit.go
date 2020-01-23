@@ -57,7 +57,7 @@ type EditOptions struct {
 }
 
 func (o *EditOptions) Complete() (err error) {
-	err = o.ConfigFlags.Complete("")
+	err = o.ConfigFlags.Complete()
 	if err != nil {
 		return err
 	}

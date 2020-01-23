@@ -49,7 +49,7 @@ type RemoveOptions struct {
 func (o *RemoveOptions) Complete(args []string) error {
 	o.RepoName = args[0]
 
-	return o.ConfigFlags.Complete("")
+	return o.ConfigFlags.Complete()
 }
 
 func (o *RemoveOptions) Validate() error {

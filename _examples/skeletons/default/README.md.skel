@@ -1,15 +1,15 @@
 {{.Project.Name}}
 =====
 
-[![Build Status](https://travis-ci.org/{{.Git.User}}/{{.Git.RepoName}}.svg?branch=master)](https://travis-ci.org/{{.Git.User}}/{{.Git.RepoName}})
-[![GoDoc](https://godoc.org/github.com/{{.Git.GoPackagePath}}?status.svg)](https://godoc.org/{{.Git.GoPackagePath}})
-![GitHub](https://img.shields.io/github/license/{{.Git.User}}/{{.Git.RepoName}}?color=orange)
+[![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
+[![GoDoc](https://godoc.org/github.com/{{.Project.GoPackagePath}}?status.svg)](https://godoc.org/{{.Project.GoPackagePath}})
+![ProjectHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
 
 Installation
 ------------
 
 ```
-go get -u {{.Git.GoPackagePath}}
+go get -u {{.Project.GoPackagePath}}
 ```
 
 {{ if .License -}}

@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
@@ -84,10 +83,8 @@ func TestCreate_IllegalTemplateFilename(t *testing.T) {
 
 	err = Create(skeleton, tmpdir, &CreateOptions{
 		DryRun: true,
-		Config: config.Config{
-			Values: template.Values{
-				"filename": "../../",
-			},
+		Values: template.Values{
+			"filename": "../../",
 		},
 	})
 	require.Error(t, err)
@@ -113,10 +110,8 @@ func TestCreate_EmptyTemplateFilename(t *testing.T) {
 
 	err = Create(skeleton, tmpdir, &CreateOptions{
 		DryRun: true,
-		Config: config.Config{
-			Values: template.Values{
-				"filename": "",
-			},
+		Values: template.Values{
+			"filename": "",
 		},
 	})
 	require.Error(t, err)

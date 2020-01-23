@@ -21,7 +21,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff skeleton list --repositories my-repo=https://github.com/martinohmann/kickoff-skeletons`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(""); err != nil {
+			if err := o.Complete(); err != nil {
 				return err
 			}
 

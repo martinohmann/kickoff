@@ -11,28 +11,20 @@ import (
 func TestConfig_ApplyDefaults(t *testing.T) {
 	config := Config{
 		Project: Project{
-			Author: "John Doe",
-			Email:  "john@example.com",
-		},
-		Git: Git{
-			User: "johndoe",
+			Owner: "johndoe",
+			Email: "john@example.com",
 		},
 	}
 
-	config.ApplyDefaults("myproject")
+	config.ApplyDefaults()
 
 	expected := Config{
-		License:   NoLicense,
-		Gitignore: NoGitignore,
 		Project: Project{
-			Name:   "myproject",
-			Author: "John Doe",
-			Email:  "john@example.com",
-		},
-		Git: Git{
-			Host:     DefaultGitHost,
-			User:     "johndoe",
-			RepoName: "myproject",
+			Host:      DefaultProjectHost,
+			Owner:     "johndoe",
+			Email:     "john@example.com",
+			License:   NoLicense,
+			Gitignore: NoGitignore,
 		},
 		Repositories: map[string]string{
 			DefaultRepositoryName: DefaultRepositoryURL,
@@ -46,7 +38,7 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 func TestConfig_MergeFromFile(t *testing.T) {
 	config := Config{
 		Project: Project{
-			Author: "John Doe",
+			Email: "johndoe@example.com",
 		},
 	}
 
@@ -55,10 +47,11 @@ func TestConfig_MergeFromFile(t *testing.T) {
 
 	expected := Config{
 		Project: Project{
-			Author: "John Doe",
+			Owner: "johndoe",
+			Email: "johndoe@example.com",
 		},
-		Git: Git{
-			User: "johndoe",
+		Repositories: map[string]string{
+			"kickoff-skeleton": "https://git.john.doe/johndoe/kickoff-skeletons",
 		},
 		Values: template.Values{
 			"foo": "bar",
@@ -68,20 +61,20 @@ func TestConfig_MergeFromFile(t *testing.T) {
 	assert.Equal(t, expected, config)
 }
 
-func TestGit_GoPackagePath(t *testing.T) {
-	g := Git{User: "foo", RepoName: "bar", Host: "github.com"}
-	assert.Equal(t, "github.com/foo/bar", g.GoPackagePath())
+func TestProject_GoPackagePath(t *testing.T) {
+	p := Project{Owner: "foo", Name: "bar", Host: "github.com"}
+	assert.Equal(t, "github.com/foo/bar", p.GoPackagePath())
 }
 
-func TestGit_URL(t *testing.T) {
-	g := Git{User: "foo", RepoName: "bar", Host: "github.com"}
-	assert.Equal(t, "https://github.com/foo/bar", g.URL())
+func TestProject_URL(t *testing.T) {
+	p := Project{Owner: "foo", Name: "bar", Host: "github.com"}
+	assert.Equal(t, "https://github.com/foo/bar", p.URL())
 }
 
-func TestProject_AuthorString(t *testing.T) {
-	p1 := Project{Author: "John Doe", Email: "john@example.com"}
-	assert.Equal(t, "John Doe <john@example.com>", p1.AuthorString())
+func TestProject_Author(t *testing.T) {
+	p1 := Project{Owner: "johndoe", Email: "john@example.com"}
+	assert.Equal(t, "johndoe <john@example.com>", p1.Author())
 
-	p2 := Project{Author: "Jane Doe"}
-	assert.Equal(t, "Jane Doe", p2.AuthorString())
+	p2 := Project{Owner: "janedoe"}
+	assert.Equal(t, "janedoe", p2.Author())
 }
