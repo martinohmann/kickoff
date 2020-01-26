@@ -25,6 +25,11 @@ type Repository interface {
 	// returned skeleton already includes the recursively merged list of files
 	// and values from potential parents.
 	LoadSkeleton(name string) (*Skeleton, error)
+
+	// LoadSkeleton loads multiple skeletons from the repository. The returned
+	// skeletons already includes the recursively merged list of files and
+	// values from potential parents.
+	LoadSkeletons(names []string) ([]*Skeleton, error)
 }
 
 type initializer interface {
@@ -117,12 +122,11 @@ func (r *localDir) SkeletonInfo(name string) (*Info, error) {
 }
 
 func (r *localDir) LoadSkeleton(name string) (*Skeleton, error) {
-	info, err := r.SkeletonInfo(name)
-	if err != nil {
-		return nil, err
-	}
+	return loadSkeleton(r, name)
+}
 
-	return Load(info)
+func (r *localDir) LoadSkeletons(names []string) ([]*Skeleton, error) {
+	return loadSkeletons(r, names)
 }
 
 func (r *localDir) SkeletonInfos() ([]*Info, error) {
@@ -239,4 +243,26 @@ func checkoutBranch(wt *git.Worktree, branch string) error {
 	}
 
 	return nil
+}
+
+func loadSkeleton(repo Repository, name string) (*Skeleton, error) {
+	info, err := repo.SkeletonInfo(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return Load(info)
+}
+
+func loadSkeletons(repo Repository, names []string) ([]*Skeleton, error) {
+	var err error
+	skeletons := make([]*Skeleton, len(names))
+	for i, name := range names {
+		skeletons[i], err = repo.LoadSkeleton(name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return skeletons, nil
 }

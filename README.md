@@ -18,6 +18,7 @@ Contents
 - [Environment variables](#environment-variables)
 - [Shell completion](#shell-completion)
 - [Skeleton inheritance](#skeleton-inheritance)
+- [Skeleton composition](#skeleton-composition)
 
 ## Features
 
@@ -34,6 +35,9 @@ Contents
 - Dry run for project creation.
 - Skeleton inheritance: skeletons can inherit files and values from an optional
   parent skeleton.
+- Skeleton composition: projects can be created by composing multiple skeletons
+  together. This is similar to inheritance but allows for way more flexible use
+  of skeletons.
 
 ## Installation
 
@@ -125,6 +129,20 @@ parent:
 
 If `repositoryURL` is omitted, the same repository as the one of the
 skeleton is assumed. `repositoryURL` can be a remote URL or local path.
+
+## Skeleton composition
+
+Projects can be created by composing multiple skeletons together. This is just
+as simple as providing multiple skeletons instead of one on project creation
+(either as comma separated list or separate CLI args):
+
+```
+kickoff project create skeleton1,skeleton2 skeleton3 /path/to/project
+```
+
+Note that the skeletons are merged left to right, so files and values from
+skeletons on the right will override files and values of the same name from
+other skeletons.
 
 ## License
 

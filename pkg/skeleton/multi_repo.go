@@ -65,12 +65,11 @@ func (r *multiRepo) SkeletonInfo(name string) (*Info, error) {
 }
 
 func (r *multiRepo) LoadSkeleton(name string) (*Skeleton, error) {
-	info, err := r.SkeletonInfo(name)
-	if err != nil {
-		return nil, err
-	}
+	return loadSkeleton(r, name)
+}
 
-	return Load(info)
+func (r *multiRepo) LoadSkeletons(names []string) ([]*Skeleton, error) {
+	return loadSkeletons(r, names)
 }
 
 func (r *multiRepo) findSkeleton(name string) (*Info, error) {

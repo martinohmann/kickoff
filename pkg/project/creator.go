@@ -97,7 +97,7 @@ func (c *creator) create(skeleton *skeleton.Skeleton, outputDir string) error {
 	log.WithField("values", fmt.Sprintf("%#v", skeleton.Values)).Debug("merged values")
 
 	log.WithFields(log.Fields{
-		"skeleton": skeleton.Info.Path,
+		"skeleton": skeleton.String(),
 		"target":   outputDir,
 	}).Info("creating project from skeleton")
 
@@ -146,7 +146,7 @@ func (c *creator) processFiles(skel *skeleton.Skeleton, dstPath string) error {
 		}
 
 		if file.Inherited {
-			log.WithField("path", file.AbsPath).Debug("processing inherited file")
+			log.WithField("path", file.AbsPath).Debug("processing inherited resource")
 		}
 
 		srcRelPath := file.RelPath

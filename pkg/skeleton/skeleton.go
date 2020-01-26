@@ -5,18 +5,83 @@ package skeleton
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/template"
 )
 
 var (
 	// ErrDirNotFound indicates that a skeleton directory was not found.
 	ErrDirNotFound = errors.New("skeleton dir not found")
 )
+
+// File contains paths and other information about a skeleton file, e.g.
+// whether it was inherited from a parent skeleton or not.
+type File struct {
+	// RelPath is the file path relative to root directory of the skeleton.
+	RelPath string
+
+	// AbsPath is the absolute path to the file on disk.
+	AbsPath string
+
+	// Inherited indicates whether the file was inherited from a parent
+	// skeleton or not.
+	Inherited bool
+
+	// Info is the os.FileInfo for the file
+	Info os.FileInfo
+}
+
+// Skeleton is the representation of a skeleton returned by Load() with all
+// references to parent skeletons (if any) resolved.
+type Skeleton struct {
+	// Description is the skeleton description text obtained from the skeleton
+	// config.
+	Description string
+
+	// Parent is a reference to the parent skeleton. Is nil if the skeleton has
+	// no parent.
+	Parent *Skeleton
+
+	// Info is the skeleton info that was used to load the skeleton.
+	Info *Info
+
+	// The Files slice contains a merged and sorted list of file references
+	// that includes all files from the skeleton and its parents (if any).
+	Files []*File
+
+	// Values are the template values from the skeleton's config merged with
+	// those of it's parents (if any).
+	Values template.Values
+}
+
+// String implements fmt.Stringer.
+func (s *Skeleton) String() string {
+	if s.Parent == nil {
+		return s.Info.String()
+	}
+
+	return fmt.Sprintf("%s->%s", s.Parent, s.Info)
+}
+
+// WalkFiles walks all skeleton files using fn.
+func (s *Skeleton) WalkFiles(fn func(file *File, err error) error) error {
+	var err error
+
+	for _, file := range s.Files {
+		err = fn(file, err)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // FindSkeletonDir finds the skeleton dir path resides in. It walk up the
 // filesystem tree and checks for each parent if it is a skeleton dir and

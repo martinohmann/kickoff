@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
@@ -18,7 +19,7 @@ func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "create <skeleton-name> <output-dir>",
+		Use:   "create <skeleton-name> [<skeleton-name>...] <output-dir>",
 		Short: "Create a project from a skeleton",
 		Long: cmdutil.LongDesc(`
 			Create a project from a skeleton.`),
@@ -41,9 +42,12 @@ func NewCreateCmd() *cobra.Command {
 			# Dry run project creation
 			kickoff project create myskeleton ~/repos/myproject --dry-run
 
+			# Composition of multiple skeletons (comma separated or as separate arg)
+			kickoff project create firstskeleton,secondskeleton thirdskeleton ~/repos/myproject
+
 			# Forces overwrite of skeleton files in existing project
 			kickoff project create myskeleton ~/repos/myproject --force`),
-		Args: cobra.ExactArgs(2),
+		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -69,7 +73,7 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 
 	OutputDir string
-	Skeleton  string
+	Skeletons []string
 	DryRun    bool
 	Force     bool
 
@@ -90,10 +94,18 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
-	o.Skeleton = args[0]
+	skeletonArgs := args[0 : len(args)-1]
+	outputDir := args[len(args)-1]
 
-	if args[1] != "" {
-		o.OutputDir, err = filepath.Abs(args[1])
+	o.Skeletons = make([]string, 0)
+
+	for _, arg := range skeletonArgs {
+		skeletons := strings.Split(arg, ",")
+		o.Skeletons = append(o.Skeletons, skeletons...)
+	}
+
+	if outputDir != "" {
+		o.OutputDir, err = filepath.Abs(outputDir)
 		if err != nil {
 			return err
 		}
@@ -129,8 +141,10 @@ func (o *CreateOptions) Validate() error {
 		return cmdutil.ErrEmptyOutputDir
 	}
 
-	if o.Skeleton == "" {
-		return cmdutil.ErrEmptySkeletonName
+	for i, name := range o.Skeletons {
+		if name == "" {
+			return fmt.Errorf("empty skeleton name index %d", i)
+		}
 	}
 
 	if o.Project.Owner == "" {
@@ -148,7 +162,12 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repo.LoadSkeleton(o.Skeleton)
+	skeletons, err := repo.LoadSkeletons(o.Skeletons)
+	if err != nil {
+		return err
+	}
+
+	skeleton, err := skeleton.Merge(skeletons...)
 	if err != nil {
 		return err
 	}

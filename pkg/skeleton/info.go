@@ -17,6 +17,15 @@ type Info struct {
 	Repo *RepositoryInfo
 }
 
+// String implements fmt.Stringer.
+func (i *Info) String() string {
+	if i.Repo == nil {
+		return i.Name
+	}
+
+	return fmt.Sprintf("%s:%s", i.Repo.Name, i.Name)
+}
+
 // Config loads the skeleton config for the info.
 func (i *Info) LoadConfig() (Config, error) {
 	configPath := filepath.Join(i.Path, ConfigFileName)
