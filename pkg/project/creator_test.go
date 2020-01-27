@@ -18,12 +18,12 @@ func TestCreate(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	repo, err := skeleton.OpenRepository("testdata/skeletons")
+	repo, err := skeleton.OpenRepository("../testdata/repos/repo1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	skeleton, err := repo.LoadSkeleton("advanced")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,12 +47,12 @@ func TestCreate_DryRun(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	repo, err := skeleton.OpenRepository("testdata/skeletons")
+	repo, err := skeleton.OpenRepository("../testdata/repos/repo1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	skeleton, err := repo.LoadSkeleton("advanced")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,12 +71,12 @@ func TestCreate_IllegalTemplateFilename(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	repo, err := skeleton.OpenRepository("testdata/skeletons")
+	repo, err := skeleton.OpenRepository("../testdata/repos/repo1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	skeleton, err := repo.LoadSkeleton("advanced")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,12 +98,12 @@ func TestCreate_EmptyTemplateFilename(t *testing.T) {
 	tmpdir, remove := newTempDir(t)
 	defer remove()
 
-	repo, err := skeleton.OpenRepository("testdata/skeletons")
+	repo, err := skeleton.OpenRepository("../testdata/repos/repo1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	skeleton, err := repo.LoadSkeleton("test-skeleton")
+	skeleton, err := repo.LoadSkeleton("advanced")
 	if err != nil {
 		t.Fatal(err)
 	}

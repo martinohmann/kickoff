@@ -1,7 +1,0 @@
----
-project:
-  owner: johndoe
-repositories:
-  kickoff-skeleton: https://git.john.doe/johndoe/kickoff-skeletons
-values:
-  foo: bar

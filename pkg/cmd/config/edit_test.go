@@ -75,11 +75,11 @@ func TestEditCmd_Run_InvalidEditor(t *testing.T) {
 	os.Setenv("EDITOR", "./nonexistent")
 	os.Setenv("SHELL", "sh")
 
-	configBuf, err := ioutil.ReadFile("testdata/config.yaml")
+	configBuf, err := ioutil.ReadFile("../../testdata/config/config.yaml")
 	require.NoError(t, err)
 
 	cmd := NewEditCmd()
-	cmd.SetArgs([]string{"--config", "testdata/config.yaml"})
+	cmd.SetArgs([]string{"--config", "../../testdata/config/config.yaml"})
 
 	expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
 
@@ -88,7 +88,7 @@ func TestEditCmd_Run_InvalidEditor(t *testing.T) {
 
 	assert.Regexp(t, expectedErrPattern, err)
 
-	configBuf2, err := ioutil.ReadFile("testdata/config.yaml")
+	configBuf2, err := ioutil.ReadFile("../../testdata/config/config.yaml")
 	require.NoError(t, err)
 
 	assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")

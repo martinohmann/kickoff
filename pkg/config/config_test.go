@@ -42,7 +42,7 @@ func TestConfig_MergeFromFile(t *testing.T) {
 		},
 	}
 
-	err := config.MergeFromFile("testdata/config.yaml")
+	err := config.MergeFromFile("../testdata/config/config.yaml")
 	require.NoError(t, err)
 
 	expected := Config{
@@ -51,7 +51,8 @@ func TestConfig_MergeFromFile(t *testing.T) {
 			Email: "johndoe@example.com",
 		},
 		Repositories: map[string]string{
-			"kickoff-skeleton": "https://git.john.doe/johndoe/kickoff-skeletons",
+			"local":  "/some/local/path",
+			"remote": "https://git.john.doe/johndoe/remote-repo",
 		},
 		Values: template.Values{
 			"foo": "bar",

@@ -33,7 +33,7 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 func TestShowCmd_Execute(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"--config", "testdata/config.yaml"})
+	cmd.SetArgs([]string{"--config", "../../testdata/config/values-config.yaml"})
 
 	err := cmd.Execute()
 	if err != nil {

@@ -43,56 +43,56 @@ func TestMultiRepo_SkeletonInfo(t *testing.T) {
 		},
 		{
 			name:        "skeleton exists in multiple repos",
-			skeleton:    "a-skeleton",
-			expectedErr: errors.New(`skeleton "a-skeleton" found in multiple repositories: default, default-copy. explicitly provide <repo-name>:<skeleton-name> to select one`),
+			skeleton:    "minimal",
+			expectedErr: errors.New(`skeleton "minimal" found in multiple repositories: default, default-copy. explicitly provide <repo-name>:<skeleton-name> to select one`),
 		},
 		{
 			name:     "ambiguous skeleton can be prefixed with repo name to fetch it",
-			skeleton: "default-copy:a-skeleton",
+			skeleton: "default-copy:minimal",
 			expected: &Info{
-				Name: "a-skeleton",
-				Path: filepath.Join(pwd, "testdata/local-dir-copy/a-skeleton"),
+				Name: "minimal",
+				Path: filepath.Join(pwd, "../testdata/repos/repo2/minimal"),
 				Repo: &RepositoryInfo{
 					Local: true,
 					Name:  "default-copy",
-					Path:  filepath.Join(pwd, "testdata/local-dir-copy"),
+					Path:  filepath.Join(pwd, "../testdata/repos/repo2"),
 				},
 			},
 		},
 		{
 			name:     "skeletons present in only one repo can be fetched without prefix",
-			skeleton: "b-skeleton",
+			skeleton: "simple",
 			expected: &Info{
-				Name: "b-skeleton",
-				Path: filepath.Join(pwd, "testdata/local-repo/b-skeleton"),
+				Name: "simple",
+				Path: filepath.Join(pwd, "../testdata/repos/repo3/simple"),
 				Repo: &RepositoryInfo{
 					Local: true,
 					Name:  "other",
-					Path:  filepath.Join(pwd, "testdata/local-repo"),
+					Path:  filepath.Join(pwd, "../testdata/repos/repo3"),
 				},
 			},
 		},
 		{
-			name:     "fails if a repository returned and error #1",
-			skeleton: "a-skeleton",
+			name:     "fails if a repository returned an error #1",
+			skeleton: "minimal",
 			repos: map[string]string{
-				"default": "testdata/local-dir",
-				"broken":  "testdata/nonexistent",
+				"default": "../testdata/repos/repo1",
+				"broken":  "../testdata/repos/nonexistent",
 			},
-			expectedErr: fmt.Errorf(`stat %s/testdata/nonexistent: no such file or directory`, pwd),
+			expectedErr: fmt.Errorf(`stat %s: no such file or directory`, filepath.Join(pwd, "../testdata/repos/nonexistent")),
 		},
 		{
-			name:     "fails if a named repository returned and error #2",
+			name:     "fails if a named repository returned an error #2",
 			skeleton: "broken:a-skeleton",
 			repos: map[string]string{
-				"default": "testdata/local-dir",
-				"broken":  "testdata/nonexistent",
+				"default": "../testdata/repos/repo1",
+				"broken":  "../testdata/repos/nonexistent",
 			},
-			expectedErr: fmt.Errorf(`stat %s/testdata/nonexistent: no such file or directory`, pwd),
+			expectedErr: fmt.Errorf(`stat %s: no such file or directory`, filepath.Join(pwd, "../testdata/repos/nonexistent")),
 		},
 		{
 			name:        "unknown repo name",
-			skeleton:    "unknown-repo:a-skeleton",
+			skeleton:    "unknown-repo:someskeleton",
 			expectedErr: errors.New(`no skeleton repository configured with name "unknown-repo"`),
 		},
 	}
@@ -102,9 +102,9 @@ func TestMultiRepo_SkeletonInfo(t *testing.T) {
 			repos := test.repos
 			if repos == nil {
 				repos = map[string]string{
-					"default":      "testdata/local-dir",
-					"default-copy": "testdata/local-dir-copy",
-					"other":        "testdata/local-repo",
+					"default":      "../testdata/repos/repo1",
+					"default-copy": "../testdata/repos/repo2",
+					"other":        "../testdata/repos/repo3",
 				}
 			}
 
@@ -136,39 +136,48 @@ func TestMultiRepo_SkeletonInfos(t *testing.T) {
 		{
 			name: "fails if a there is a nonexistent repo configured",
 			repos: map[string]string{
-				"default": "testdata/local-dir",
-				"broken":  "testdata/nonexistent",
+				"default": "../testdata/repos/repo1",
+				"broken":  "../testdata/repos/nonexistent",
 			},
-			expectedErr: fmt.Errorf(`stat %s/testdata/nonexistent: no such file or directory`, pwd),
+			expectedErr: fmt.Errorf(`stat %s: no such file or directory`, filepath.Join(pwd, "../testdata/repos/nonexistent")),
 		},
 		{
 			name: "lists all available skeletons",
 			expected: []*Info{
 				{
-					Name: "a-skeleton",
-					Path: filepath.Join(pwd, "testdata/local-dir/a-skeleton"),
+					Name: "advanced",
+					Path: filepath.Join(pwd, "../testdata/repos/repo1/advanced"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "default",
-						Path:  filepath.Join(pwd, "testdata/local-dir"),
+						Path:  filepath.Join(pwd, "../testdata/repos/repo1"),
 					},
 				},
 				{
-					Name: "a-skeleton",
-					Path: filepath.Join(pwd, "testdata/local-dir-copy/a-skeleton"),
+					Name: "minimal",
+					Path: filepath.Join(pwd, "../testdata/repos/repo1/minimal"),
+					Repo: &RepositoryInfo{
+						Local: true,
+						Name:  "default",
+						Path:  filepath.Join(pwd, "../testdata/repos/repo1"),
+					},
+				},
+				{
+					Name: "minimal",
+					Path: filepath.Join(pwd, "../testdata/repos/repo2/minimal"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "default-copy",
-						Path:  filepath.Join(pwd, "testdata/local-dir-copy"),
+						Path:  filepath.Join(pwd, "../testdata/repos/repo2"),
 					},
 				},
 				{
-					Name: "b-skeleton",
-					Path: filepath.Join(pwd, "testdata/local-repo/b-skeleton"),
+					Name: "simple",
+					Path: filepath.Join(pwd, "../testdata/repos/repo3/simple"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "other",
-						Path:  filepath.Join(pwd, "testdata/local-repo"),
+						Path:  filepath.Join(pwd, "../testdata/repos/repo3"),
 					},
 				},
 			},
@@ -180,9 +189,9 @@ func TestMultiRepo_SkeletonInfos(t *testing.T) {
 			repos := test.repos
 			if repos == nil {
 				repos = map[string]string{
-					"default":      "testdata/local-dir",
-					"default-copy": "testdata/local-dir-copy",
-					"other":        "testdata/local-repo",
+					"default":      "../testdata/repos/repo1",
+					"default-copy": "../testdata/repos/repo2",
+					"other":        "../testdata/repos/repo3",
 				}
 			}
 
