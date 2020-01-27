@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/boilerplate"
+	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
@@ -72,13 +72,20 @@ func (o *EditOptions) Complete() (err error) {
 }
 
 func (o *EditOptions) Run() (err error) {
-	var create bool
+	var contents []byte
+
 	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath == config.DefaultConfigPath {
-			create = true
-		} else {
+		if o.ConfigPath != config.DefaultConfigPath {
 			return fmt.Errorf("file %q does not exist", o.ConfigPath)
 		}
+
+		contents, err = yaml.Marshal(o.Config)
+	} else {
+		contents, err = ioutil.ReadFile(o.ConfigPath)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	tmpf, err := ioutil.TempFile("", "kickoff-*.yaml")
@@ -86,22 +93,9 @@ func (o *EditOptions) Run() (err error) {
 		return fmt.Errorf("failed to create temporary file: %v", err)
 	}
 
-	defer func() {
-		log.WithField("tmpfile", tmpf.Name()).Debug("removing temporary file")
-		os.Remove(tmpf.Name())
-	}()
-
 	tmpfilePath := tmpf.Name()
 
-	log.WithField("tmpfile", tmpfilePath).Debug("temporary file created")
-
-	contents := boilerplate.DefaultConfigBytes()
-	if !create {
-		contents, err = ioutil.ReadFile(o.ConfigPath)
-		if err != nil {
-			return err
-		}
-	}
+	defer os.Remove(tmpfilePath)
 
 	log.WithFields(log.Fields{
 		"tmpfile":    tmpfilePath,
@@ -122,7 +116,7 @@ func (o *EditOptions) Run() (err error) {
 	// consider it invalid and abort without copying it back.
 	_, err = config.Load(tmpfilePath)
 	if err != nil {
-		return fmt.Errorf("invalid kickoff config: %v", err)
+		return fmt.Errorf("not saving invalid kickoff config: %v", err)
 	}
 
 	log.WithFields(log.Fields{
