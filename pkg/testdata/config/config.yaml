@@ -1,0 +1,8 @@
+---
+project:
+  owner: johndoe
+repositories:
+  local: /some/local/path
+  remote: https://git.john.doe/johndoe/remote-repo
+values:
+  foo: bar

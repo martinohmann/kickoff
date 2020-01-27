@@ -12,7 +12,11 @@ import (
 func TestShowCmd_Execute_NonexistantRepository(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"myskeleton", "--config", "../../config/testdata/empty-config.yaml", "--repositories", "default=nonexistent"})
+	cmd.SetArgs([]string{
+		"myskeleton",
+		"--config", "../../testdata/config/empty-config.yaml",
+		"--repositories", "default=nonexistent",
+	})
 
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -21,7 +25,11 @@ func TestShowCmd_Execute_NonexistantRepository(t *testing.T) {
 func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"myskeleton", "--config", "../../config/testdata/empty-config.yaml", "--output", "enterprise-xml"})
+	cmd.SetArgs([]string{
+		"myskeleton",
+		"--config", "../../testdata/config/empty-config.yaml",
+		"--output", "enterprise-xml",
+	})
 
 	err := cmd.Execute()
 	require.Error(t, err)
@@ -30,7 +38,11 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 func TestShowCmd_Execute(t *testing.T) {
 	streams := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"a-skeleton", "--config", "../../config/testdata/empty-config.yaml", "--repositories", "default=../../skeleton/testdata/local-dir"})
+	cmd.SetArgs([]string{
+		"minimal",
+		"--config", "../../testdata/config/empty-config.yaml",
+		"--repositories", "default=../../testdata/repos/repo1",
+	})
 
 	err := cmd.Execute()
 	require.NoError(t, err)

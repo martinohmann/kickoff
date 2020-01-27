@@ -12,13 +12,13 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	pwd, _ := os.Getwd()
+	repo, err := OpenRepository("../testdata/repos/advanced")
+	require.NoError(t, err)
 
 	info := func(name string) *Info {
-		return &Info{
-			Name: name,
-			Path: filepath.Join(pwd, "testdata/skeletons", name),
-		}
+		info, err := repo.SkeletonInfo(name)
+		require.NoError(t, err)
+		return info
 	}
 
 	tests := []struct {
@@ -89,7 +89,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestSkeleton_WalkFiles(t *testing.T) {
-	repo, err := OpenRepository("testdata/skeletons")
+	repo, err := OpenRepository("../testdata/repos/advanced")
 	require.NoError(t, err)
 
 	skeleton, err := repo.LoadSkeleton("child")
@@ -111,14 +111,14 @@ func TestSkeleton_WalkFiles(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	expectedAbs := []string{
-		filepath.Join(pwd, "testdata/skeletons/child"),
-		filepath.Join(pwd, "testdata/skeletons/child/dir"),
-		filepath.Join(pwd, "testdata/skeletons/child/dir/otherdir"),
-		filepath.Join(pwd, "testdata/skeletons/child/dir/otherdir/file.txt"),
-		filepath.Join(pwd, "testdata/skeletons/parent/dir/template.txt.skel"),
-		filepath.Join(pwd, "testdata/skeletons/child/somefile.txt"),
-		filepath.Join(pwd, "testdata/skeletons/child/someotherfile.txt"),
-		filepath.Join(pwd, "testdata/skeletons/parent/someparentfile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child/dir"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child/dir/otherdir"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child/dir/otherdir/file.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/parent/dir/template.txt.skel"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child/somefile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/child/someotherfile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/parent/someparentfile.txt"),
 	}
 
 	assert.Equal(t, expectedAbs, actualAbs)
