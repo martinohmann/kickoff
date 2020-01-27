@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/boilerplate"
 )
 
 // Create creates a new skeleton at path. The created skeleton contains an
@@ -21,20 +20,12 @@ func Create(path string) error {
 		return fmt.Errorf("failed to create skeleton dir %q", err)
 	}
 
-	readmeSkelPath := filepath.Join(path, "README.md.skel")
-
-	log.WithField("path", readmeSkelPath).Info("writing README.md.skel")
-
-	err = ioutil.WriteFile(readmeSkelPath, boilerplate.DefaultReadmeBytes(), 0644)
+	err = writeReadmeSkeleton(path)
 	if err != nil {
 		return fmt.Errorf("failed to write skeleton README: %v", err)
 	}
 
-	configPath := filepath.Join(path, ConfigFileName)
-
-	log.WithField("path", configPath).Infof("writing %s", ConfigFileName)
-
-	err = ioutil.WriteFile(configPath, boilerplate.DefaultSkeletonConfigBytes(), 0644)
+	err = writeConfigFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to write skeleton config: %v", err)
 	}
@@ -55,4 +46,20 @@ func CreateRepository(path, skeletonName string) error {
 	skeletonDir := filepath.Join(path, skeletonName)
 
 	return Create(skeletonDir)
+}
+
+func writeReadmeSkeleton(dir string) error {
+	readmeSkelPath := filepath.Join(dir, "README.md.skel")
+
+	log.WithField("path", readmeSkelPath).Info("writing README.md.skel")
+
+	return ioutil.WriteFile(readmeSkelPath, defaultReadmeSkeletonBytes, 0644)
+}
+
+func writeConfigFile(dir string) error {
+	configPath := filepath.Join(dir, ConfigFileName)
+
+	log.WithField("path", configPath).Infof("writing %s", ConfigFileName)
+
+	return ioutil.WriteFile(configPath, defaultConfigBytes, 0644)
 }
