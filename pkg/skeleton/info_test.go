@@ -28,18 +28,18 @@ func TestRepositoryInfo_LocalPath(t *testing.T) {
 				Host:   "github.com",
 				Path:   "user/repo",
 			},
-			expected: filepath.Join(LocalCache, "github.com/user/repo"),
+			expected: filepath.Join(LocalCache, "github.com/user/repo@master"),
 		},
 		{
 			name: "remote with user",
 			given: &RepositoryInfo{
-				Scheme: "ssh",
-				User:   "git",
-				Host:   "github.com",
-				Path:   "user/repo",
-				Branch: "develop",
+				Scheme:   "ssh",
+				User:     "git",
+				Host:     "github.com",
+				Path:     "user/repo",
+				Revision: "develop",
 			},
-			expected: filepath.Join(LocalCache, "github.com/user/repo"),
+			expected: filepath.Join(LocalCache, "github.com/user/repo@develop"),
 		},
 	}
 	for _, test := range tests {
@@ -96,7 +96,7 @@ func TestRepositoryInfo_String(t *testing.T) {
 	}
 }
 
-func TestParseURL(t *testing.T) {
+func TestParseRepositoryURL(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	var tests = []struct {
@@ -114,35 +114,26 @@ func TestParseURL(t *testing.T) {
 			},
 		},
 		{
-			name:  "local with branch",
-			given: "my/repo?branch=develop",
-			expected: &RepositoryInfo{
-				Local:  true,
-				Path:   pwd + "/my/repo",
-				Branch: "develop",
-			},
-		},
-		{
 			name:  "remote https",
 			given: "https://github.com/martinohmann/kickoff-skeletons",
 			expected: &RepositoryInfo{
-				Local:  false,
-				Scheme: "https",
-				Host:   "github.com",
-				Path:   "martinohmann/kickoff-skeletons",
-				Branch: "master",
+				Local:    false,
+				Scheme:   "https",
+				Host:     "github.com",
+				Path:     "martinohmann/kickoff-skeletons",
+				Revision: "master",
 			},
 		},
 		{
-			name:  "remote ssh with branch",
-			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?branch=v1.1.1",
+			name:  "remote ssh with revision",
+			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?rev=v1.1.1",
 			expected: &RepositoryInfo{
-				Local:  false,
-				Scheme: "ssh",
-				User:   "git",
-				Host:   "github.com:22",
-				Path:   "martinohmann/kickoff-skeletons",
-				Branch: "v1.1.1",
+				Local:    false,
+				Scheme:   "ssh",
+				User:     "git",
+				Host:     "github.com:22",
+				Path:     "martinohmann/kickoff-skeletons",
+				Revision: "v1.1.1",
 			},
 		},
 	}

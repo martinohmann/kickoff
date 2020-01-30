@@ -74,10 +74,13 @@ kickoff project create default ~/path/to/my/new/project --license mit --gitignor
 Add a remote skeleton repository and create a new project:
 
 ```
-kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo
+kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo?rev=v1.0.0
 kickoff repository list
 kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
 ```
+
+Remote repository urls can contain an optional `rev` query parameter which may
+point to a commit, tag or branch. If omitted `master` is assumed.
 
 ## Project Skeletons
 
@@ -123,12 +126,14 @@ to the `.kickoff.yaml` of the skeleton like this:
 
 ```
 parent:
-  repositoryURL: https://github.com/martinohmann/kickoff-skeletons
+  repositoryURL: https://github.com/martinohmann/kickoff-skeletons?rev=master
   skeletonName: my-parent-skeleton
 ```
 
-If `repositoryURL` is omitted, the same repository as the one of the
-skeleton is assumed. `repositoryURL` can be a remote URL or local path.
+If `repositoryURL` is omitted, the same repository as the one of the skeleton
+is assumed. `repositoryURL` can be a remote URL or local path. Remote
+repository urls can contain an optional `rev` query parameter which may point
+to a commit, tag or branch. If omitted `master` is assumed.
 
 ## Skeleton composition
 

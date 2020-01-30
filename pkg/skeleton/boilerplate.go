@@ -48,7 +48,7 @@ description: ""
 # -----------------------------------------
 #
 #   parent:
-#     repositoryURL: https://github.com/martinohmann/kickoff-skeletons?branch=master
+#     repositoryURL: https://github.com/martinohmann/kickoff-skeletons?rev=master
 #     skeletonName: default
 #
 parent: null

@@ -6,6 +6,73 @@ import (
 	"path/filepath"
 )
 
+// Loader loads skeletons from a repository.
+type Loader struct {
+	Repo Repository
+}
+
+// NewLoader creates a new *Loader value which will use repo to load skeletons.
+func NewLoader(repo Repository) *Loader {
+	return &Loader{
+		Repo: repo,
+	}
+}
+
+// NewSingleRepositoryLoader creates a new *Loader value which can load
+// skeletons from the single repository at url. Returns an error if opening the
+// repository fails.
+func NewSingleRepositoryLoader(url string) (*Loader, error) {
+	repo, err := OpenRepository(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLoader(repo), nil
+}
+
+// NewRepositoryAggregateLoader creates a new *Loader value which can load
+// skeletons from multiple repositories. The repos map must contain repo names
+// as keys and repo urls as values. Returns an error if the passed in map of
+// repositories is invalid.
+func NewRepositoryAggregateLoader(repos map[string]string) (*Loader, error) {
+	repo, err := NewRepositoryAggregate(repos)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLoader(repo), nil
+}
+
+// LoadSkeleton loads the skeleton with name from the repository. The
+// returned skeleton already includes the recursively merged list of files
+// and values from potential parents.
+func (l *Loader) LoadSkeleton(name string) (*Skeleton, error) {
+	info, err := l.Repo.SkeletonInfo(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return Load(info)
+}
+
+// LoadSkeleton loads multiple skeletons from the repository. The returned
+// skeletons already includes the recursively merged list of files and
+// values from potential parents.
+func (l *Loader) LoadSkeletons(names []string) ([]*Skeleton, error) {
+	var err error
+
+	skeletons := make([]*Skeleton, len(names))
+
+	for i, name := range names {
+		skeletons[i], err = l.LoadSkeleton(name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return skeletons, nil
+}
+
 // Load loads a skeleton based on its *Info. It will recursively load all
 // parent skeletons (if any) and merge all parent values and files into the
 // resulting *Skeleton.
@@ -96,9 +163,14 @@ func loadParent(info *Info, ref *Reference, visits map[Reference]struct{}) (*Ske
 func collectFiles(info *Info) ([]*File, error) {
 	files := make([]*File, 0)
 
-	err := info.Walk(func(path string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(info.Path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		if fi.Name() == ConfigFileName {
+			// ignore skeleton config file
+			return nil
 		}
 
 		relPath, err := filepath.Rel(info.Path, path)

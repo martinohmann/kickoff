@@ -50,7 +50,7 @@ func (o *ListOptions) Run() error {
 	sort.Strings(repoNames)
 
 	tw := cli.NewTableWriter(o.Out)
-	tw.SetHeader("Name", "Type", "Branch", "URL", "LocalPath")
+	tw.SetHeader("Name", "Type", "Revision", "URL", "LocalPath")
 
 	for _, name := range repoNames {
 		url := o.Repositories[name]
@@ -65,12 +65,12 @@ func (o *ListOptions) Run() error {
 			typ = "local"
 		}
 
-		branch := "-"
-		if info.Branch != "" {
-			branch = info.Branch
+		rev := "-"
+		if info.Revision != "" {
+			rev = info.Revision
 		}
 
-		tw.Append(name, typ, branch, info.String(), info.LocalPath())
+		tw.Append(name, typ, rev, info.String(), info.LocalPath())
 	}
 
 	tw.Render()

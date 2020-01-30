@@ -11,88 +11,95 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoad(t *testing.T) {
-	repo, err := OpenRepository("../testdata/repos/advanced")
-	require.NoError(t, err)
-
-	info := func(name string) *Info {
-		info, err := repo.SkeletonInfo(name)
-		require.NoError(t, err)
-		return info
-	}
-
+func TestLoader_LoadSkeletons(t *testing.T) {
 	tests := []struct {
-		name        string
-		info        *Info
-		expectedErr error
-		validate    func(s *Skeleton, t *testing.T)
+		name          string
+		skeletonNames []string
+		expectedErr   error
+		validate      func(s []*Skeleton, t *testing.T)
 	}{
 		{
-			name: "no parent",
-			info: info("parent"),
-			validate: func(s *Skeleton, t *testing.T) {
-				assert.Nil(t, s.Parent)
-				assert.Len(t, s.Files, 5)
+			name:          "no parent",
+			skeletonNames: []string{"parent"},
+			validate: func(s []*Skeleton, t *testing.T) {
+				require.Len(t, s, 1)
+				assert.Nil(t, s[0].Parent)
+				assert.Len(t, s[0].Files, 5)
 				assert.Equal(t, template.Values{
 					"foo":      "bar",
 					"baz":      "qux",
 					"somebool": true,
-				}, s.Values)
+				}, s[0].Values)
 			},
 		},
 		{
-			name: "child with parent",
-			info: info("child"),
-			validate: func(s *Skeleton, t *testing.T) {
-				assert.NotNil(t, s.Parent)
-				assert.Len(t, s.Files, 8)
+			name:          "child with parent",
+			skeletonNames: []string{"child"},
+			validate: func(s []*Skeleton, t *testing.T) {
+				require.Len(t, s, 1)
+				assert.NotNil(t, s[0].Parent)
+				assert.Len(t, s[0].Files, 8)
 				assert.Equal(t, template.Values{
 					"foo":      "foo",
 					"baz":      "qux",
 					"somebool": false,
-				}, s.Values)
+				}, s[0].Values)
 			},
 		},
 		{
-			name: "child of child with parent",
-			info: info("childofchild"),
-			validate: func(s *Skeleton, t *testing.T) {
-				require.NotNil(t, s.Parent)
-				assert.NotNil(t, s.Parent.Parent)
-				assert.Len(t, s.Files, 9)
+			name:          "child of child with parent",
+			skeletonNames: []string{"childofchild"},
+			validate: func(s []*Skeleton, t *testing.T) {
+				require.Len(t, s, 1)
+				require.NotNil(t, s[0].Parent)
+				assert.NotNil(t, s[0].Parent.Parent)
+				assert.Len(t, s[0].Files, 9)
 				assert.Equal(t, template.Values{
 					"foo":      "foo",
 					"baz":      "qux",
 					"somebool": false,
-				}, s.Values)
+				}, s[0].Values)
 			},
 		},
 		{
-			name:        "dependency cycle",
-			info:        info("cyclea"),
-			expectedErr: errors.New(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"..", SkeletonName:"cycleb"}`),
+			name:          "load multiple",
+			skeletonNames: []string{"childofchild", "parent", "child"},
+			validate: func(s []*Skeleton, t *testing.T) {
+				require.Len(t, s, 3)
+				assert.Equal(t, "childofchild", s[0].Info.String())
+				assert.Equal(t, "parent", s[1].Info.String())
+				assert.Equal(t, "child", s[2].Info.String())
+			},
+		},
+		{
+			name:          "dependency cycle",
+			skeletonNames: []string{"cyclea"},
+			expectedErr:   errors.New(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"..", SkeletonName:"cycleb"}`),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			skel, err := Load(test.info)
+			loader, err := NewSingleRepositoryLoader("../testdata/repos/advanced")
+			require.NoError(t, err)
+
+			skeletons, err := loader.LoadSkeletons(test.skeletonNames)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
-				test.validate(skel, t)
+				test.validate(skeletons, t)
 			}
 		})
 	}
 }
 
 func TestSkeleton_WalkFiles(t *testing.T) {
-	repo, err := OpenRepository("../testdata/repos/advanced")
+	loader, err := NewSingleRepositoryLoader("../testdata/repos/advanced")
 	require.NoError(t, err)
 
-	skeleton, err := repo.LoadSkeleton("child")
+	skeleton, err := loader.LoadSkeleton("child")
 	require.NoError(t, err)
 
 	actualAbs := make([]string, 0)

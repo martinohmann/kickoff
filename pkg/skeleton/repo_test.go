@@ -4,74 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
-	git "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func TestOpenRepository_LocalRepo(t *testing.T) {
-	r, err := git.PlainInit("../testdata/repos/repo3", false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll("../testdata/repos/repo3/.git")
-
-	w, err := r.Worktree()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = w.Add("simple")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = w.Commit("initial", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "John Doe",
-			Email: "john@doe.org",
-			When:  time.Now(),
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := OpenRepository("../testdata/repos/repo3?branch=master")
-	if err != nil {
-		t.Fatalf("expected nil error but got: %v", err)
-	}
-
-	skel, err := repo.SkeletonInfo("simple")
-	if err != nil {
-		t.Fatalf("expected nil error but got: %v", err)
-	}
-
-	pwd, _ := os.Getwd()
-
-	expected := &Info{
-		Name: "simple",
-		Path: filepath.Join(pwd, "../testdata/repos/repo3/simple"),
-		Repo: &RepositoryInfo{
-			Local:  true,
-			Path:   filepath.Join(pwd, "../testdata/repos/repo3"),
-			Branch: "master",
-		},
-	}
-
-	assert.Equal(t, expected, skel)
-}
-
-func TestOpenRepository_LocalRepoError(t *testing.T) {
-	_, err := OpenRepository("/nonexistent/local/repo?branch=master")
-	if err == nil {
-		t.Fatal("expected error but got nil")
-	}
-}
-
-func TestOpenRepository_LocalDir(t *testing.T) {
+func TestOpenRepository_Local(t *testing.T) {
 	repo, err := OpenRepository("../testdata/repos/repo1")
 	if err != nil {
 		t.Fatalf("expected nil error but got: %v", err)
@@ -96,9 +33,39 @@ func TestOpenRepository_LocalDir(t *testing.T) {
 	assert.Equal(t, expected, skel)
 }
 
-func TestOpenRepository_LocalDirError(t *testing.T) {
+func TestOpenRepository_LocalError(t *testing.T) {
 	_, err := OpenRepository("/nonexistent/local/dir")
 	if err == nil {
 		t.Fatal("expected error but got nil")
+	}
+}
+
+func TestFindSkeletons(t *testing.T) {
+	skeletons, err := findSkeletons(nil, "../testdata/repos/advanced")
+	if err != nil {
+		t.Fatalf("expected nil error but got: %v", err)
+	}
+
+	pwd, _ := os.Getwd()
+
+	expected := []*Info{
+		{Name: "bar", Path: filepath.Join(pwd, "../testdata/repos/advanced/bar")},
+		{Name: "child", Path: filepath.Join(pwd, "../testdata/repos/advanced/child")},
+		{Name: "childofchild", Path: filepath.Join(pwd, "../testdata/repos/advanced/childofchild")},
+		{Name: "cyclea", Path: filepath.Join(pwd, "../testdata/repos/advanced/cyclea")},
+		{Name: "cycleb", Path: filepath.Join(pwd, "../testdata/repos/advanced/cycleb")},
+		{Name: "cyclec", Path: filepath.Join(pwd, "../testdata/repos/advanced/cyclec")},
+		{Name: "foo/bar", Path: filepath.Join(pwd, "../testdata/repos/advanced/foo/bar")},
+		{Name: "nested/dir", Path: filepath.Join(pwd, "../testdata/repos/advanced/nested/dir")},
+		{Name: "parent", Path: filepath.Join(pwd, "../testdata/repos/advanced/parent")},
+	}
+
+	assert.Equal(t, expected, skeletons)
+}
+
+func TestFindSkeletons_Error(t *testing.T) {
+	_, err := findSkeletons(nil, "nonexistent")
+	if err == nil {
+		t.Fatalf("expected error but got nil")
 	}
 }

@@ -1,27 +1,20 @@
 package skeleton
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 )
 
-var (
-	// ErrNoRepositories is returned by NewMultiRepo if no repositories are
-	// configured.
-	ErrNoRepositories = errors.New("no skeleton repositories configured")
-)
-
-type multiRepo struct {
+type repositoryAggregate struct {
 	repoURLs  map[string]string
 	repoNames []string
 }
 
-// NewMultiRepo creates a new Repository which will lookup skeletons in the
+// NewRepositoryAggregate creates a new Repository which will lookup skeletons in the
 // repositories provided in the repos map. The map maps an arbitrary repository
 // name to an url.
-func NewMultiRepo(repos map[string]string) (Repository, error) {
+func NewRepositoryAggregate(repos map[string]string) (Repository, error) {
 	if len(repos) == 0 {
 		return nil, ErrNoRepositories
 	}
@@ -37,7 +30,7 @@ func NewMultiRepo(repos map[string]string) (Repository, error) {
 
 	sort.Strings(repoNames)
 
-	r := &multiRepo{
+	r := &repositoryAggregate{
 		repoURLs:  repos,
 		repoNames: repoNames,
 	}
@@ -45,18 +38,14 @@ func NewMultiRepo(repos map[string]string) (Repository, error) {
 	return r, nil
 }
 
-func (r *multiRepo) SkeletonInfo(name string) (*Info, error) {
+// SkeletonInfo implements Repository.
+func (r *repositoryAggregate) SkeletonInfo(name string) (*Info, error) {
 	repoName, name := splitName(name)
 	if repoName == "" {
 		return r.findSkeleton(name)
 	}
 
-	url, ok := r.repoURLs[repoName]
-	if !ok {
-		return nil, fmt.Errorf("no skeleton repository configured with name %q", repoName)
-	}
-
-	repo, err := openNamedRepository(repoName, url)
+	repo, err := r.openRepository(repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -64,15 +53,28 @@ func (r *multiRepo) SkeletonInfo(name string) (*Info, error) {
 	return repo.SkeletonInfo(name)
 }
 
-func (r *multiRepo) LoadSkeleton(name string) (*Skeleton, error) {
-	return loadSkeleton(r, name)
+// SkeletonInfos implements Repository.
+func (r *repositoryAggregate) SkeletonInfos() ([]*Info, error) {
+	allSkeletons := make([]*Info, 0)
+
+	err := r.foreachRepository(func(repo Repository) error {
+		skeletons, err := repo.SkeletonInfos()
+		if err != nil {
+			return err
+		}
+
+		allSkeletons = append(allSkeletons, skeletons...)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return allSkeletons, nil
 }
 
-func (r *multiRepo) LoadSkeletons(names []string) ([]*Skeleton, error) {
-	return loadSkeletons(r, names)
-}
-
-func (r *multiRepo) findSkeleton(name string) (*Info, error) {
+func (r *repositoryAggregate) findSkeleton(name string) (*Info, error) {
 	candidates := make([]*Info, 0)
 	seenRepos := make([]string, 0)
 
@@ -103,37 +105,16 @@ func (r *multiRepo) findSkeleton(name string) (*Info, error) {
 	}
 
 	return nil, fmt.Errorf(
-		"skeleton %q found in multiple repositories: %s. explicitly provide <repo-name>:<skeleton-name> to select one",
+		"skeleton %q found in multiple repositories: %s. explicitly provide <repo-name>:%s to select one",
 		name,
 		strings.Join(seenRepos, ", "),
+		name,
 	)
 }
 
-func (r *multiRepo) SkeletonInfos() ([]*Info, error) {
-	allSkeletons := make([]*Info, 0)
-
-	err := r.foreachRepository(func(repo Repository) error {
-		skeletons, err := repo.SkeletonInfos()
-		if err != nil {
-			return err
-		}
-
-		allSkeletons = append(allSkeletons, skeletons...)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return allSkeletons, nil
-}
-
-func (r *multiRepo) foreachRepository(fn func(repo Repository) error) error {
+func (r *repositoryAggregate) foreachRepository(fn func(repo Repository) error) error {
 	for _, name := range r.repoNames {
-		url := r.repoURLs[name]
-
-		repo, err := openNamedRepository(name, url)
+		repo, err := r.openRepository(name)
 		if err != nil {
 			return err
 		}
@@ -145,6 +126,15 @@ func (r *multiRepo) foreachRepository(fn func(repo Repository) error) error {
 	}
 
 	return nil
+}
+
+func (r *repositoryAggregate) openRepository(name string) (Repository, error) {
+	url, ok := r.repoURLs[name]
+	if !ok {
+		return nil, fmt.Errorf("no skeleton repository configured with name %q", name)
+	}
+
+	return openNamedRepository(name, url)
 }
 
 // splitName splits the name into repo name and skeleton name. Repo name may be

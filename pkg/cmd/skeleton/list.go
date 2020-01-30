@@ -40,7 +40,7 @@ type ListOptions struct {
 }
 
 func (o *ListOptions) Run() error {
-	repo, err := skeleton.NewMultiRepo(o.Repositories)
+	repo, err := skeleton.NewRepositoryAggregate(o.Repositories)
 	if err != nil {
 		return err
 	}
