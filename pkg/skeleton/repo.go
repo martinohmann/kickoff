@@ -2,8 +2,10 @@ package skeleton
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/file"
@@ -20,33 +22,43 @@ type Repository interface {
 	// SkeletonInfos returns infos for all skeletons available in the repository.
 	// Returns any error that may occur while traversing the directory.
 	SkeletonInfos() ([]*Info, error)
-
-	// LoadSkeleton loads the skeleton with name from the repository. The
-	// returned skeleton already includes the recursively merged list of files
-	// and values from potential parents.
-	LoadSkeleton(name string) (*Skeleton, error)
-
-	// LoadSkeleton loads multiple skeletons from the repository. The returned
-	// skeletons already includes the recursively merged list of files and
-	// values from potential parents.
-	LoadSkeletons(names []string) ([]*Skeleton, error)
 }
 
-type initializer interface {
-	init() error
+// repoCacheKey uniquely identifies a locally configured repository by name and
+// url. Used as a key for the repository cache below.
+type repoCacheKey struct {
+	name, url string
 }
+
+var (
+	// repoCache is used to avoid unnecessary git and fs operations for
+	// repositories that have already been initialized.
+	repoCache map[repoCacheKey]Repository
+
+	// repoCacheMu protects repoCache
+	repoCacheMu sync.Mutex
+)
 
 // OpenRepository opens a repository and returns it. If url points to a remote
 // repository it will be looked up in the local cache and reused if possible.
 // If the repository is not in the cache it will be cloned. Open will
-// automatically checkout branches provided in the url. Returns any errors that
-// occur while parsing the url opening the repository directory or during git
-// actions.
+// automatically checks out the revision provided in the url. Returns any
+// errors that occur while parsing the url opening the repository directory or
+// during git actions.
 func OpenRepository(url string) (Repository, error) {
 	return openNamedRepository("", url)
 }
 
-func openNamedRepository(name, url string) (Repository, error) {
+func openNamedRepository(name, url string) (repo Repository, err error) {
+	cacheKey := repoCacheKey{name, url}
+
+	repoCacheMu.Lock()
+	defer repoCacheMu.Unlock()
+
+	if repo, ok := repoCache[cacheKey]; ok {
+		return repo, nil
+	}
+
 	info, err := ParseRepositoryURL(url)
 	if err != nil {
 		return nil, err
@@ -54,53 +66,127 @@ func openNamedRepository(name, url string) (Repository, error) {
 
 	info.Name = name
 
-	var r Repository
-
-	switch {
-	case info.Local && info.Branch == "":
-		r = newLocalDir(info)
-	case info.Local:
-		r = newLocalRepo(info)
-	default:
-		r = newRemoteRepo(info)
+	if info.Local {
+		repo, err = openLocalRepository(info)
+	} else {
+		repo, err = openRemoteRepository(info)
 	}
 
-	if ri, ok := r.(initializer); ok {
-		err = ri.init()
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
 	}
 
-	return r, nil
-}
-
-type localDir struct {
-	info *RepositoryInfo
-}
-
-func newLocalDir(info *RepositoryInfo) *localDir {
-	return &localDir{
-		info: info,
+	if repoCache == nil {
+		repoCache = make(map[repoCacheKey]Repository)
 	}
+
+	repoCache[cacheKey] = repo
+
+	return repo, nil
 }
 
-func (r *localDir) init() error {
-	path := r.info.LocalPath()
+func openLocalRepository(info *RepositoryInfo) (Repository, error) {
+	path := info.LocalPath()
 
 	ok, err := file.IsDirectory(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !ok {
-		return fmt.Errorf("%s is not a directory", path)
+		return nil, fmt.Errorf("%s is not a directory", path)
 	}
 
-	return nil
+	return &repository{info}, nil
 }
 
-func (r *localDir) SkeletonInfo(name string) (*Info, error) {
+func openRemoteRepository(info *RepositoryInfo) (Repository, error) {
+	log.WithFields(log.Fields{
+		"url":   info.String(),
+		"local": info.LocalPath(),
+	}).Debug("using remote skeleton repository")
+
+	repo, err := openOrCloneGitRepository(info)
+	if err != nil {
+		return nil, err
+	}
+
+	hash, err := resolveRevision(repo, info.Revision)
+	if err != nil {
+		return nil, err
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, err
+	}
+
+	log.WithField("sha1", hash.String()).Debug("checking out commit")
+
+	err = worktree.Checkout(&git.CheckoutOptions{
+		Hash:  *hash,
+		Force: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &repository{info}, nil
+}
+
+func openOrCloneGitRepository(info *RepositoryInfo) (*git.Repository, error) {
+	repo, err := git.PlainOpen(info.LocalPath())
+	switch {
+	case err == git.ErrRepositoryNotExists:
+		return git.PlainClone(info.LocalPath(), false, &git.CloneOptions{
+			URL: info.String(),
+		})
+	case err != nil:
+		return nil, err
+	default:
+		err := repo.Fetch(&git.FetchOptions{})
+		if err != nil && err != git.NoErrAlreadyUpToDate {
+			return nil, err
+		}
+
+		return repo, nil
+	}
+}
+
+func resolveRevision(repo *git.Repository, revision string) (*plumbing.Hash, error) {
+	revisions := []plumbing.Revision{
+		plumbing.Revision(revision),
+		plumbing.Revision(plumbing.NewTagReferenceName(revision)),
+		plumbing.Revision(plumbing.NewRemoteReferenceName("origin", revision)),
+	}
+
+	for _, rev := range revisions {
+		hash, err := repo.ResolveRevision(rev)
+		if err == plumbing.ErrReferenceNotFound {
+			continue
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		log.WithFields(log.Fields{
+			"sha1":     hash.String(),
+			"revision": rev,
+		}).Debug("resolved revision")
+
+		return hash, nil
+	}
+
+	return nil, plumbing.ErrReferenceNotFound
+}
+
+type repository struct {
+	info *RepositoryInfo
+}
+
+// SkeletonInfo implements Repository.
+func (r *repository) SkeletonInfo(name string) (*Info, error) {
 	path := filepath.Join(r.info.LocalPath(), name)
 
 	ok, err := isSkeletonDir(path)
@@ -121,146 +207,63 @@ func (r *localDir) SkeletonInfo(name string) (*Info, error) {
 	return info, nil
 }
 
-func (r *localDir) LoadSkeleton(name string) (*Skeleton, error) {
-	return loadSkeleton(r, name)
-}
-
-func (r *localDir) LoadSkeletons(names []string) ([]*Skeleton, error) {
-	return loadSkeletons(r, names)
-}
-
-func (r *localDir) SkeletonInfos() ([]*Info, error) {
+// SkeletonInfos implements Repository.
+func (r *repository) SkeletonInfos() ([]*Info, error) {
 	return findSkeletons(r.info, r.info.LocalPath())
 }
 
-type localRepo struct {
-	*localDir
-}
+// findSkeletons recursively finds all skeletons in dir. Returns any error that
+// may occur while traversing dir.
+func findSkeletons(repo *RepositoryInfo, dir string) ([]*Info, error) {
+	skeletons := make([]*Info, 0)
 
-func newLocalRepo(info *RepositoryInfo) *localRepo {
-	return &localRepo{
-		localDir: &localDir{info},
-	}
-}
-
-func (r *localRepo) init() error {
-	localPath := r.info.LocalPath()
-
-	repo, err := git.PlainOpen(localPath)
-	if err != nil {
-		return fmt.Errorf("failed to open local repository %s: %v", localPath, err)
-	}
-
-	wt, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	return checkoutBranch(wt, r.info.Branch)
-}
-
-type remoteRepo struct {
-	*localRepo
-}
-
-func newRemoteRepo(info *RepositoryInfo) *remoteRepo {
-	return &remoteRepo{
-		localRepo: newLocalRepo(info),
-	}
-}
-
-func (r *remoteRepo) init() error {
-	localPath := r.info.LocalPath()
-
-	log.WithField("url", r.info.String()).Debug("using remote skeleton repository")
-
-	repo, err := git.PlainOpen(localPath)
-	if err == git.ErrRepositoryNotExists {
-		parentDir := filepath.Dir(localPath)
-
-		err = os.MkdirAll(parentDir, 0755)
-		if err != nil {
-			return err
-		}
-
-		log.WithField("localPath", localPath).Debug("cloning remote skeleton repository")
-
-		repo, err = git.PlainClone(localPath, false, &git.CloneOptions{
-			URL: r.info.String(),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to clone repository %s: %v", r.info, err)
-		}
-	} else if err != nil {
-		return fmt.Errorf("failed to open local repository %s: %v", localPath, err)
-	}
-
-	wt, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	status, err := wt.Status()
-	if err != nil {
-		return err
-	}
-
-	if !status.IsClean() {
-		log.WithField("localPath", localPath).Debug("cleaning repository")
-
-		err = wt.Clean(&git.CleanOptions{Dir: true})
-		if err != nil {
-			return fmt.Errorf("failed to clean repository at %s: %v", localPath, err)
-		}
-	}
-
-	err = checkoutBranch(wt, r.info.Branch)
-	if err != nil {
-		return err
-	}
-
-	log.WithField("branch", r.info.Branch).Debug("pulling branch")
-
-	err = wt.Pull(&git.PullOptions{
-		SingleBranch: true,
-		Depth:        1,
-	})
-	if err != nil && err != git.NoErrAlreadyUpToDate {
-		return fmt.Errorf("failed to pull branch %q: %v", r.info.Branch, err)
-	}
-
-	return nil
-}
-
-func checkoutBranch(wt *git.Worktree, branch string) error {
-	log.WithField("branch", branch).Debug("checking out branch")
-
-	err := wt.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to checkout branch %q: %v", branch, err)
-	}
-
-	return nil
-}
-
-func loadSkeleton(repo Repository, name string) (*Skeleton, error) {
-	info, err := repo.SkeletonInfo(name)
+	fileInfos, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	return Load(info)
-}
+	for _, info := range fileInfos {
+		if !info.IsDir() {
+			continue
+		}
 
-func loadSkeletons(repo Repository, names []string) ([]*Skeleton, error) {
-	var err error
-	skeletons := make([]*Skeleton, len(names))
-	for i, name := range names {
-		skeletons[i], err = repo.LoadSkeleton(name)
+		path := filepath.Join(dir, info.Name())
+
+		ok, err := isSkeletonDir(path)
+		if os.IsPermission(err) {
+			log.Warnf("permission error, skipping dir: %v", err)
+			continue
+		}
+
 		if err != nil {
 			return nil, err
+		}
+
+		if ok {
+			abspath, err := filepath.Abs(path)
+			if err != nil {
+				return nil, err
+			}
+
+			skeletons = append(skeletons, &Info{
+				Name: info.Name(),
+				Path: abspath,
+				Repo: repo,
+			})
+			continue
+		}
+
+		skels, err := findSkeletons(repo, path)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, s := range skels {
+			skeletons = append(skeletons, &Info{
+				Name: filepath.Join(info.Name(), s.Name),
+				Path: s.Path,
+				Repo: repo,
+			})
 		}
 	}
 

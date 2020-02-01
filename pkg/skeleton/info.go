@@ -3,7 +3,6 @@ package skeleton
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -19,7 +18,7 @@ type Info struct {
 
 // String implements fmt.Stringer.
 func (i *Info) String() string {
-	if i.Repo == nil {
+	if i.Repo == nil || len(i.Repo.Name) == 0 {
 		return i.Name
 	}
 
@@ -33,20 +32,6 @@ func (i *Info) LoadConfig() (Config, error) {
 	return LoadConfig(configPath)
 }
 
-// Walk recursively walks all files and directories of the skeleton. This
-// behaves exactly as filepath.Walk, except that it will ignore the skeleton's
-// ConfigFile.
-func (i *Info) Walk(walkFn filepath.WalkFunc) error {
-	return filepath.Walk(i.Path, func(path string, info os.FileInfo, err error) error {
-		if info.Name() == ConfigFileName {
-			// ignore skeleton config file
-			return err
-		}
-
-		return walkFn(path, info, err)
-	})
-}
-
 var (
 	// LocalCache holds the path to the local repository cache. This is platform
 	// specific.
@@ -54,18 +39,18 @@ var (
 )
 
 const (
-	defaultBranch = "master"
+	defaultRevision = "master"
 )
 
 // RepositoryInfo holds information about a skeleton repository.
 type RepositoryInfo struct {
-	Local  bool
-	Name   string
-	Branch string
-	Path   string
-	Scheme string
-	User   string
-	Host   string
+	Local    bool
+	Name     string
+	Revision string
+	Path     string
+	Scheme   string
+	User     string
+	Host     string
 }
 
 // String implements fmt.Stringer.
@@ -99,7 +84,12 @@ func (i *RepositoryInfo) LocalPath() string {
 		return i.Path
 	}
 
-	return filepath.Join(LocalCache, i.Host, i.Path)
+	rev := i.Revision
+	if len(rev) == 0 {
+		rev = defaultRevision
+	}
+
+	return filepath.Join(LocalCache, i.Host, fmt.Sprintf("%s@%s", i.Path, rev))
 }
 
 // ParseRepositoryURL parses a raw repository url into a repository info.
@@ -115,11 +105,6 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 
 	info := &RepositoryInfo{}
 
-	branch, ok := u.Query()["branch"]
-	if ok && len(branch) > 0 {
-		info.Branch = branch[0]
-	}
-
 	if u.Host == "" {
 		abspath, err := filepath.Abs(u.Path)
 		if err != nil {
@@ -134,8 +119,13 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 		info.Host = u.Host
 		info.Path = u.Path[1:]
 
-		if info.Branch == "" {
-			info.Branch = defaultBranch
+		rev, ok := u.Query()["rev"]
+		if ok && len(rev) > 0 {
+			info.Revision = rev[0]
+		}
+
+		if info.Revision == "" {
+			info.Revision = defaultRevision
 		}
 	}
 

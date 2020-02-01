@@ -64,7 +64,7 @@ func (o *ShowOptions) Complete(args []string) error {
 }
 
 func (o *ShowOptions) Run() error {
-	repo, err := skeleton.NewMultiRepo(o.Repositories)
+	repo, err := skeleton.NewRepositoryAggregate(o.Repositories)
 	if err != nil {
 		return err
 	}

@@ -157,12 +157,12 @@ func (o *CreateOptions) Validate() error {
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
-	repo, err := skeleton.NewMultiRepo(o.Repositories)
+	loader, err := skeleton.NewRepositoryAggregateLoader(o.Repositories)
 	if err != nil {
 		return err
 	}
 
-	skeletons, err := repo.LoadSkeletons(o.Skeletons)
+	skeletons, err := loader.LoadSkeletons(o.Skeletons)
 	if err != nil {
 		return err
 	}

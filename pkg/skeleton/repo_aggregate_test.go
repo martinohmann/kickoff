@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMultiRepo_EmptyRepos_Error(t *testing.T) {
-	_, err := NewMultiRepo(nil)
+func TestRepositoryAggregate_EmptyRepos_Error(t *testing.T) {
+	_, err := NewRepositoryAggregate(nil)
 	assert.Equal(t, ErrNoRepositories, err)
 }
 
-func TestMultiRepo_EmptyRepoName_Error(t *testing.T) {
-	_, err := NewMultiRepo(map[string]string{
+func TestRepositoryAggregate_EmptyRepoName_Error(t *testing.T) {
+	_, err := NewRepositoryAggregate(map[string]string{
 		"default": "path/to/foo",
 		"":        "path/to/bar",
 	})
@@ -26,7 +26,7 @@ func TestMultiRepo_EmptyRepoName_Error(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 }
 
-func TestMultiRepo_SkeletonInfo(t *testing.T) {
+func TestRepositoryAggregate_SkeletonInfo(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	tests := []struct {
@@ -44,7 +44,7 @@ func TestMultiRepo_SkeletonInfo(t *testing.T) {
 		{
 			name:        "skeleton exists in multiple repos",
 			skeleton:    "minimal",
-			expectedErr: errors.New(`skeleton "minimal" found in multiple repositories: default, default-copy. explicitly provide <repo-name>:<skeleton-name> to select one`),
+			expectedErr: errors.New(`skeleton "minimal" found in multiple repositories: default, default-copy. explicitly provide <repo-name>:minimal to select one`),
 		},
 		{
 			name:     "ambiguous skeleton can be prefixed with repo name to fetch it",
@@ -108,7 +108,7 @@ func TestMultiRepo_SkeletonInfo(t *testing.T) {
 				}
 			}
 
-			repo, err := NewMultiRepo(repos)
+			repo, err := NewRepositoryAggregate(repos)
 			require.NoError(t, err)
 
 			info, err := repo.SkeletonInfo(test.skeleton)
@@ -124,7 +124,7 @@ func TestMultiRepo_SkeletonInfo(t *testing.T) {
 	}
 }
 
-func TestMultiRepo_SkeletonInfos(t *testing.T) {
+func TestRepositoryAggregate_SkeletonInfos(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	tests := []struct {
@@ -195,7 +195,7 @@ func TestMultiRepo_SkeletonInfos(t *testing.T) {
 				}
 			}
 
-			repo, err := NewMultiRepo(repos)
+			repo, err := NewRepositoryAggregate(repos)
 			require.NoError(t, err)
 
 			infos, err := repo.SkeletonInfos()
