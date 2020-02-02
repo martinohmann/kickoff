@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/apex/log"
 )
@@ -20,17 +21,7 @@ func Create(path string) error {
 		return fmt.Errorf("failed to create skeleton dir %q", err)
 	}
 
-	err = writeReadmeSkeleton(path)
-	if err != nil {
-		return fmt.Errorf("failed to write skeleton README: %v", err)
-	}
-
-	err = writeConfigFile(path)
-	if err != nil {
-		return fmt.Errorf("failed to write skeleton config: %v", err)
-	}
-
-	return nil
+	return writeFiles(path)
 }
 
 // CreateRepository creates a new skeleton repository at path and initializes
@@ -48,18 +39,25 @@ func CreateRepository(path, skeletonName string) error {
 	return Create(skeletonDir)
 }
 
-func writeReadmeSkeleton(dir string) error {
-	readmeSkelPath := filepath.Join(dir, "README.md.skel")
+func writeFiles(dir string) error {
+	filenames := make([]string, 0, len(fileTemplates))
+	for filename := range fileTemplates {
+		filenames = append(filenames, filename)
+	}
 
-	log.WithField("path", readmeSkelPath).Info("writing README.md.skel")
+	sort.Strings(filenames)
 
-	return ioutil.WriteFile(readmeSkelPath, defaultReadmeSkeletonBytes, 0644)
-}
+	for _, filename := range filenames {
+		path := filepath.Join(dir, filename)
+		contents := fileTemplates[filename]
 
-func writeConfigFile(dir string) error {
-	configPath := filepath.Join(dir, ConfigFileName)
+		log.WithField("path", path).Infof("writing %s", filename)
 
-	log.WithField("path", configPath).Infof("writing %s", ConfigFileName)
+		err := ioutil.WriteFile(path, []byte(contents), 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write skeleton file: %v", err)
+		}
+	}
 
-	return ioutil.WriteFile(configPath, defaultConfigBytes, 0644)
+	return nil
 }

@@ -1,22 +1,9 @@
 package skeleton
 
-var (
-	defaultReadmeSkeletonBytes = []byte(`# {{.Project.Name}}
-
-{{ if .Values.travis.enabled -}}
-[![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
-{{- end }}
-![GitHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
-
-{{ if .License -}}
-## License
-
-The source code of {{.Project.Name}} is released under the {{.License.Name}}. See the bundled
-LICENSE file for details.
-{{- end }}
-`)
-
-	defaultConfigBytes = []byte(`---
+// fileTemplates is a mapping between filenames and the contents for these
+// files when generating a new skeleton.
+var fileTemplates = map[string]string{
+	ConfigFileName: `---
 # Description
 # ===========
 #
@@ -69,5 +56,19 @@ parent: null
 values:
   travis:
     enabled: false
-`)
-)
+`,
+	"README.md.skel": `# {{.Project.Name}}
+
+{{ if .Values.travis.enabled -}}
+[![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
+{{- end }}
+![GitHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
+
+{{ if .License -}}
+## License
+
+The source code of {{.Project.Name}} is released under the {{.License.Name}}. See the bundled
+LICENSE file for details.
+{{- end }}
+`,
+}
