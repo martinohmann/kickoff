@@ -76,6 +76,11 @@ func openNamedRepository(name, url string) (repo Repository, err error) {
 		return nil, err
 	}
 
+	err = info.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	if repoCache == nil {
 		repoCache = make(map[repoCacheKey]Repository)
 	}
@@ -196,7 +201,7 @@ type repository struct {
 
 // SkeletonInfo implements Repository.
 func (r *repository) SkeletonInfo(name string) (*Info, error) {
-	path := filepath.Join(r.info.LocalPath(), name)
+	path := filepath.Join(r.info.SkeletonsDir(), name)
 
 	ok, err := isSkeletonDir(path)
 	if err != nil {
@@ -218,7 +223,7 @@ func (r *repository) SkeletonInfo(name string) (*Info, error) {
 
 // SkeletonInfos implements Repository.
 func (r *repository) SkeletonInfos() ([]*Info, error) {
-	return findSkeletons(r.info, r.info.LocalPath())
+	return findSkeletons(r.info, r.info.SkeletonsDir())
 }
 
 // findSkeletons recursively finds all skeletons in dir. Returns any error that

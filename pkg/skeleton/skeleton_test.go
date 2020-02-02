@@ -18,17 +18,17 @@ func TestIsInsideSkeletonDir(t *testing.T) {
 	}{
 		{
 			name:     "not inside of skeleton dir",
-			path:     "../testdata/repos/advanced/notaskeleton/somefile",
+			path:     "../testdata/repos/advanced/skeletons/notaskeleton/somefile",
 			expected: false,
 		},
 		{
 			name:     "inside of skeleton dir",
-			path:     "../testdata/repos/advanced/bar/subdir/somefile.txt",
+			path:     "../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt",
 			expected: true,
 		},
 		{
 			name:     "path is a skeleton dir",
-			path:     "../testdata/repos/advanced/bar",
+			path:     "../testdata/repos/advanced/skeletons/bar",
 			expected: false,
 		},
 		{
@@ -63,33 +63,33 @@ func TestFindSkeletonDir(t *testing.T) {
 	}{
 		{
 			name:        "not inside of skeleton dir",
-			path:        "../testdata/repos/advanced/notaskeleton/somefile",
+			path:        "../testdata/repos/advanced/skeletons/notaskeleton/somefile",
 			expectedErr: ErrDirNotFound,
 		},
 		{
 			name:     "skeleton dir",
-			path:     "../testdata/repos/advanced/bar",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/bar"),
+			path:     "../testdata/repos/advanced/skeletons/bar",
+			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
 		},
 		{
 			name:     "dir inside of skeleton dir",
-			path:     "../testdata/repos/advanced/bar/subdir",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/bar"),
+			path:     "../testdata/repos/advanced/skeletons/bar/subdir",
+			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
 		},
 		{
 			name:     "file in dir inside of skeleton dir",
-			path:     "../testdata/repos/advanced/bar/subdir/somefile.txt",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/bar"),
+			path:     "../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt",
+			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
 		},
 		{
 			name:     "file inside of skeleton dir",
-			path:     "../testdata/repos/advanced/bar/.kickoff.yaml",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/bar"),
+			path:     "../testdata/repos/advanced/skeletons/bar/.kickoff.yaml",
+			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
 		},
 		{
 			name:     "nonexistent file inside of skeleton dir",
-			path:     "../testdata/repos/advanced/bar/baz/nonexistent.txt",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/bar"),
+			path:     "../testdata/repos/advanced/skeletons/bar/baz/nonexistent.txt",
+			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
 		},
 	}
 

@@ -74,7 +74,7 @@ func TestLoader_LoadSkeletons(t *testing.T) {
 		{
 			name:          "dependency cycle",
 			skeletonNames: []string{"cyclea"},
-			expectedErr:   errors.New(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"..", SkeletonName:"cycleb"}`),
+			expectedErr:   errors.New(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"../..", SkeletonName:"cycleb"}`),
 		},
 	}
 
@@ -118,14 +118,14 @@ func TestSkeleton_WalkFiles(t *testing.T) {
 	pwd, _ := os.Getwd()
 
 	expectedAbs := []string{
-		filepath.Join(pwd, "../testdata/repos/advanced/child"),
-		filepath.Join(pwd, "../testdata/repos/advanced/child/dir"),
-		filepath.Join(pwd, "../testdata/repos/advanced/child/dir/otherdir"),
-		filepath.Join(pwd, "../testdata/repos/advanced/child/dir/otherdir/file.txt"),
-		filepath.Join(pwd, "../testdata/repos/advanced/parent/dir/template.txt.skel"),
-		filepath.Join(pwd, "../testdata/repos/advanced/child/somefile.txt"),
-		filepath.Join(pwd, "../testdata/repos/advanced/child/someotherfile.txt"),
-		filepath.Join(pwd, "../testdata/repos/advanced/parent/someparentfile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child/dir"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child/dir/otherdir"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child/dir/otherdir/file.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/parent/dir/template.txt.skel"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child/somefile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/child/someotherfile.txt"),
+		filepath.Join(pwd, "../testdata/repos/advanced/skeletons/parent/someparentfile.txt"),
 	}
 
 	assert.Equal(t, expectedAbs, actualAbs)
