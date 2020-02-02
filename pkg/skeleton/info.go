@@ -3,6 +3,7 @@ package skeleton
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -89,7 +90,26 @@ func (i *RepositoryInfo) LocalPath() string {
 		revision = defaultRevision
 	}
 
+	revision = url.PathEscape(revision)
+
 	return filepath.Join(LocalCache, i.Host, fmt.Sprintf("%s@%s", i.Path, revision))
+}
+
+// SkeletonsDir returns the local path of the skeletons dir within the
+// repository.
+func (i *RepositoryInfo) SkeletonsDir() string {
+	return filepath.Join(i.LocalPath(), "skeletons")
+}
+
+// Validate validates a repository info. Returns an error if i does not
+// describe a valid skeleton repository.
+func (i *RepositoryInfo) Validate() error {
+	fi, err := os.Stat(i.SkeletonsDir())
+	if os.IsNotExist(err) || !fi.IsDir() {
+		return fmt.Errorf("%s is not a valid skeleton repository, skeletons/ is not a directory", i.LocalPath())
+	}
+
+	return err
 }
 
 // ParseRepositoryURL parses a raw repository url into a repository info.

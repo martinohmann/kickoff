@@ -21,8 +21,12 @@ func TestCreateRepository(t *testing.T) {
 	err = CreateRepository(outputPath, "myskeleton")
 	require.NoError(t, err)
 
+	skeletonsDir := filepath.Join(outputPath, "skeletons")
+	skeletonDir := filepath.Join(skeletonsDir, "myskeleton")
+
 	assert.DirExists(t, outputPath)
-	assert.DirExists(t, filepath.Join(outputPath, "myskeleton"))
-	assert.FileExists(t, filepath.Join(outputPath, "myskeleton", "README.md.skel"))
-	assert.FileExists(t, filepath.Join(outputPath, "myskeleton", ConfigFileName))
+	assert.DirExists(t, skeletonsDir)
+	assert.DirExists(t, skeletonDir)
+	assert.FileExists(t, filepath.Join(skeletonDir, "README.md.skel"))
+	assert.FileExists(t, filepath.Join(skeletonDir, ConfigFileName))
 }

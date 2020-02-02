@@ -51,7 +51,7 @@ func TestRepositoryAggregate_SkeletonInfo(t *testing.T) {
 			skeleton: "default-copy:minimal",
 			expected: &Info{
 				Name: "minimal",
-				Path: filepath.Join(pwd, "../testdata/repos/repo2/minimal"),
+				Path: filepath.Join(pwd, "../testdata/repos/repo2/skeletons/minimal"),
 				Repo: &RepositoryInfo{
 					Local: true,
 					Name:  "default-copy",
@@ -64,7 +64,7 @@ func TestRepositoryAggregate_SkeletonInfo(t *testing.T) {
 			skeleton: "simple",
 			expected: &Info{
 				Name: "simple",
-				Path: filepath.Join(pwd, "../testdata/repos/repo3/simple"),
+				Path: filepath.Join(pwd, "../testdata/repos/repo3/skeletons/simple"),
 				Repo: &RepositoryInfo{
 					Local: true,
 					Name:  "other",
@@ -146,7 +146,7 @@ func TestRepositoryAggregate_SkeletonInfos(t *testing.T) {
 			expected: []*Info{
 				{
 					Name: "advanced",
-					Path: filepath.Join(pwd, "../testdata/repos/repo1/advanced"),
+					Path: filepath.Join(pwd, "../testdata/repos/repo1/skeletons/advanced"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "default",
@@ -155,7 +155,7 @@ func TestRepositoryAggregate_SkeletonInfos(t *testing.T) {
 				},
 				{
 					Name: "minimal",
-					Path: filepath.Join(pwd, "../testdata/repos/repo1/minimal"),
+					Path: filepath.Join(pwd, "../testdata/repos/repo1/skeletons/minimal"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "default",
@@ -164,7 +164,7 @@ func TestRepositoryAggregate_SkeletonInfos(t *testing.T) {
 				},
 				{
 					Name: "minimal",
-					Path: filepath.Join(pwd, "../testdata/repos/repo2/minimal"),
+					Path: filepath.Join(pwd, "../testdata/repos/repo2/skeletons/minimal"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "default-copy",
@@ -173,7 +173,7 @@ func TestRepositoryAggregate_SkeletonInfos(t *testing.T) {
 				},
 				{
 					Name: "simple",
-					Path: filepath.Join(pwd, "../testdata/repos/repo3/simple"),
+					Path: filepath.Join(pwd, "../testdata/repos/repo3/skeletons/simple"),
 					Repo: &RepositoryInfo{
 						Local: true,
 						Name:  "other",
