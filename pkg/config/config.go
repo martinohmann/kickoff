@@ -24,9 +24,9 @@ var (
 	// local config directory.
 	DefaultConfigPath = filepath.Join(LocalConfigDir, "config.yaml")
 
-	// DefaultRepositoryURL is the default lookup path for the user's
-	// local skeleton directory.
-	DefaultRepositoryURL = filepath.Join(LocalConfigDir, "repository")
+	// DefaultRepositoryURL is the url of the default skeleton repository if
+	// the user did not configure anything else.
+	DefaultRepositoryURL = "https://github.com/martinohmann/kickoff-skeletons"
 )
 
 const (
@@ -63,8 +63,7 @@ func (c *Config) ApplyDefaults() {
 		c.Repositories = make(map[string]string)
 	}
 
-	_, ok := c.Repositories[DefaultRepositoryName]
-	if !ok {
+	if len(c.Repositories) == 0 {
 		c.Repositories[DefaultRepositoryName] = DefaultRepositoryURL
 	}
 

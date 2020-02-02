@@ -52,8 +52,6 @@ type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 	cmdutil.OutputFlags
-
-	Output string
 }
 
 func (o *ShowOptions) Run() (err error) {

@@ -336,23 +336,24 @@ func (o *InitOptions) persistConfiguration() error {
 		fmt.Fprintf(o.Out, "\n---\n%s\n", string(buf))
 	}
 
+	message := fmt.Sprintf("Save config to %s?", o.ConfigPath)
 	if file.Exists(o.ConfigPath) {
-		var persistConfig bool
+		message = fmt.Sprintf(
+			"There is already a config at %s, do you want to overwrite it?",
+			o.ConfigPath,
+		)
+	}
 
-		err := survey.AskOne(&survey.Confirm{
-			Message: fmt.Sprintf(
-				"There is already a config at %s, do you want to overwrite it?",
-				o.ConfigPath,
-			),
-		}, &persistConfig)
-		if err != nil {
-			return err
-		}
+	var persistConfig bool
 
-		if !persistConfig {
-			log.Error("did not save config")
-			return nil
-		}
+	err = survey.AskOne(&survey.Confirm{Message: message, Default: true}, &persistConfig)
+	if err != nil {
+		return err
+	}
+
+	if !persistConfig {
+		log.Error("did not save config")
+		return nil
 	}
 
 	log.WithField("path", o.ConfigPath).Info("writing config")
