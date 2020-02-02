@@ -65,12 +65,12 @@ func (o *ListOptions) Run() error {
 			typ = "local"
 		}
 
-		rev := "-"
+		revision := "-"
 		if info.Revision != "" {
-			rev = info.Revision
+			revision = info.Revision
 		}
 
-		tw.Append(name, typ, rev, info.String(), info.LocalPath())
+		tw.Append(name, typ, revision, info.String(), info.LocalPath())
 	}
 
 	tw.Render()

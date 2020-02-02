@@ -84,12 +84,12 @@ func (i *RepositoryInfo) LocalPath() string {
 		return i.Path
 	}
 
-	rev := i.Revision
-	if len(rev) == 0 {
-		rev = defaultRevision
+	revision := i.Revision
+	if revision == "" {
+		revision = defaultRevision
 	}
 
-	return filepath.Join(LocalCache, i.Host, fmt.Sprintf("%s@%s", i.Path, rev))
+	return filepath.Join(LocalCache, i.Host, fmt.Sprintf("%s@%s", i.Path, revision))
 }
 
 // ParseRepositoryURL parses a raw repository url into a repository info.
@@ -119,9 +119,9 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 		info.Host = u.Host
 		info.Path = u.Path[1:]
 
-		rev, ok := u.Query()["rev"]
-		if ok && len(rev) > 0 {
-			info.Revision = rev[0]
+		revision, ok := u.Query()["revision"]
+		if ok && len(revision) > 0 {
+			info.Revision = revision[0]
 		}
 
 		if info.Revision == "" {

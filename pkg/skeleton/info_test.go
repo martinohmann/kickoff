@@ -126,7 +126,7 @@ func TestParseRepositoryURL(t *testing.T) {
 		},
 		{
 			name:  "remote ssh with revision",
-			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?rev=v1.1.1",
+			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?revision=v1.1.1",
 			expected: &RepositoryInfo{
 				Local:    false,
 				Scheme:   "ssh",
