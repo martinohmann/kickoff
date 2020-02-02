@@ -138,11 +138,11 @@ point to a commit, tag or branch. If omitted `master` is assumed.
 ## Skeleton composition
 
 Projects can be created by composing multiple skeletons together. This is just
-as simple as providing multiple skeletons instead of one on project creation
-(either as comma separated list or separate CLI args):
+as simple as providing multiple skeletons instead of one as comma separated
+list on project creation:
 
 ```
-kickoff project create skeleton1,skeleton2 skeleton3 /path/to/project
+kickoff project create skeleton1,skeleton2,skeleton3 /path/to/project
 ```
 
 Note that the skeletons are merged left to right, so files and values from
