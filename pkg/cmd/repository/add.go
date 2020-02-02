@@ -42,6 +42,8 @@ func NewAddCmd() *cobra.Command {
 		},
 	}
 
+	cmd.MarkZshCompPositionalArgumentFile(2)
+
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd

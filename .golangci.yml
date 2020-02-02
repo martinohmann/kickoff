@@ -2,6 +2,10 @@
 run:
   deadline: 10m
 
+linters-settings:
+  errcheck:
+    ignore: fmt:[FS]?[Pp]rint*,github.com/spf13/cobra:Mark*
+
 linters:
   enable:
     - whitespace

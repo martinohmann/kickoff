@@ -42,12 +42,12 @@ func NewCreateCmd() *cobra.Command {
 			# Dry run project creation
 			kickoff project create myskeleton ~/repos/myproject --dry-run
 
-			# Composition of multiple skeletons (comma separated or as separate arg)
-			kickoff project create firstskeleton,secondskeleton thirdskeleton ~/repos/myproject
+			# Composition of multiple skeletons (comma separated)
+			kickoff project create firstskeleton,secondskeleton,thirdskeleton ~/repos/myproject
 
 			# Forces overwrite of skeleton files in existing project
 			kickoff project create myskeleton ~/repos/myproject --force`),
-		Args: cobra.MinimumNArgs(2),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -60,6 +60,8 @@ func NewCreateCmd() *cobra.Command {
 			return o.Run()
 		},
 	}
+
+	cmd.MarkZshCompPositionalArgumentFile(2)
 
 	o.AddFlags(cmd)
 	o.ConfigFlags.AddFlags(cmd)
@@ -94,15 +96,10 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
-	skeletonArgs := args[0 : len(args)-1]
-	outputDir := args[len(args)-1]
+	skeletons := args[0]
+	outputDir := args[1]
 
-	o.Skeletons = make([]string, 0)
-
-	for _, arg := range skeletonArgs {
-		skeletons := strings.Split(arg, ",")
-		o.Skeletons = append(o.Skeletons, skeletons...)
-	}
+	o.Skeletons = strings.Split(skeletons, ",")
 
 	if outputDir != "" {
 		o.OutputDir, err = filepath.Abs(outputDir)

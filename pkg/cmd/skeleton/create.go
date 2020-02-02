@@ -38,6 +38,8 @@ func NewCreateCmd() *cobra.Command {
 		},
 	}
 
+	cmd.MarkZshCompPositionalArgumentFile(1)
+
 	cmdutil.AddForceFlag(cmd, &o.Force)
 
 	return cmd
