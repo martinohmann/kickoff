@@ -101,6 +101,20 @@ func openLocalRepository(info *RepositoryInfo) (Repository, error) {
 }
 
 func openRemoteRepository(info *RepositoryInfo) (Repository, error) {
+	err := updateLocalGitRepository(info)
+	if err != nil {
+		if file.Exists(info.LocalPath()) {
+			log.WithField("path", info.LocalPath()).Debug("cleaning up repository cache")
+			os.RemoveAll(info.LocalPath())
+		}
+
+		return nil, err
+	}
+
+	return &repository{info}, nil
+}
+
+func updateLocalGitRepository(info *RepositoryInfo) error {
 	log.WithFields(log.Fields{
 		"url":   info.String(),
 		"local": info.LocalPath(),
@@ -108,30 +122,25 @@ func openRemoteRepository(info *RepositoryInfo) (Repository, error) {
 
 	repo, err := openOrCloneGitRepository(info)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	hash, err := resolveRevision(repo, info.Revision)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.WithField("sha1", hash.String()).Debug("checking out commit")
 
-	err = worktree.Checkout(&git.CheckoutOptions{
+	return worktree.Checkout(&git.CheckoutOptions{
 		Hash:  *hash,
 		Force: true,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &repository{info}, nil
 }
 
 func openOrCloneGitRepository(info *RepositoryInfo) (*git.Repository, error) {
