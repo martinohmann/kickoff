@@ -131,12 +131,7 @@ func (c *creator) create(skeleton *skeleton.Skeleton, outputDir string) error {
 }
 
 func (c *creator) processFiles(skel *skeleton.Skeleton, dstPath string) error {
-	templateData := map[string]interface{}{
-		"ProjectName": c.config.Name, // left here for backwards compat
-		"Project":     &c.config,
-		"Values":      skel.Values,
-		"License":     c.license,
-	}
+	templateData := c.templateData(skel)
 
 	dirMap := make(map[string]string)
 
@@ -209,6 +204,14 @@ func (c *creator) processFiles(skel *skeleton.Skeleton, dstPath string) error {
 
 		return c.writeTemplate(file.AbsPath, outputPath, file.Info.Mode(), templateData)
 	})
+}
+
+func (c *creator) templateData(skeleton *skeleton.Skeleton) map[string]interface{} {
+	return map[string]interface{}{
+		"Project": &c.config,
+		"Values":  skeleton.Values,
+		"License": c.license,
+	}
 }
 
 func (c *creator) makeDirectory(path string, mode os.FileMode) error {
