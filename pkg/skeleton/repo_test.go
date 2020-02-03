@@ -2,6 +2,7 @@ package skeleton
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -70,4 +71,28 @@ func TestFindSkeletons(t *testing.T) {
 func TestFindSkeletons_Error(t *testing.T) {
 	_, err := findSkeletons(nil, "nonexistent")
 	require.Error(t, err)
+}
+
+func TestOpenRepository_RemoteErr_LocalCache(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "kickoff-repos-")
+	require.NoError(t, err)
+
+	oldCache := LocalCache
+	LocalCache = tmpdir
+	defer func() {
+		LocalCache = oldCache
+		os.RemoveAll(tmpdir)
+	}()
+
+	skeletonsDir := filepath.Join(LocalCache, "invaliddomain/martinohmann/kickoff-skeletons@HEAD/skeletons")
+
+	err = os.MkdirAll(skeletonsDir, 0755)
+	require.NoError(t, err)
+
+	repo, err := OpenRepository("https://invaliddomain/martinohmann/kickoff-skeletons?revision=HEAD")
+	require.NoError(t, err)
+
+	infos, err := repo.SkeletonInfos()
+	require.NoError(t, err)
+	assert.Len(t, infos, 0)
 }

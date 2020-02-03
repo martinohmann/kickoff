@@ -51,7 +51,7 @@ func Create(skeleton *skeleton.Skeleton, outputDir string, options *CreateOption
 		if err == license.ErrNotFound {
 			return fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", options.Config.License)
 		} else if err != nil {
-			return err
+			return fmt.Errorf("failed to fetch license due to: %v", err)
 		}
 	}
 
@@ -60,7 +60,7 @@ func Create(skeleton *skeleton.Skeleton, outputDir string, options *CreateOption
 		if err == gitignore.ErrNotFound {
 			return fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", options.Config.Gitignore)
 		} else if err != nil {
-			return err
+			return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 		}
 	}
 

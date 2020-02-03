@@ -1,6 +1,8 @@
 package gitignore
 
 import (
+	"fmt"
+
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/gitignore"
@@ -20,7 +22,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			gitignores, err := gitignore.List()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}
 
 			tw := cli.NewTableWriter(streams.Out)

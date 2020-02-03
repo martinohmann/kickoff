@@ -27,7 +27,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			gitignore, err := gitignore.Get(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}
 
 			fmt.Fprintln(streams.Out, gitignore)

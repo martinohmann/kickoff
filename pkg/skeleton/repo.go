@@ -3,6 +3,7 @@ package skeleton
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"sync"
@@ -107,16 +108,32 @@ func openLocalRepository(info *RepositoryInfo) (Repository, error) {
 
 func openRemoteRepository(info *RepositoryInfo) (Repository, error) {
 	err := updateLocalGitRepository(info)
-	if err != nil {
-		if file.Exists(info.LocalPath()) {
-			log.WithField("path", info.LocalPath()).Debug("cleaning up repository cache")
-			os.RemoveAll(info.LocalPath())
-		}
-
-		return nil, err
+	if err == nil {
+		return &repository{info}, nil
 	}
 
-	return &repository{info}, nil
+	if file.Exists(info.LocalPath()) {
+		if netErr, ok := err.(net.Error); ok {
+			// If we have the repository in the local cache and this is a network
+			// error, we will do best effort and try to serve the local cache
+			// instead of failing. At least log a warning.
+			log.WithField("url", info.String()).
+				Warnf("falling back to potentially stale repository from local cache due to network error: %v", netErr)
+
+			return openLocalRepository(info)
+		}
+
+		if err == plumbing.ErrReferenceNotFound {
+			// A git reference error indicates that we cloned a repository but
+			// the desired revision was not found. The local cache is in a
+			// potentially invalid state now and needs to be cleaned.
+			log.WithField("path", info.LocalPath()).Debug("cleaning up repository cache")
+
+			os.RemoveAll(info.LocalPath())
+		}
+	}
+
+	return nil, err
 }
 
 func updateLocalGitRepository(info *RepositoryInfo) error {

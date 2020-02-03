@@ -1,6 +1,8 @@
 package license
 
 import (
+	"fmt"
+
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/license"
@@ -18,7 +20,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			licenses, err := license.List()
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to fetch licenses due to: %v", err)
 			}
 
 			tw := cli.NewTableWriter(streams.Out)

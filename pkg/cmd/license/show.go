@@ -22,7 +22,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			license, err := license.Get(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to fetch license text due to: %v", err)
 			}
 
 			fmt.Fprintln(streams.Out, license.Body)
