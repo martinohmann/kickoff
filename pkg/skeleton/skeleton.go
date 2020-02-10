@@ -72,20 +72,6 @@ func (s *Skeleton) String() string {
 	return fmt.Sprintf("%s->%s", s.Parent, s.Info)
 }
 
-// WalkFiles walks all skeleton files using fn.
-func (s *Skeleton) WalkFiles(fn func(file *File, err error) error) error {
-	var err error
-
-	for _, file := range s.Files {
-		err = fn(file, err)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Merge merges multiple skeletons together and returns a new *Skeleton.
 // The skeletons are merged left to right with template values, skeleton files
 // and skeleton info of the rightmost skeleton taking preference over already
