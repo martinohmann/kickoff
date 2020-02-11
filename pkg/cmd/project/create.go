@@ -9,6 +9,8 @@ import (
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/file"
+	"github.com/martinohmann/kickoff/pkg/gitignore"
+	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/project"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
@@ -80,6 +82,7 @@ type CreateOptions struct {
 	Force     bool
 
 	rawValues []string
+	initGit   bool
 }
 
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
@@ -93,6 +96,8 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Project.Owner, "owner", o.Project.Owner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
+
+	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory.")
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
@@ -169,9 +174,30 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	return project.Create(skeleton, o.OutputDir, &project.CreateOptions{
-		DryRun: o.DryRun,
-		Config: o.Project,
-		Values: o.Values,
-	})
+	options := &project.CreateOptions{
+		DryRun:  o.DryRun,
+		Config:  o.Project,
+		Values:  o.Values,
+		InitGit: o.initGit,
+	}
+
+	if o.Project.HasLicense() {
+		options.License, err = license.Get(o.Project.License)
+		if err == license.ErrNotFound {
+			return fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", o.Project.License)
+		} else if err != nil {
+			return fmt.Errorf("failed to fetch license due to: %v", err)
+		}
+	}
+
+	if o.Project.HasGitignore() {
+		options.Gitignore, err = gitignore.Get(o.Project.Gitignore)
+		if err == gitignore.ErrNotFound {
+			return fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", o.Project.Gitignore)
+		} else if err != nil {
+			return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
+		}
+	}
+
+	return project.Create(skeleton, o.OutputDir, options)
 }

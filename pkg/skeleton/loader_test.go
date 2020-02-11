@@ -95,7 +95,7 @@ func TestLoader_LoadSkeletons(t *testing.T) {
 	}
 }
 
-func TestSkeleton_WalkFiles(t *testing.T) {
+func TestSkeleton_Files(t *testing.T) {
 	loader, err := NewSingleRepositoryLoader("../testdata/repos/advanced")
 	require.NoError(t, err)
 
@@ -105,15 +105,10 @@ func TestSkeleton_WalkFiles(t *testing.T) {
 	actualAbs := make([]string, 0)
 	actualRel := make([]string, 0)
 
-	err = skeleton.WalkFiles(func(file *File, err error) error {
-		if err == nil {
-			actualAbs = append(actualAbs, file.AbsPath)
-			actualRel = append(actualRel, file.RelPath)
-		}
-
-		return err
-	})
-	require.NoError(t, err)
+	for _, file := range skeleton.Files {
+		actualAbs = append(actualAbs, file.AbsPath)
+		actualRel = append(actualRel, file.RelPath)
+	}
 
 	pwd, _ := os.Getwd()
 
