@@ -5,7 +5,9 @@
 [![GoDoc](https://godoc.org/github.com/martinohmann/kickoff?status.svg)](https://godoc.org/github.com/martinohmann/kickoff)
 ![GitHub](https://img.shields.io/github/license/martinohmann/kickoff?color=orange)
 
-Bootstrap projects from skeletons. **Documentation is currently WIP.**
+Bootstrap projects from skeleton directories.
+
+[![asciicast](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk.svg)](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk)
 
 Contents
 --------
