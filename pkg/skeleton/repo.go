@@ -11,6 +11,7 @@ import (
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/file"
 	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -175,7 +176,9 @@ func openOrCloneGitRepository(info *RepositoryInfo) (*git.Repository, error) {
 	case err != nil:
 		return nil, err
 	default:
-		err := repo.Fetch(&git.FetchOptions{})
+		err := repo.Fetch(&git.FetchOptions{
+			RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
+		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
 			return nil, err
 		}

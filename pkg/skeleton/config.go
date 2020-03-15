@@ -21,7 +21,7 @@ type Config struct {
 
 // Reference is a reference to a skeleton in a specific repository.
 type Reference struct {
-	RepositoryURL string `json:"repositoryURL"`
+	RepositoryURL string `json:"repositoryURL,omitempty"`
 	SkeletonName  string `json:"skeletonName"`
 }
 
