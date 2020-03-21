@@ -1,11 +1,9 @@
 ---
-## License configuration
+## Skeleton description
 #
-# A LICENSE file will be automatically generated if a license is specified.
-#
-# Check out the `licenses` subcommand of kickoff for a list a available
-# licenses.
-license: MIT
+# Add some useful hints for the usage of this skeleton.
+description: |
+  Some example skeleton
 
 ## Custom configuration values
 #
