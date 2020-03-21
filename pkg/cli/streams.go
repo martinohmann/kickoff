@@ -27,11 +27,15 @@ type IOStreams struct {
 
 // NewTestIOStreams provides IOStreams that use a *bytes.Buffer. This can be
 // used in tests to make assertions on command output as well as control the
-// input stream.
-func NewTestIOStreams() IOStreams {
-	return IOStreams{
-		In:     &bytes.Buffer{},
-		Out:    &bytes.Buffer{},
-		ErrOut: &bytes.Buffer{},
+// input stream. Returns IOStreams and *bytes.Buffer for in, out and errOut.
+func NewTestIOStreams() (IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
+	in, out, errOut := &bytes.Buffer{}, &bytes.Buffer{}, &bytes.Buffer{}
+
+	streams := IOStreams{
+		In:     in,
+		Out:    out,
+		ErrOut: errOut,
 	}
+
+	return streams, in, out, errOut
 }

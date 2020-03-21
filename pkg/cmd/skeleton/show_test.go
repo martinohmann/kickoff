@@ -1,7 +1,6 @@
 package skeleton
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/martinohmann/kickoff/pkg/cli"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestShowCmd_Execute_NonexistantRepository(t *testing.T) {
-	streams := cli.NewTestIOStreams()
+	streams, _, _, _ := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{
 		"myskeleton",
@@ -23,7 +22,7 @@ func TestShowCmd_Execute_NonexistantRepository(t *testing.T) {
 }
 
 func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
-	streams := cli.NewTestIOStreams()
+	streams, _, _, _ := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{
 		"myskeleton",
@@ -36,7 +35,7 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 }
 
 func TestShowCmd_Execute(t *testing.T) {
-	streams := cli.NewTestIOStreams()
+	streams, _, out, _ := cli.NewTestIOStreams()
 	cmd := NewShowCmd(streams)
 	cmd.SetArgs([]string{
 		"minimal",
@@ -47,7 +46,7 @@ func TestShowCmd_Execute(t *testing.T) {
 	err := cmd.Execute()
 	require.NoError(t, err)
 
-	output := streams.Out.(*bytes.Buffer).String()
+	output := out.String()
 
 	expected := `values:
   foo: bar`

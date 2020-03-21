@@ -1,7 +1,6 @@
 package skeleton
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/martinohmann/kickoff/pkg/cli"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestListCmd_Execute(t *testing.T) {
-	streams := cli.NewTestIOStreams()
+	streams, _, out, _ := cli.NewTestIOStreams()
 	cmd := NewListCmd(streams)
 	cmd.SetArgs([]string{
 		"--config", "../../testdata/config/empty-config.yaml",
@@ -20,7 +19,7 @@ func TestListCmd_Execute(t *testing.T) {
 	err := cmd.Execute()
 	require.NoError(t, err)
 
-	output := streams.Out.(*bytes.Buffer).String()
+	output := out.String()
 
 	expected := `minimal`
 
