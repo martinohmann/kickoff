@@ -20,10 +20,13 @@ builds:
       - goos: darwin
         goarch: 386
 archives:
-  - format: binary
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    format: binary
     files:
       - none*
     replacements:
+      linux: Linux
+      darwin: Darwin
       386: i386
       amd64: x86_64
 release:

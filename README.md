@@ -50,7 +50,7 @@ Currently only Linux and MacOSX are packaged as binary releases. Check out the
 versions.
 
 ```bash
-curl -SsL -o kickoff "https://github.com/martinohmann/kickoff/releases/download/v0.0.2/kickoff_0.0.2_$(uname -s | tr '[:upper:]' '[:lower:]')_x86_64"
+curl -SsL -o kickoff "https://github.com/martinohmann/kickoff/releases/latest/download/kickoff_$(uname -s)_$(uname -m)"
 chmod +x kickoff
 mv kickoff $GOPATH/bin/
 ```
