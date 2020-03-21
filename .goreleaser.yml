@@ -5,7 +5,7 @@ builds:
     binary: kickoff
     ldflags:
       - -s -w
-        -X github.com/martinohmann/kickoff/pkg/version.gitVersion={{.Version}}
+        -X github.com/martinohmann/kickoff/pkg/version.gitVersion=v{{.Version}}
         -X github.com/martinohmann/kickoff/pkg/version.gitCommit={{.FullCommit}}
         -X github.com/martinohmann/kickoff/pkg/version.buildDate={{.Date}}
     env:
