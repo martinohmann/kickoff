@@ -21,7 +21,7 @@ func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "create <skeleton-name> [<skeleton-name>...] <output-dir>",
+		Use:   "create <skeleton-name> <output-dir>",
 		Short: "Create a project from a skeleton",
 		Long: cmdutil.LongDesc(`
 			Create a project from a skeleton.`),
