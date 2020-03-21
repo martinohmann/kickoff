@@ -27,6 +27,7 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 		Long: cmdutil.LongDesc(`
 			Interactively initialize the kickoff configuration.
 		`),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := o.Complete()
 			if err != nil {

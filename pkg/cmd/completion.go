@@ -10,7 +10,7 @@ import (
 
 func NewCompletionCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "completion",
+		Use:   "completion <shell>",
 		Short: "Shell completion",
 		Long: cmdutil.LongDesc(`
 			Configure your shell to load kickoff completions.

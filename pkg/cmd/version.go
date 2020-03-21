@@ -24,6 +24,7 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Displays the version",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := o.Validate()
 			if err != nil {

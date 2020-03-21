@@ -11,12 +11,24 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:           "kickoff",
-		SilenceUsage:  true,
 		SilenceErrors: true,
-		PersistentPreRun: func(_ *cobra.Command, _ []string) {
+		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 			if verbose {
 				log.SetLevel(log.DebugLevel)
 			}
+
+			// We silence usage output here instead of doing so while
+			// initializing the struct above because we want to print the usage
+			// if the user actually misused the CLI (e.g. missing arguments,
+			// wrong flags), but we do not want to show the usage on errors
+			// that occurred when the CLI arguments where actually valid (e.g.
+			// user queried for a skeleton that does not exist). Since
+			// PersistentPreRun is called after argument parsing happened, we
+			// silence the usage here for all subsequent errors.
+			//
+			// Also see the following issue:
+			// https://github.com/spf13/cobra/issues/340#issuecomment-378726225
+			cmd.SilenceUsage = true
 		},
 	}
 
