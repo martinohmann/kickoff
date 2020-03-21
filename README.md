@@ -43,22 +43,31 @@ Contents
 
 ## Installation
 
-Quick:
+### From binary release
 
-```
-go get -u github.com/martinohmann/kickoff/cmd/kickoff
+Currently only Linux and MacOSX are packaged as binary releases. Check out the
+[releases](https://github.com/martinohmann/kickoff/releases) for all available
+versions.
+
+```bash
+curl -SsL -o kickoff "https://github.com/martinohmann/kickoff/releases/download/v0.0.1/kickoff_0.0.1_$(uname -s | tr '[:upper:]' '[:lower:]')_x86_64"
+chmod +x kickoff
+mv kickoff $GOPATH/bin/
 ```
 
-Recommended:
+### From source
 
-```
+```bash
 git clone https://github.com/martinohmann/kickoff
+cd kickoff
 make install
 ```
 
-Verify installation by running:
+This will install the `kickoff` binary to `$GOPATH/bin/kickoff`.
 
-```
+You can verify the installation by printing the version:
+
+```bash
 kickoff version
 ```
 
@@ -66,7 +75,7 @@ kickoff version
 
 Initialize the kickoff config and create a new project:
 
-```
+```bash
 kickoff init
 kickoff project create default ~/path/to/my/new/project --license mit --gitignore go,hugo
 ```
@@ -75,7 +84,7 @@ kickoff project create default ~/path/to/my/new/project --license mit --gitignor
 
 Add a remote skeleton repository and create a new project:
 
-```
+```bash
 kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo?revision=v1.0.0
 kickoff repository list
 kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
@@ -94,7 +103,7 @@ your own.
 You can add the `kickoff-skeletons` repository to your config to directly
 create projects from the available skeletons:
 
-```
+```bash
 kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
 ```
 
@@ -111,13 +120,13 @@ The following environment variables can be used to configure kickoff:
 
 Add to your `~/.bashrc` for bash completion:
 
-```
+```bash
 . <(kickoff completion bash)
 ```
 
 Add to your `~/.zshrc` for zsh completion:
 
-```
+```bash
 . <(kickoff completion zsh)
 ```
 
@@ -126,7 +135,7 @@ Add to your `~/.zshrc` for zsh completion:
 Skeletons can inherit from other skeletons. Just add the `parent` configuration
 to the `.kickoff.yaml` of the skeleton like this:
 
-```
+```yaml
 parent:
   repositoryURL: https://github.com/martinohmann/kickoff-skeletons?revision=master
   skeletonName: my-parent-skeleton
@@ -143,7 +152,7 @@ Projects can be created by composing multiple skeletons together. This is just
 as simple as providing multiple skeletons instead of one as comma separated
 list on project creation:
 
-```
+```bash
 kickoff project create skeleton1,skeleton2,skeleton3 /path/to/project
 ```
 
