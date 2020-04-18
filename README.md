@@ -15,7 +15,7 @@ Contents
 - [Features](#features)
 - [Installation](#installation)
 - [Quickstart](#quickstart)
-- [Using remote skeleton repositories](#using-remote-skeleton-repositories)
+- [Using skeleton repositories](#using-skeleton-repositories)
 - [Project Skeletons](#project-skeletons)
 - [Environment variables](#environment-variables)
 - [Shell completion](#shell-completion)
@@ -80,7 +80,56 @@ kickoff init
 kickoff project create default ~/path/to/my/new/project --license mit --gitignore go,hugo
 ```
 
-## Using remote skeleton repositories
+The kickoff cli comes with detailed examples on each subcommand, so be sure to
+check them out. Showing the help is a good starting point:
+
+```bash
+# List of all available commands.
+kickoff help
+
+# Help for the `project create` subcommand.
+kickoff project create help
+```
+
+## Using skeleton repositories
+
+Kickoff supports local and remote skeleton repositories. If you want, you can
+use the repository that come along with `kickoff`. Head over to the
+[kickoff-skeletons](https://github.com/martinohmann/kickoff-skeletons)
+repository for ready-to-use skeletons and to get some inspiration to create
+your own.
+
+You can add the `kickoff-skeletons` repository to your config to directly
+create projects from the available skeletons:
+
+```bash
+kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
+```
+
+### Local skeleton repositories
+
+Kickoff supports local repositories which do not necessarily need to be git
+repos. If you did not create a local repository via `kickoff init`, you can
+create one like this:
+
+```bash
+kickoff repository create ~/path/to/new/repo
+kickoff repository add myrepo ~/path/to/new/repo
+```
+
+The `kickoff repository create` command will create a new repository which
+already contains a minimal `default` skeleton with a commented `.kickoff.yaml`
+file and a `README.md.skel` skeleton to get you started. You can delete it or
+customize it to your needs.
+
+You can verify that your local repository was correctly created and added by
+listing the available kickoff repositories:
+
+```bash
+kickoff repository list
+```
+
+### Remote skeleton repositories
 
 Add a remote skeleton repository and create a new project:
 
@@ -95,17 +144,58 @@ may point to a commit, tag or branch. If omitted `master` is assumed.
 
 ## Project Skeletons
 
-Head over to the
-[kickoff-skeletons](https://github.com/martinohmann/kickoff-skeletons)
-repository for ready-to-use skeletons and to get some inspiration to create
-your own.
+A skeleton is just a subdirectory of the `skeletons/` directory inside your
+local repository. The skeleton directory must contain a `.kickoff.yaml` file
+(which may be empty).
 
-You can add the `kickoff-skeletons` repository to your config to directly
-create projects from the available skeletons:
+### Creating skeletons in a local repository
+
+Creating a new skeleton with some boilerplate can be done like this:
 
 ```bash
-kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
+kickoff skeleton create ~/path/to/local/skeleton-repository/skeletons/myskeleton
 ```
+
+You can verify it by listing all available skeletons:
+
+```bash
+kickoff skeleton list
+```
+
+### Skeleton templating
+
+Any file with the `.skel` extension is treated as a [Go
+templates](https://golang.org/pkg/text/template/) and can be fully templated.
+When creating a project the resolved `.skel` templates will be written to the
+target directory with the `.skel` extension stripped, e.g. `README.md.skel`
+becomes `README.md`.
+
+### Template variables
+
+Kickoff makes available a couple of variables to these templates:
+
+| Variable                 | Description                                                                                                                                                                                         |
+| ---                      | ---                                                                                                                                                                                                 |
+| `.Project.Host`          | The git host you specified during `kickoff init`, e.g. `github.com`                                                                                                                                 |
+| `.Project.Owner`         | The project owner you specified, e.g. `martinohmann`                                                                                                                                                |
+| `.Project.Email`         | The project email you specified, e.g. `foo@bar.baz`                                                                                                                                                 |
+| `.Project.Name`          | The name you specified when running `kickoff project create`                                                                                                                                        |
+| `.Project.License`       | The name of the license, if you picked one                                                                                                                                                          |
+| `.Project.Gitignore`     | Comma-separated list of gitignore templates, if provided                                                                                                                                            |
+| `.Project.URL`           | The URL to the project repo, e.g. `https://github.com/martinohmann/myproject`                                                                                                                       |
+| `.Project.GoPackagePath` | The package path for go projects, e.g. `github.com/martinohmann/myproject`                                                                                                                          |
+| `.Project.Author`        | If an email is present, this will resolve to `project-owner <foo@bar.baz>`, otherwise just `owner`                                                                                                  |
+| `.Values`                | The merged result of the `values` from your local kickoff `config.yaml`, the project skeleton's `values` from `.kickoff.yaml` and any variables that were set using `--set` during project creation |
+
+### Templating file and directory names
+
+Kickoff will try to resolve Go template variables in file and directory names.
+E.g. a directory `cmd/{{.Project.Name}}` will be resolved to `cmd/myproject` if
+the project is named `myproject`. It is also possible to put arbitrary files
+into these directories. These will be moved to the correct place after the
+directory name was resolved. You can check out this example skeleton which
+makes use of this feature:
+[kickoff-skeletons:golang/cli](https://github.com/martinohmann/kickoff-skeletons/tree/master/skeletons/golang/cli).
 
 ## Environment variables
 
