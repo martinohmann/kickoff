@@ -3,6 +3,7 @@ package skeleton
 import (
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
+	"github.com/martinohmann/kickoff/pkg/homedir"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -54,7 +55,12 @@ func (o *ListOptions) Run() error {
 	tw.SetHeader("RepoName", "Name", "Path")
 
 	for _, skeleton := range skeletons {
-		tw.Append(skeleton.Repo.Name, skeleton.Name, skeleton.Path)
+		path, err := homedir.Collapse(skeleton.Path)
+		if err != nil {
+			return err
+		}
+
+		tw.Append(skeleton.Repo.Name, skeleton.Name, path)
 	}
 
 	tw.Render()

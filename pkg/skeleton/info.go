@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/kirsle/configdir"
+	"github.com/martinohmann/kickoff/pkg/homedir"
 )
 
 // Info holds information about a skeleton.
@@ -126,7 +127,12 @@ func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
 	info := &RepositoryInfo{}
 
 	if u.Host == "" {
-		abspath, err := filepath.Abs(u.Path)
+		path, err := homedir.Expand(u.Path)
+		if err != nil {
+			return nil, err
+		}
+
+		abspath, err := filepath.Abs(path)
 		if err != nil {
 			return nil, err
 		}
