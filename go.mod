@@ -16,6 +16,7 @@ require (
 	github.com/imdario/mergo v0.3.8
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/mattn/go-colorable v0.1.2
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v0.0.5

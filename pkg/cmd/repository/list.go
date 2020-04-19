@@ -5,6 +5,7 @@ import (
 
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
+	"github.com/martinohmann/kickoff/pkg/homedir"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -50,27 +51,35 @@ func (o *ListOptions) Run() error {
 	sort.Strings(repoNames)
 
 	tw := cli.NewTableWriter(o.Out)
-	tw.SetHeader("Name", "Type", "Revision", "URL", "LocalPath")
+	tw.SetHeader("Name", "Type", "Path", "URL", "Revision")
 
 	for _, name := range repoNames {
-		url := o.Repositories[name]
+		repoURL := o.Repositories[name]
 
-		info, err := skeleton.ParseRepositoryURL(url)
+		info, err := skeleton.ParseRepositoryURL(repoURL)
 		if err != nil {
 			return err
 		}
 
-		typ := "remote"
-		if info.Local {
-			typ = "local"
-		}
-
+		url := "-"
 		revision := "-"
-		if info.Revision != "" {
-			revision = info.Revision
+		typ := "local"
+
+		if !info.Local {
+			url = info.String()
+			typ = "remote"
+
+			if info.Revision != "" {
+				revision = info.Revision
+			}
 		}
 
-		tw.Append(name, typ, revision, info.String(), info.LocalPath())
+		path, err := homedir.Collapse(info.LocalPath())
+		if err != nil {
+			return err
+		}
+
+		tw.Append(name, typ, path, url, revision)
 	}
 
 	tw.Render()
