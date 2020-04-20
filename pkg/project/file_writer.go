@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/afero"
@@ -15,16 +16,19 @@ import (
 // SkeletonFileWriter writes skeleton files into a target directory after
 // rendering all templates contained in them.
 type SkeletonFileWriter struct {
-	fs     afero.Fs
-	dirMap map[string]string
+	fs        afero.Fs
+	dirMap    map[string]string
+	overwrite bool
 }
 
 // NewSkeletonFileWriter creates a new *SkeletonFileWriter which uses fs as the
-// target filesystem for all files and directories that may be created.
-func NewSkeletonFileWriter(fs afero.Fs) *SkeletonFileWriter {
+// target filesystem for all files and directories that may be created. If
+// overwrite is true, files existing in target dirs will be overwritten.
+func NewSkeletonFileWriter(fs afero.Fs, overwrite bool) *SkeletonFileWriter {
 	return &SkeletonFileWriter{
-		fs:     fs,
-		dirMap: make(map[string]string),
+		fs:        fs,
+		dirMap:    make(map[string]string),
+		overwrite: overwrite,
 	}
 }
 
@@ -60,6 +64,11 @@ func (fw *SkeletonFileWriter) writeFile(f *skeleton.File, targetDir string, valu
 			"path.src":    f.RelPath,
 			"path.target": targetRelPath,
 		})
+	}
+
+	if file.Exists(targetAbsPath) && !fw.overwrite {
+		logger.Warn("target exists, skipping")
+		return nil
 	}
 
 	switch {

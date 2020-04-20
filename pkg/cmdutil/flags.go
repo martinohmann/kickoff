@@ -18,7 +18,12 @@ func AddConfigFlag(cmd *cobra.Command, val *string) {
 
 // AddForceFlag adds the --force flag to cmd and binds it to val.
 func AddForceFlag(cmd *cobra.Command, val *bool) {
-	cmd.Flags().BoolVar(val, "force", *val, "Forces overwrite of existing output directory")
+	cmd.Flags().BoolVar(val, "force", *val, "Forces writing into existing output directory")
+}
+
+// AddOverwriteFlag adds the --overwrite flag to cmd and binds it to val.
+func AddOverwriteFlag(cmd *cobra.Command, val *bool) {
+	cmd.Flags().BoolVar(val, "overwrite", *val, "Overwrite files that are already present in output directory")
 }
 
 // ConfigFlags provide a flag for configuring the path to the kickoff config

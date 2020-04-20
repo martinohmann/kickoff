@@ -24,6 +24,7 @@ func TestCreate(t *testing.T) {
 		name          string
 		expectedErr   error
 		createOptions *CreateOptions
+		setup         func(t *testing.T, outputDir string)
 		validate      func(t *testing.T, outputDir string)
 	}{
 		{
@@ -101,6 +102,48 @@ func TestCreate(t *testing.T) {
 			},
 			expectedErr: errors.New(`templated filename "{{.Values.filename}}" resolved to an empty string`),
 		},
+		{
+			name: "does not overwrite existing files if Overwrite is false",
+			createOptions: &CreateOptions{
+				Overwrite: false,
+				License: &license.Info{
+					Body: `some license [fullname] [year]`,
+				},
+			},
+			setup: func(t *testing.T, outputDir string) {
+				require.NoError(t, ioutil.WriteFile(filepath.Join(outputDir, "README.md"), []byte(`do not touch`), 0644))
+				require.NoError(t, ioutil.WriteFile(filepath.Join(outputDir, "LICENSE"), []byte(`do not touch`), 0644))
+			},
+			validate: func(t *testing.T, outputDir string) {
+				contents, err := ioutil.ReadFile(filepath.Join(outputDir, "README.md"))
+				require.NoError(t, err)
+				assert.Equal(t, `do not touch`, string(contents))
+				contents, err = ioutil.ReadFile(filepath.Join(outputDir, "LICENSE"))
+				require.NoError(t, err)
+				assert.Equal(t, `do not touch`, string(contents))
+			},
+		},
+		{
+			name: "does overwrite existing files if Overwrite is true",
+			createOptions: &CreateOptions{
+				Overwrite: true,
+				License: &license.Info{
+					Body: `some license [fullname] [year]`,
+				},
+			},
+			setup: func(t *testing.T, outputDir string) {
+				require.NoError(t, ioutil.WriteFile(filepath.Join(outputDir, "README.md"), []byte(`do not touch`), 0644))
+				require.NoError(t, ioutil.WriteFile(filepath.Join(outputDir, "LICENSE"), []byte(`do not touch`), 0644))
+			},
+			validate: func(t *testing.T, outputDir string) {
+				contents, err := ioutil.ReadFile(filepath.Join(outputDir, "README.md"))
+				require.NoError(t, err)
+				assert.NotEqual(t, `do not touch`, string(contents))
+				contents, err = ioutil.ReadFile(filepath.Join(outputDir, "LICENSE"))
+				require.NoError(t, err)
+				assert.NotEqual(t, `do not touch`, string(contents))
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -121,6 +164,10 @@ func TestCreate(t *testing.T) {
 			}
 
 			defer os.RemoveAll(tmpdir)
+
+			if test.setup != nil {
+				test.setup(t, tmpdir)
+			}
 
 			err = Create(skeleton, tmpdir, test.createOptions)
 			if test.expectedErr != nil {
