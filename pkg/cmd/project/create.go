@@ -47,8 +47,11 @@ func NewCreateCmd() *cobra.Command {
 			# Composition of multiple skeletons (comma separated)
 			kickoff project create firstskeleton,secondskeleton,thirdskeleton ~/repos/myproject
 
-			# Forces overwrite of skeleton files in existing project
-			kickoff project create myskeleton ~/repos/myproject --force`),
+			# Forces creation of project in existing directory, retaining existing files
+			kickoff project create myskeleton ~/repos/myproject --force
+
+			# Forces creation of project in existing directory, overwriting existing files
+			kickoff project create myskeleton ~/repos/myproject --force --overwrite`),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
@@ -69,6 +72,7 @@ func NewCreateCmd() *cobra.Command {
 	o.ConfigFlags.AddFlags(cmd)
 
 	cmdutil.AddForceFlag(cmd, &o.Force)
+	cmdutil.AddOverwriteFlag(cmd, &o.Overwrite)
 
 	return cmd
 }
@@ -80,6 +84,7 @@ type CreateOptions struct {
 	Skeletons []string
 	DryRun    bool
 	Force     bool
+	Overwrite bool
 
 	rawValues []string
 	initGit   bool
@@ -175,10 +180,11 @@ func (o *CreateOptions) Run() error {
 	}
 
 	options := &project.CreateOptions{
-		DryRun:  o.DryRun,
-		Config:  o.Project,
-		Values:  o.Values,
-		InitGit: o.initGit,
+		DryRun:    o.DryRun,
+		Config:    o.Project,
+		Values:    o.Values,
+		InitGit:   o.initGit,
+		Overwrite: o.Overwrite,
 	}
 
 	if o.Project.HasLicense() {

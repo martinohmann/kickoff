@@ -9,6 +9,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/config"
+	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
@@ -25,6 +26,7 @@ type CreateOptions struct {
 	Values    template.Values
 	Gitignore string
 	InitGit   bool
+	Overwrite bool
 	License   *license.Info
 }
 
@@ -61,7 +63,7 @@ func (c *Creator) CreateProject(s *skeleton.Skeleton, targetDir string) error {
 		return err
 	}
 
-	fw := NewSkeletonFileWriter(c.Filesystem)
+	fw := NewSkeletonFileWriter(c.Filesystem, c.Options.Overwrite)
 
 	log.Infof("creating project in %s", targetDir)
 
@@ -113,9 +115,14 @@ func (c *Creator) getTemplateValues(values template.Values) (template.Values, er
 }
 
 func (c *Creator) writeFile(targetDir, path string, content []byte, mode os.FileMode) error {
-	log.WithField("path", path).Info("writing file")
-
 	targetPath := filepath.Join(targetDir, path)
+
+	if file.Exists(targetPath) && !c.Options.Overwrite {
+		log.WithField("path", path).Warn("target exists, skipping")
+		return nil
+	}
+
+	log.WithField("path", path).Info("writing file")
 
 	return afero.WriteFile(c.Filesystem, targetPath, content, mode)
 }
