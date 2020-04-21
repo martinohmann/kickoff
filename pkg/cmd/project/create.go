@@ -13,6 +13,7 @@ import (
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/project"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
+	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
@@ -38,7 +39,10 @@ func NewCreateCmd() *cobra.Command {
 			# Create project with gitignore
 			kickoff project create myskeleton ~/repos/myproject --gitignore go,helm,hugo
 
-			# Create project with value overrides
+			# Create project with value overrides from files
+			kickoff project create myskeleton ~/repos/myproject --values values.yaml --values values2.yaml
+
+			# Create project with value overrides via --set
 			kickoff project create myskeleton ~/repos/myproject --set travis.enabled=true,mykey=mynewvalue
 
 			# Dry run project creation
@@ -86,8 +90,9 @@ type CreateOptions struct {
 	Force     bool
 	Overwrite bool
 
-	rawValues []string
-	initGit   bool
+	rawValues   []string
+	valuesFiles []string
+	initGit     bool
 }
 
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
@@ -100,6 +105,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Project.Name, "name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&o.Project.Owner, "owner", o.Project.Owner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 
+	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles, "Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 
 	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory.")
@@ -125,6 +131,20 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	err = o.ConfigFlags.Complete()
 	if err != nil {
 		return err
+	}
+
+	if len(o.valuesFiles) > 0 {
+		for _, path := range o.valuesFiles {
+			vals, err := template.LoadValues(path)
+			if err != nil {
+				return err
+			}
+
+			err = o.Values.Merge(vals)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(o.rawValues) > 0 {
