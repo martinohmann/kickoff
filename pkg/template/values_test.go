@@ -20,18 +20,42 @@ func TestMergeValues(t *testing.T) {
 		},
 	}
 
+	c := Values{
+		"nested": map[string]interface{}{
+			"bar": "foo",
+		},
+	}
+
 	expected := Values{
 		"foo":      "bar",
 		"somebool": false,
 		"nested": map[string]interface{}{
-			"bar": "baz",
+			"bar": "foo",
 		},
 	}
 
-	merged, err := MergeValues(a, b)
+	merged, err := MergeValues(a, b, c)
 	require.NoError(t, err)
 	assert.Equal(t, expected, merged)
 
 	// immutability
 	assert.Equal(t, true, a["somebool"])
+}
+
+func TestLoadValues(t *testing.T) {
+	values, err := LoadValues("../testdata/values/values.yaml")
+	require.NoError(t, err)
+
+	expected := Values{
+		"foo": "bar",
+		"baz": "qux",
+	}
+
+	assert.Equal(t, expected, values)
+
+	_, err = LoadValues("../testdata/values/invalid.yaml")
+	require.Error(t, err)
+
+	_, err = LoadValues("../testdata/values/nonexistent.yaml")
+	require.Error(t, err)
 }
