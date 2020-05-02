@@ -174,18 +174,18 @@ becomes `README.md`.
 
 Kickoff makes available a couple of variables to these templates:
 
-| Variable                 | Description                                                                                                                                                                                         |
-| ---                      | ---                                                                                                                                                                                                 |
-| `.Project.Host`          | The git host you specified during `kickoff init`, e.g. `github.com`                                                                                                                                 |
-| `.Project.Owner`         | The project owner you specified, e.g. `martinohmann`                                                                                                                                                |
-| `.Project.Email`         | The project email you specified, e.g. `foo@bar.baz`                                                                                                                                                 |
-| `.Project.Name`          | The name you specified when running `kickoff project create`                                                                                                                                        |
-| `.Project.License`       | The name of the license, if you picked one                                                                                                                                                          |
-| `.Project.Gitignore`     | Comma-separated list of gitignore templates, if provided                                                                                                                                            |
-| `.Project.URL`           | The URL to the project repo, e.g. `https://github.com/martinohmann/myproject`                                                                                                                       |
-| `.Project.GoPackagePath` | The package path for go projects, e.g. `github.com/martinohmann/myproject`                                                                                                                          |
-| `.Project.Author`        | If an email is present, this will resolve to `project-owner <foo@bar.baz>`, otherwise just `owner`                                                                                                  |
-| `.Values`                | The merged result of the `values` from your local kickoff `config.yaml`, the project skeleton's `values` from `.kickoff.yaml` and any variables that were set using `--set` during project creation |
+| Variable                 | Description                                                                                                                                                                                                                               |
+| ---                      | ---                                                                                                                                                                                                                                       |
+| `.Project.Host`          | The git host you specified during `kickoff init`, e.g. `github.com`                                                                                                                                                                       |
+| `.Project.Owner`         | The project owner you specified, e.g. `martinohmann`                                                                                                                                                                                      |
+| `.Project.Email`         | The project email you specified, e.g. `foo@bar.baz`                                                                                                                                                                                       |
+| `.Project.Name`          | The name you specified when running `kickoff project create`                                                                                                                                                                              |
+| `.Project.License`       | The name of the license, if you picked one                                                                                                                                                                                                |
+| `.Project.Gitignore`     | Comma-separated list of gitignore templates, if provided                                                                                                                                                                                  |
+| `.Project.URL`           | The URL to the project repo, e.g. `https://github.com/martinohmann/myproject`                                                                                                                                                             |
+| `.Project.GoPackagePath` | The package path for go projects, e.g. `github.com/martinohmann/myproject`                                                                                                                                                                |
+| `.Project.Author`        | If an email is present, this will resolve to `project-owner <foo@bar.baz>`, otherwise just `owner`                                                                                                                                        |
+| `.Values`                | The merged result of the `values` from your local kickoff `config.yaml`, the project skeleton's `values` from `.kickoff.yaml`, values from files passed via `--values` and any values that were set using `--set` during project creation |
 
 ### Templating file and directory names
 
