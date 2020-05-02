@@ -3,9 +3,9 @@ package skeleton
 import (
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"kickoff.run/pkg/cli"
 )
 
 func TestListCmd_Execute(t *testing.T) {

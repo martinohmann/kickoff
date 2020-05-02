@@ -3,10 +3,10 @@ package license
 import (
 	"fmt"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/license"
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {

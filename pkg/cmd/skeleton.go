@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmd/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmd/skeleton"
 )
 
 func NewSkeletonCmd(streams cli.IOStreams) *cobra.Command {

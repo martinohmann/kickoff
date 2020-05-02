@@ -1,4 +1,4 @@
-package config
+package config // import "kickoff.run/pkg/cmd/config"
 
 import (
 	"fmt"
@@ -10,10 +10,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ghodss/yaml"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
 )
 
 var (

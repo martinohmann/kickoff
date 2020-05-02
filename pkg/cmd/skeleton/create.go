@@ -1,13 +1,13 @@
-package skeleton
+package skeleton // import "kickoff.run/pkg/cmd/skeleton"
 
 import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/skeleton"
 )
 
 func NewCreateCmd() *cobra.Command {

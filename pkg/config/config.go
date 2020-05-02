@@ -1,5 +1,5 @@
 // Package config provides configuration for kickoff.
-package config
+package config // import "kickoff.run/pkg/config"
 
 import (
 	"fmt"
@@ -11,8 +11,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
 	"github.com/kirsle/configdir"
-	"github.com/martinohmann/kickoff/pkg/template"
 	gitconfig "github.com/tcnksm/go-gitconfig"
+	"kickoff.run/pkg/template"
 )
 
 var (

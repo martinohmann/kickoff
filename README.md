@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.com/martinohmann/kickoff.svg?branch=master)](https://travis-ci.com/martinohmann/kickoff)
 [![codecov](https://codecov.io/gh/martinohmann/kickoff/branch/master/graph/badge.svg)](https://codecov.io/gh/martinohmann/kickoff)
-[![Go Report Card](https://goreportcard.com/badge/github.com/martinohmann/kickoff)](https://goreportcard.com/report/github.com/martinohmann/kickoff)
-[![GoDoc](https://godoc.org/github.com/martinohmann/kickoff?status.svg)](https://godoc.org/github.com/martinohmann/kickoff)
+[![Go Report Card](https://goreportcard.com/badge/kickoff.run)](https://goreportcard.com/report/kickoff.run)
+[![GoDoc](https://godoc.org/kickoff.run?status.svg)](https://godoc.org/kickoff.run)
 ![GitHub](https://img.shields.io/github/license/martinohmann/kickoff?color=orange)
 
 Start new projects from reusable skeleton directories. Use community project

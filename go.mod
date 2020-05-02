@@ -1,4 +1,4 @@
-module github.com/martinohmann/kickoff
+module kickoff.run
 
 go 1.13
 

@@ -8,14 +8,14 @@ import (
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/apex/log"
 	"github.com/ghodss/yaml"
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/gitignore"
-	"github.com/martinohmann/kickoff/pkg/license"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/gitignore"
+	"kickoff.run/pkg/license"
+	"kickoff.run/pkg/skeleton"
 )
 
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {

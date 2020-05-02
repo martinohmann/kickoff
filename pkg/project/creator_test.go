@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/license"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/license"
+	"kickoff.run/pkg/skeleton"
+	"kickoff.run/pkg/template"
 )
 
 func TestCreate(t *testing.T) {

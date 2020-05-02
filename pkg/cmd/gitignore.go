@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmd/gitignore"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmd/gitignore"
 )
 
 func NewGitignoreCmd(streams cli.IOStreams) *cobra.Command {

@@ -1,9 +1,9 @@
 package config
 
 import (
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {

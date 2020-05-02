@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/afero"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/skeleton"
+	"kickoff.run/pkg/template"
 )
 
 // SkeletonFileWriter writes skeleton files into a target directory after

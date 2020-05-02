@@ -1,9 +1,9 @@
-package cmd
+package cmd // import "kickoff.run/pkg/cmd"
 
 import (
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
 )
 
 func NewRootCmd(streams cli.IOStreams) *cobra.Command {

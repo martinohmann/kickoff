@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
 )
 
 // AddConfigFlag adds the --config flag to cmd and binds it to val.

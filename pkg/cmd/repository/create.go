@@ -1,15 +1,15 @@
-package repository
+package repository // import "kickoff.run/pkg/cmd/repository"
 
 import (
 	"errors"
 	"fmt"
 	"path/filepath"
 
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/skeleton"
 )
 
 func NewCreateCmd() *cobra.Command {

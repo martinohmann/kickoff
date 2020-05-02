@@ -5,11 +5,11 @@ import (
 
 	"github.com/disiqueira/gotree"
 	"github.com/ghodss/yaml"
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/homedir"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/homedir"
+	"kickoff.run/pkg/skeleton"
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {

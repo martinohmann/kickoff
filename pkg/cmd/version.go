@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/version"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/version"
 )
 
 var (

@@ -1,4 +1,4 @@
-package project
+package project // import "kickoff.run/pkg/project"
 
 import (
 	"os"
@@ -9,12 +9,12 @@ import (
 
 	"github.com/apex/log"
 	git "github.com/go-git/go-git/v5"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/license"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/afero"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/license"
+	"kickoff.run/pkg/skeleton"
+	"kickoff.run/pkg/template"
 )
 
 // CreateOptions provide optional configuration for the project creator. If

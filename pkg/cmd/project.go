@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/martinohmann/kickoff/pkg/cmd/project"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cmd/project"
 )
 
 func NewProjectCmd() *cobra.Command {

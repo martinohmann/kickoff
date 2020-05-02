@@ -3,10 +3,10 @@ package gitignore
 import (
 	"fmt"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/gitignore"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/gitignore"
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/kirsle/configdir"
-	"github.com/martinohmann/kickoff/pkg/homedir"
+	"kickoff.run/pkg/homedir"
 )
 
 // Info holds information about a skeleton.

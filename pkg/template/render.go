@@ -1,6 +1,6 @@
 // Package template provides tools to render template strings and template
 // files.
-package template
+package template // import "kickoff.run/pkg/template"
 
 import (
 	"bytes"

@@ -1,6 +1,6 @@
 // Package license provides an adapter to fetch license texts from the GitHub
 // Licenses API.
-package license
+package license // import "kickoff.run/pkg/license"
 
 import (
 	"context"

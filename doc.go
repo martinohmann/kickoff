@@ -5,4 +5,4 @@
 // The tool was initial meant for bootstrapping golang projects, but it is
 // actually language agnostic as the skeletons do not need to be golang
 // specific.
-package kickoff
+package kickoff // import "kickoff.run"

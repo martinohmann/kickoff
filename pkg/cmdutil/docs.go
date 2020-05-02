@@ -1,6 +1,6 @@
 // Package cmdutil provides utilities that are shared between multiple commands
 // like flags, documentation helpers and errors.
-package cmdutil
+package cmdutil // import "kickoff.run/pkg/cmdutil"
 
 import (
 	"strings"

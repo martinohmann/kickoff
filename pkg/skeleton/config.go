@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
-	"github.com/martinohmann/kickoff/pkg/template"
+	"kickoff.run/pkg/template"
 )
 
 const (

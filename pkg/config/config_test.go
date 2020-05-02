@@ -3,9 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"kickoff.run/pkg/template"
 )
 
 func TestConfig_ApplyDefaults(t *testing.T) {

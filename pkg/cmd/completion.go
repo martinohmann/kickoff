@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
 )
 
 func NewCompletionCmd(streams cli.IOStreams) *cobra.Command {

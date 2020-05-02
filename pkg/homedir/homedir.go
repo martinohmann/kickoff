@@ -1,6 +1,6 @@
 // Package homedir provides functionality to expand `~` to the absolute home
 // directory of a user and vice-versa.
-package homedir
+package homedir // import "kickoff.run/pkg/homedir"
 
 import (
 	"fmt"

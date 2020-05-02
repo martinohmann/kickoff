@@ -1,5 +1,5 @@
 // Package version contains kickoff version info which is set via build args.
-package version
+package version // import "kickoff.run/pkg/version"
 
 import (
 	"fmt"

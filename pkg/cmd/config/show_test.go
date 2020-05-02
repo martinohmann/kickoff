@@ -3,10 +3,10 @@ package config
 import (
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"kickoff.run/pkg/cli"
+	"kickoff.run/pkg/cmdutil"
 )
 
 func TestShowCmd_Execute_NonexistentConfig(t *testing.T) {

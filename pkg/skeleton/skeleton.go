@@ -1,7 +1,7 @@
 // Package skeleton provides functionality to interact with local and remote
 // skeleton repositories and to fetch the configuration values of any given
 // skeleton.
-package skeleton
+package skeleton // import "kickoff.run/pkg/skeleton"
 
 import (
 	"errors"
@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/template"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/template"
 )
 
 var (

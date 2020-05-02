@@ -1,6 +1,6 @@
 // Package file provides utility functionality for working with files and
 // directories.
-package file
+package file // import "kickoff.run/pkg/file"
 
 import (
 	"fmt"

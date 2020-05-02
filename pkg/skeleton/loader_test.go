@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"kickoff.run/pkg/template"
 )
 
 func TestLoader_LoadSkeletons(t *testing.T) {

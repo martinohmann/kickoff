@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
+	"kickoff.run/pkg/cmdutil"
 )
 
 func TestCreateCmd_Execute_EmptyOutputDir(t *testing.T) {

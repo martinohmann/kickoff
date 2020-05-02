@@ -1,4 +1,4 @@
-package project
+package project // import "kickoff.run/pkg/cmd/project"
 
 import (
 	"errors"
@@ -7,15 +7,15 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/file"
-	"github.com/martinohmann/kickoff/pkg/gitignore"
-	"github.com/martinohmann/kickoff/pkg/license"
-	"github.com/martinohmann/kickoff/pkg/project"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
-	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/file"
+	"kickoff.run/pkg/gitignore"
+	"kickoff.run/pkg/license"
+	"kickoff.run/pkg/project"
+	"kickoff.run/pkg/skeleton"
+	"kickoff.run/pkg/template"
 )
 
 func NewCreateCmd() *cobra.Command {

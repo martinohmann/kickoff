@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/cmdutil"
-	"github.com/martinohmann/kickoff/pkg/config"
-	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
+	"kickoff.run/pkg/cmdutil"
+	"kickoff.run/pkg/config"
+	"kickoff.run/pkg/skeleton"
 )
 
 var (

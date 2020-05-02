@@ -1,7 +1,7 @@
 // Package gitignore provides an interface to gitignore.io to fetch gitignore
 // templates. These templates are used to optionally populate the .gitignore
 // file of a new project.
-package gitignore
+package gitignore // import "kickoff.run/pkg/gitignore"
 
 import (
 	"bufio"
