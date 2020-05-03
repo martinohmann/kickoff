@@ -9,6 +9,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/Masterminds/sprig/v3 v3.0.2
 	github.com/apex/log v1.1.1
+	github.com/disiqueira/gotree v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-github/v28 v28.1.1
