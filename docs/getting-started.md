@@ -159,8 +159,8 @@ project skeletons.
 
 ## Next steps
 
-* [Creating project skeletons](skeletons/creating-skeletons): Learn more about
-  how to create and share your own project skeletons.
+* [Project skeletons](skeletons): Learn more about how to create and share your
+  own project skeletons.
 * [Working with skeleton repositories](repositories): Using local and remote
   skeleton repositories.
 * [Configuring Kickoff](configuration): Documentation of Kickoff's

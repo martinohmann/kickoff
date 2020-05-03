@@ -108,5 +108,5 @@ multiple values from file via `--values`.
 
 * [Templating](templating): Learn more about `.skel` templates and the usage of
   template variables within file and directory names.
-* [Skeleton inheritance](inheritance): Extending skeletons.
+* [Skeleton inheritance](inheritance): Inheriting from a parent skeleton.
 * [Skeleton composition](composition): Creating projects from multiple project skeletons.

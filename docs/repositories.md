@@ -18,7 +18,7 @@ You can add the `kickoff-skeletons` repository to your config to directly
 create projects from the available skeletons:
 
 ```bash
-kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
+$ kickoff repository add kickoff-skeletons https://github.com/martinohmann/kickoff-skeletons
 ```
 
 ## Local skeleton repositories
@@ -28,8 +28,8 @@ repos. If you did not create a local repository via `kickoff init`, you can
 create one like this:
 
 ```bash
-kickoff repository create ~/path/to/new/repo
-kickoff repository add myrepo ~/path/to/new/repo
+$ kickoff repository create ~/path/to/new/repo
+$ kickoff repository add myrepo ~/path/to/new/repo
 ```
 
 The `kickoff repository create` command will create a new repository which
@@ -41,7 +41,7 @@ You can verify that your local repository was correctly created and added by
 listing the available kickoff repositories:
 
 ```bash
-kickoff repository list
+$ kickoff repository list
 ```
 
 ## Remote skeleton repositories
@@ -49,9 +49,9 @@ kickoff repository list
 Add a remote skeleton repository and create a new project:
 
 ```bash
-kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo?revision=v1.0.0
-kickoff repository list
-kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
+$ kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo?revision=v1.0.0
+$ kickoff repository list
+$ kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
 ```
 
 Remote repository urls can contain an optional `revision` query parameter which

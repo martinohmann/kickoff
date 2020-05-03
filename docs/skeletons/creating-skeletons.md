@@ -36,7 +36,20 @@ default         default                 ~/kickoff-skeletons/skeletons/default
 default         myskeleton              ~/kickoff-skeletons/skeletons/myskeleton
 ```
 
-Happy templating!
+You can also inspect inpect individual skeletons to see what's in there:
+
+```bash
+$ kickoff skeleton show myskeleton
+
+Name            myskeleton
+Path            ~/kickoff-skeletons/skeletons/myskeleton
+Description     -
+Files           myskeleton
+                └── README.md.skel
+Parent          -
+Values          travis:
+                  enabled: false
+```
 
 ## Next steps
 
