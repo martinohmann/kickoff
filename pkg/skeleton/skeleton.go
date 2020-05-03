@@ -27,17 +27,17 @@ var (
 // whether it was inherited from a parent skeleton or not.
 type File struct {
 	// RelPath is the file path relative to root directory of the skeleton.
-	RelPath string
+	RelPath string `json:"relPath"`
 
 	// AbsPath is the absolute path to the file on disk.
-	AbsPath string
+	AbsPath string `json:"absPath"`
 
 	// Inherited indicates whether the file was inherited from a parent
 	// skeleton or not.
-	Inherited bool
+	Inherited bool `json:"inherited"`
 
 	// Info is the os.FileInfo for the file
-	Info os.FileInfo
+	Info os.FileInfo `json:"-"`
 }
 
 // Skeleton is the representation of a skeleton returned by Load() with all
@@ -45,22 +45,22 @@ type File struct {
 type Skeleton struct {
 	// Description is the skeleton description text obtained from the skeleton
 	// config.
-	Description string
+	Description string `json:"description,omitempty"`
 
 	// Parent is a reference to the parent skeleton. Is nil if the skeleton has
 	// no parent.
-	Parent *Skeleton
+	Parent *Skeleton `json:"parent,omitempty"`
 
 	// Info is the skeleton info that was used to load the skeleton.
-	Info *Info
+	Info *Info `json:"info"`
 
 	// The Files slice contains a merged and sorted list of file references
 	// that includes all files from the skeleton and its parents (if any).
-	Files []*File
+	Files []*File `json:"files,omitempty"`
 
 	// Values are the template values from the skeleton's config merged with
 	// those of it's parents (if any).
-	Values template.Values
+	Values template.Values `json:"values,omitempty"`
 }
 
 // String implements fmt.Stringer.

@@ -46,13 +46,13 @@ const (
 
 // RepositoryInfo holds information about a skeleton repository.
 type RepositoryInfo struct {
-	Local    bool
-	Name     string
-	Revision string
-	Path     string
-	Scheme   string
-	User     string
-	Host     string
+	Local    bool   `json:"local"`
+	Name     string `json:"name"`
+	Revision string `json:"revision,omitempty"`
+	Path     string `json:"path"`
+	Scheme   string `json:"scheme,omitempty"`
+	User     string `json:"user,omitempty"`
+	Host     string `json:"host,omitempty"`
 }
 
 // String implements fmt.Stringer.

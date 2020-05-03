@@ -1,13 +1,13 @@
 package skeleton
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
 
+	"github.com/disiqueira/gotree"
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
+	"github.com/martinohmann/kickoff/pkg/homedir"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -64,17 +64,12 @@ func (o *ShowOptions) Complete(args []string) error {
 }
 
 func (o *ShowOptions) Run() error {
-	repo, err := skeleton.NewRepositoryAggregate(o.Repositories)
+	loader, err := skeleton.NewRepositoryAggregateLoader(o.Repositories)
 	if err != nil {
 		return err
 	}
 
-	skeleton, err := repo.SkeletonInfo(o.Skeleton)
-	if err != nil {
-		return err
-	}
-
-	config, err := skeleton.LoadConfig()
+	skeleton, err := loader.LoadSkeleton(o.Skeleton)
 	if err != nil {
 		return err
 	}
@@ -83,16 +78,60 @@ func (o *ShowOptions) Run() error {
 
 	switch o.Output {
 	case "json":
-		buf, err = json.MarshalIndent(config, "", "  ")
+		return cmdutil.RenderJSON(o.Out, skeleton)
+	case "yaml":
+		return cmdutil.RenderYAML(o.Out, skeleton)
 	default:
-		buf, err = yaml.Marshal(config)
+		tw := cli.NewTableWriter(o.Out)
+
+		description := strings.TrimSpace(skeleton.Description)
+
+		if len(description) == 0 {
+			description = "-"
+		}
+
+		tree := gotree.New(skeleton.Info.Name)
+
+		for _, file := range skeleton.Files {
+			if file.RelPath == "." {
+				continue
+			}
+
+			tree.Add(file.RelPath)
+		}
+
+		parent := "-"
+		if skeleton.Parent != nil {
+			parent, err = homedir.Collapse(skeleton.Parent.Info.Path)
+			if err != nil {
+				return err
+			}
+		}
+
+		values := "-"
+		if len(skeleton.Values) > 0 {
+			buf, err = yaml.Marshal(skeleton.Values)
+			if err != nil {
+				return err
+			}
+
+			values = strings.TrimSpace(string(buf))
+		}
+
+		path, err := homedir.Collapse(skeleton.Info.Path)
+		if err != nil {
+			return err
+		}
+
+		tw.Append("Name", skeleton.Info.Name)
+		tw.Append("Path", path)
+		tw.Append("Description", description)
+		tw.Append("Files", strings.TrimSpace(tree.Print()))
+		tw.Append("Parent", parent)
+		tw.Append("Values", values)
+
+		tw.Render()
+
+		return nil
 	}
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(o.Out, strings.TrimSpace(string(buf)))
-
-	return nil
 }
