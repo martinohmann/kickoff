@@ -1,11 +1,6 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
-	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/spf13/cobra"
@@ -55,20 +50,10 @@ type ShowOptions struct {
 }
 
 func (o *ShowOptions) Run() (err error) {
-	var buf []byte
-
 	switch o.Output {
 	case "json":
-		buf, err = json.MarshalIndent(o.Config, "", "  ")
+		return cmdutil.RenderJSON(o.Out, o.Config)
 	default:
-		buf, err = yaml.Marshal(o.Config)
+		return cmdutil.RenderYAML(o.Out, o.Config)
 	}
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Fprintln(o.Out, strings.TrimSpace(string(buf)))
-
-	return nil
 }

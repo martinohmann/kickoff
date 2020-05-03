@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/pkg/cli"
 	"github.com/martinohmann/kickoff/pkg/cmdutil"
 	"github.com/martinohmann/kickoff/pkg/version"
@@ -67,22 +65,11 @@ func (o *VersionOptions) Run() error {
 
 	switch o.Output {
 	case "json":
-		buf, err := json.MarshalIndent(v, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(o.Out, string(buf))
+		return cmdutil.RenderJSON(o.Out, v)
 	case "yaml":
-		buf, err := yaml.Marshal(v)
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintln(o.Out, string(buf))
+		return cmdutil.RenderYAML(o.Out, v)
 	default:
 		fmt.Fprintf(o.Out, "%#v\n", v)
+		return nil
 	}
-
-	return nil
 }
