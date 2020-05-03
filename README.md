@@ -1,4 +1,4 @@
-# kickoff -- bootstrap projects from skeleton directories
+# kickoff
 
 [![Build Status](https://travis-ci.com/martinohmann/kickoff.svg?branch=master)](https://travis-ci.com/martinohmann/kickoff)
 [![codecov](https://codecov.io/gh/martinohmann/kickoff/branch/master/graph/badge.svg)](https://codecov.io/gh/martinohmann/kickoff)
@@ -6,12 +6,17 @@
 [![GoDoc](https://godoc.org/github.com/martinohmann/kickoff?status.svg)](https://godoc.org/github.com/martinohmann/kickoff)
 ![GitHub](https://img.shields.io/github/license/martinohmann/kickoff?color=orange)
 
-Kickoff makes starting new projects easy and fast. Use community project
+Start new projects from reusable skeleton directories. Use community project
 skeletons or create your own. No more need to copy & paste initial boilerplate
 like Makefiles, CI configuration or language specific configuration files from
 existing projects to a new one.
 
 [![asciicast](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk.svg)](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk)
+
+## Documentation
+
+Head over to the [kickoff documentation](https://kickoff.run) or directly jump
+into the [Getting started guide](https://kickoff.run/getting-started).
 
 ## Features
 
@@ -31,11 +36,6 @@ existing projects to a new one.
 - Skeleton composition: projects can be created by composing multiple skeletons
   together. This is similar to inheritance but allows for way more flexible use
   of skeletons.
-
-## Documentation
-
-Head over to the [kickoff documentation](https://kickoff.run) or directly jump
-into the [Getting started guide](https://kickoff.run/getting-started).
 
 ## License
 

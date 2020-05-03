@@ -154,8 +154,8 @@ $ cat ~/project/myproject/README.md
 ```
 
 That's it! We created our first project from an -- admittedly very poor --
-project skeleton. In the [next section](skeletons/getting-started) you will
-learn how to create your own project skeleton.
+project skeleton. In the next sections you will learn how to create your own
+project skeletons.
 
 ## Next steps
 

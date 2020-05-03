@@ -27,3 +27,7 @@ Add to your `~/.zshrc` for zsh completion:
 ```bash
 . <(kickoff completion zsh)
 ```
+
+## Next steps
+
+* [Skeletons](/skeletons): Learn more about project skeletons.

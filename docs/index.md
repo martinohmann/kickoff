@@ -3,9 +3,9 @@ title: Home
 nav_order: 1
 ---
 
-# Bootstrap projects from skeleton directories
+# kickoff -- A project bootstrapping tool
 
-Kickoff makes starting new projects easy and fast. Use community project
+Start new projects from reusable skeleton directories. Use community project
 skeletons or create your own. No more need to copy & paste initial boilerplate
 like Makefiles, CI configuration or language specific configuration files from
 existing projects to a new one.
@@ -15,6 +15,8 @@ existing projects to a new one.
 
 [Getting started](getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/martinohmann/kickoff){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
+
+<hr>
 
 ## Features
 

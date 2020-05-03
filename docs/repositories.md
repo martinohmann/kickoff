@@ -4,8 +4,7 @@ nav_order: 6
 has_children: false
 ---
 
-Work in progress
-{: .label .label-yellow .float-right }
+{% include wip.md %}
 
 # Using skeleton repositories
 

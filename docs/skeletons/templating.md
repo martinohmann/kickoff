@@ -1,11 +1,10 @@
 ---
 title: Templating
 parent: Skeletons
-nav_order: 2
+nav_order: 4
 ---
 
-Work in progress
-{: .label .label-yellow .float-right }
+{% include wip.md %}
 
 # Templating
 {: .no_toc }

@@ -1,11 +1,10 @@
 ---
 title: Inheritance
 parent: Skeletons
-nav_order: 3
+nav_order: 5
 ---
 
-Work in progress
-{: .label .label-yellow .float-right }
+{% include wip.md %}
 
 # Skeleton inheritance
 {: .no_toc }
