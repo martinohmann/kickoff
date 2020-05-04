@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	git "github.com/go-git/go-git/v5"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/martinohmann/kickoff/pkg/license"
 	"github.com/martinohmann/kickoff/pkg/skeleton"
 	"github.com/martinohmann/kickoff/pkg/template"
 	"github.com/spf13/afero"
-	git "gopkg.in/src-d/go-git.v4"
 )
 
 // CreateOptions provide optional configuration for the project creator. If
