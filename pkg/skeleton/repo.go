@@ -9,10 +9,10 @@ import (
 	"sync"
 
 	"github.com/apex/log"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/martinohmann/kickoff/pkg/file"
-	git "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // Repository is the interface for a skeleton repository.
