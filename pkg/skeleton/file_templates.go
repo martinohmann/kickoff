@@ -4,67 +4,22 @@ package skeleton
 // files when generating a new skeleton.
 var fileTemplates = map[string]string{
 	ConfigFileName: `---
-# Description
-# ===========
+# Refer to the .kickoff.yaml documentation at https://kickoff.run/skeletons/configuration
+# for a complete list of available skeleton configuration options.
 #
-# Explain what this skeleton is about.
-#
-description: ""
-
-# Parent
-# ======
-# 
-# Skeletons can have parents which they inherit values and files from. Files
-# and values of the same name in a child take precedence over those present in a
-# parent.
-#
-# Example (parent in the same skeleton repo):
-# -------------------------------------------
-#
-#   parent:
-#     skeletonName: myparent
-#
-# Example (parent in local skeleton repo):
-# ----------------------------------------
-#
-#   parent:
-#     repositoryURL: /path/to/local/repo
-#     skeletonName: myparent
-#
-# Example (parent in remote skeleton repo):
-# -----------------------------------------
-#
-#   parent:
-#     repositoryURL: https://github.com/martinohmann/kickoff-skeletons?rev=master
-#     skeletonName: default
-#
-parent: null
-
-# Custom configuration values
-# ===========================
-#
-# Custom config is made available in *.skel template under {{ .Values }}. The
-# values can be overridden on project creation.
-#
-# Example:
-# --------
-#
-#   values:
-#     travis:
-#       enabled: false
-#
-values:
-  travis:
-    enabled: false
+# ---
+# description: |
+#   Some optional description of the skeleton that might be helpful to users.
+# values:
+#   myVar: 'myValue'
+#   other:
+#     someVar: false
 `,
 	"README.md.skel": `# {{.Project.Name}}
 
-{{ if .Values.travis.enabled -}}
-[![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
-{{- end }}
+{{ if .License -}}
 ![GitHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
 
-{{ if .License -}}
 ## License
 
 The source code of {{.Project.Name}} is released under the {{.License.Name}}. See the bundled
