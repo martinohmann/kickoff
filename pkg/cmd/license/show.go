@@ -10,6 +10,8 @@ import (
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
+	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
+
 	cmd := &cobra.Command{
 		Use:   "show <key>",
 		Short: "Fetch a license text",
@@ -20,7 +22,10 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff license show mit`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			license, err := license.Get(args[0])
+			ctx, cancel := timeoutFlag.Context()
+			defer cancel()
+
+			license, err := license.Get(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to fetch license text due to: %v", err)
 			}
@@ -30,6 +35,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
+
+	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
