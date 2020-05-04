@@ -3,8 +3,6 @@ title: Environment variables
 parent: Configuration
 ---
 
-{% include wip.md %}
-
 # Environment variables
 
 The following environment variables can be used to configure kickoff:
