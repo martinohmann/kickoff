@@ -21,13 +21,14 @@ import (
 // DryRun is set to true, actions will only be logged, but nothing will be
 // written to the project output dir.
 type CreateOptions struct {
-	DryRun    bool
-	Config    config.Project
-	Values    template.Values
-	Gitignore string
-	InitGit   bool
-	Overwrite bool
-	License   *license.Info
+	DryRun     bool
+	Config     config.Project
+	Values     template.Values
+	Gitignore  string
+	InitGit    bool
+	Overwrite  bool
+	AllowEmpty bool
+	License    *license.Info
 }
 
 // CreateProject creates a new project with given options from skeleton s in
@@ -63,7 +64,7 @@ func (c *Creator) CreateProject(s *skeleton.Skeleton, targetDir string) error {
 		return err
 	}
 
-	fw := NewSkeletonFileWriter(c.Filesystem, c.Options.Overwrite)
+	fw := NewSkeletonFileWriter(c.Filesystem, c.Options.Overwrite, c.Options.AllowEmpty)
 
 	log.Infof("creating project in %s", targetDir)
 

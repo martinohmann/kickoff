@@ -16,19 +16,23 @@ import (
 // SkeletonFileWriter writes skeleton files into a target directory after
 // rendering all templates contained in them.
 type SkeletonFileWriter struct {
-	fs        afero.Fs
-	dirMap    map[string]string
-	overwrite bool
+	fs         afero.Fs
+	dirMap     map[string]string
+	overwrite  bool
+	allowEmpty bool
 }
 
 // NewSkeletonFileWriter creates a new *SkeletonFileWriter which uses fs as the
 // target filesystem for all files and directories that may be created. If
-// overwrite is true, files existing in target dirs will be overwritten.
-func NewSkeletonFileWriter(fs afero.Fs, overwrite bool) *SkeletonFileWriter {
+// overwrite is true, files existing in target dirs will be overwritten. If
+// allowEmpty is true, files for templates that render to an empty string are
+// still created in the target directory.
+func NewSkeletonFileWriter(fs afero.Fs, overwrite, allowEmpty bool) *SkeletonFileWriter {
 	return &SkeletonFileWriter{
-		fs:        fs,
-		dirMap:    make(map[string]string),
-		overwrite: overwrite,
+		fs:         fs,
+		dirMap:     make(map[string]string),
+		overwrite:  overwrite,
+		allowEmpty: allowEmpty,
 	}
 }
 
@@ -83,12 +87,17 @@ func (fw *SkeletonFileWriter) writeFile(f *skeleton.File, targetDir string, valu
 
 		return fw.fs.MkdirAll(targetAbsPath, f.Info.Mode())
 	case filepath.Ext(f.RelPath) == ".skel":
-		logger.Info("rendering template")
-
 		contents, err := template.RenderFile(f.AbsPath, values)
 		if err != nil {
 			return err
 		}
+
+		if !fw.allowEmpty && len(contents) == 0 {
+			logger.Warn("skipping empty template")
+			return nil
+		}
+
+		logger.Info("rendering template")
 
 		return afero.WriteFile(fw.fs, targetAbsPath, []byte(contents), f.Info.Mode())
 	default:
