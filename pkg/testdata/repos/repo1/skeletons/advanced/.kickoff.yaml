@@ -15,5 +15,6 @@
 values:
   somekey: somevalue
   filename: foobar
+  optionalContent: ''
   travis:
     enabled: false

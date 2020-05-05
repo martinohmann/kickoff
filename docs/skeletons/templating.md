@@ -33,7 +33,7 @@ template rendering engine.
 Below is a simply example of a skeleton template file called `README.md.skel`:
 
 {% raw %}
-```markdown
+```mustache
 # {{.Project.Name}}
 
 [![Build Status](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}}.svg?branch=master)](https://travis-ci.org/{{.Project.Owner}}/{{.Project.Name}})
@@ -103,15 +103,14 @@ values:
   myVar: myValue
 
 # on project creation via --set:
-kickoff project create default ~/myproj --set myVar=myValue
+$ kickoff project create default ~/myproj --set myVar=myValue
 
 # on project creation via --values:
-kickoff project create default ~/myproj --values value.yaml
+$ kickoff project create default ~/myproj --values values.yaml
 
-# contents of values.yaml:
+# where values.yaml contains myVar:
 ---
 myVar: myValue
-
 ```
 
 ## Project template variables
@@ -162,6 +161,44 @@ the project is named `myproject`.
 It is also possible to put arbitrary files
 into these directories. These will be moved to the correct place after the
 directory name was resolved. You can take a look at [this example skeleton](https://github.com/martinohmann/kickoff-skeletons/tree/master/skeletons/golang/cli) in the [kickoff-skeletons](https://github.com/martinohmann/kickoff-skeletons) repository which makes use of this feature.
+
+## Conditional inclusion of files
+
+Sometimes it might be useful to only include files in a project based on the
+value of some variable. Kickoff will skip the creation of a file in the project
+directory when the following rules apply:
+
+- The file is a `.skel` template.
+- The file content has a length of zero bytes after template rendering.
+
+To make a template conditionally render to zero bytes, you can create a `.skel`
+template with a content like this:
+
+{% raw %}
+```mustache
+{{- if .Values.includeFile }}
+This will be rendered conditionally
+{{ end -}}
+```
+
+**Note:** make sure you use `{{-` and `-}}` to trim whitespace surrounding your
+conditional to ensure that the rendered result is zero bytes long when the
+conditional evaluates to `false`.
+{% endraw %}
+
+In the `.kickoff.yaml` of the skeleton, set the `includeFile` value to `false`:
+
+```yaml
+values:
+  includeFile: false
+```
+
+Now, the file will only be written to the project if `includeFile` is set to
+`true` via the `--set` or `--values` as described in the [Accessing and setting
+template variables section](#accessing-and-setting-template-variables).
+
+**Note:** You can also force the inclusion of any empty file using the
+`--allow-empty` flag upon project creation.
 
 ## Next steps
 

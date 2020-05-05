@@ -88,11 +88,12 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
-	OutputDir string
-	Skeletons []string
-	DryRun    bool
-	Force     bool
-	Overwrite bool
+	OutputDir  string
+	Skeletons  []string
+	DryRun     bool
+	Force      bool
+	Overwrite  bool
+	AllowEmpty bool
 
 	rawValues   []string
 	valuesFiles []string
@@ -112,7 +113,9 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles, "Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 
-	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory.")
+	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
+
+	cmd.Flags().BoolVar(&o.AllowEmpty, "allow-empty", o.AllowEmpty, "If true, empty files that are the result of template rendering will still be created in the output directory")
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
@@ -204,11 +207,12 @@ func (o *CreateOptions) Run() error {
 	}
 
 	options := &project.CreateOptions{
-		DryRun:    o.DryRun,
-		Config:    o.Project,
-		Values:    o.Values,
-		InitGit:   o.initGit,
-		Overwrite: o.Overwrite,
+		DryRun:     o.DryRun,
+		Config:     o.Project,
+		Values:     o.Values,
+		InitGit:    o.initGit,
+		Overwrite:  o.Overwrite,
+		AllowEmpty: o.AllowEmpty,
 	}
 
 	if o.Project.HasLicense() {

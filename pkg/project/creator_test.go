@@ -144,6 +144,25 @@ func TestCreate(t *testing.T) {
 				assert.NotEqual(t, `do not touch`, string(contents))
 			},
 		},
+		{
+			name:          "does not create file if template rendered to an empty string",
+			createOptions: &CreateOptions{},
+			validate: func(t *testing.T, outputDir string) {
+				_, err := ioutil.ReadFile(filepath.Join(outputDir, "optional-file"))
+				require.True(t, os.IsNotExist(err))
+			},
+		},
+		{
+			name: "does create file if template rendered to an empty string and AllowEmpty is true",
+			createOptions: &CreateOptions{
+				AllowEmpty: true,
+			},
+			validate: func(t *testing.T, outputDir string) {
+				contents, err := ioutil.ReadFile(filepath.Join(outputDir, "optional-file"))
+				require.NoError(t, err)
+				assert.Len(t, contents, 0)
+			},
+		},
 	}
 
 	for _, test := range tests {
