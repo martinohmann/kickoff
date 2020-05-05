@@ -68,10 +68,10 @@ func NewAdapter(service GitHubLicensesService) *Adapter {
 
 // Get fetches the info for the license with name. Will return
 // ErrNotFound if the license is not recognized.
-func (f *Adapter) Get(name string) (*Info, error) {
+func (f *Adapter) Get(ctx context.Context, name string) (*Info, error) {
 	log.WithField("license", name).Debugf("fetching license info from GitHub")
 
-	license, _, err := f.service.Get(context.Background(), name)
+	license, _, err := f.service.Get(ctx, name)
 	if err != nil {
 		errResp, ok := err.(*github.ErrorResponse)
 		if ok && errResp.Response.StatusCode == 404 {
@@ -87,10 +87,10 @@ func (f *Adapter) Get(name string) (*Info, error) {
 // List lists the infos for all available licenses. These do not include the
 // license body but only the metadata. Use Get to fetch the body of a
 // particular license.
-func (f *Adapter) List() ([]*Info, error) {
+func (f *Adapter) List(ctx context.Context) ([]*Info, error) {
 	log.Debug("fetching license infos from GitHub")
 
-	licenses, _, err := f.service.List(context.Background())
+	licenses, _, err := f.service.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +105,13 @@ func (f *Adapter) List() ([]*Info, error) {
 
 // Get fetches the info for the license with name using the DefaultAdapter.
 // Will return ErrNotFound if the license is not recognized.
-func Get(name string) (*Info, error) {
-	return DefaultAdapter.Get(name)
+func Get(ctx context.Context, name string) (*Info, error) {
+	return DefaultAdapter.Get(ctx, name)
 }
 
 // List lists the infos for all available licenses using the DefaultAdapter.
 // These do not include the license body but only the metadata. Use Get to
 // fetch the body of a particular license.
-func List() ([]*Info, error) {
-	return DefaultAdapter.List()
+func List(ctx context.Context) ([]*Info, error) {
+	return DefaultAdapter.List(ctx)
 }

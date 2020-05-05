@@ -10,6 +10,8 @@ import (
 )
 
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
+	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
+
 	cmd := &cobra.Command{
 		Use:   "show <name>",
 		Short: "Fetch a gitignore template",
@@ -25,7 +27,10 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff gitignore show go,helm,hugo`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			gitignore, err := gitignore.Get(args[0])
+			ctx, cancel := timeoutFlag.Context()
+			defer cancel()
+
+			gitignore, err := gitignore.Get(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}
@@ -35,6 +40,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
+
+	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

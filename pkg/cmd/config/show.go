@@ -38,7 +38,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
-	o.OutputFlags.AddFlags(cmd)
+	o.OutputFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -46,7 +46,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.OutputFlags
+	cmdutil.OutputFlag
 }
 
 func (o *ShowOptions) Run() (err error) {

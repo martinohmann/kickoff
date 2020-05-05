@@ -1,6 +1,7 @@
 package gitignore
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +63,7 @@ func TestList(t *testing.T) {
 			done := testServer(test.handler(t))
 			defer done()
 
-			gitignores, err := List()
+			gitignores, err := List(context.Background())
 			if test.expectError {
 				require.Error(t, err)
 
@@ -142,7 +143,7 @@ func TestGet(t *testing.T) {
 			done := testServer(test.handler(t))
 			defer done()
 
-			gitignores, err := Get(test.query)
+			gitignores, err := Get(context.Background(), test.query)
 			if test.expectError {
 				require.Error(t, err)
 

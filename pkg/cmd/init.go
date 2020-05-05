@@ -19,7 +19,10 @@ import (
 )
 
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {
-	o := &InitOptions{IOStreams: streams}
+	o := &InitOptions{
+		IOStreams:   streams,
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+	}
 
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -39,6 +42,7 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	o.AllowMissingConfig()
+	o.TimeoutFlag.AddFlag(cmd)
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
@@ -47,6 +51,7 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 type InitOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+	cmdutil.TimeoutFlag
 }
 
 func (o *InitOptions) Complete() (err error) {
@@ -138,7 +143,10 @@ func (o *InitOptions) configureLicense() error {
 		licenseMap        map[string]string
 	)
 
-	licenses, err := license.List()
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	licenses, err := license.List(ctx)
 	if err != nil {
 		log.Debugf("skipping license configuration due to: %v", err)
 	} else if len(licenses) > 0 {
@@ -203,7 +211,10 @@ func (o *InitOptions) configureLicense() error {
 func (o *InitOptions) configureGitignoreTemplates() error {
 	var gitignoresAvailable bool
 
-	gitignoreOptions, err := gitignore.List()
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	gitignoreOptions, err := gitignore.List(ctx)
 	if err != nil {
 		log.Debugf("skipping gitignore configuration due to: %v", err)
 	} else if len(gitignoreOptions) > 0 {

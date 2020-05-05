@@ -10,6 +10,8 @@ import (
 )
 
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
+	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
+
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -18,7 +20,10 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			licenses, err := license.List()
+			ctx, cancel := timeoutFlag.Context()
+			defer cancel()
+
+			licenses, err := license.List(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch licenses due to: %v", err)
 			}
@@ -35,6 +40,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
+
+	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

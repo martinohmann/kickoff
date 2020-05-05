@@ -1,13 +1,21 @@
 package cmdutil
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/pkg/config"
 	"github.com/martinohmann/kickoff/pkg/file"
 	"github.com/spf13/cobra"
+)
+
+const (
+	// DefaultTimeout is the default timeout for operations that cross API
+	// boundaries.
+	DefaultTimeout = 20 * time.Second
 )
 
 // AddConfigFlag adds the --config flag to cmd and binds it to val.
@@ -82,22 +90,54 @@ func (f *ConfigFlags) Complete() (err error) {
 	return nil
 }
 
-// OutputFlags manage and validate flags related to output format.
-type OutputFlags struct {
+// OutputFlag manage and validate a flag related to output format.
+type OutputFlag struct {
 	Output string
 }
 
-// AddFlags adds flags for configuring output format to cmd.
-func (f *OutputFlags) AddFlags(cmd *cobra.Command) {
+// AddFlag adds the flag for configuring output format to cmd.
+func (f *OutputFlag) AddFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&f.Output, "output", f.Output, "Output format")
 }
 
 // Validate validates the output format and returns an error if the user
 // provided an invalid value.
-func (f *OutputFlags) Validate() error {
+func (f *OutputFlag) Validate() error {
 	if f.Output != "" && f.Output != "yaml" && f.Output != "json" {
 		return ErrInvalidOutputFormat
 	}
 
 	return nil
+}
+
+// TimeoutFlag configure the timeout for operations that cross API boundaries,
+// such as http requests to third-party integrations.
+type TimeoutFlag struct {
+	Timeout time.Duration
+}
+
+// NewDefaultTimeoutFlag creates a new TimeoutFlag which uses the
+// DefaultTimeout is not overridded.
+func NewDefaultTimeoutFlag() TimeoutFlag {
+	return TimeoutFlag{
+		Timeout: DefaultTimeout,
+	}
+}
+
+// AddFlag adds the timeout flag to cmd.
+func (f *TimeoutFlag) AddFlag(cmd *cobra.Command) {
+	cmd.Flags().DurationVar(&f.Timeout, "timeout", f.Timeout, "Timeout for http requests. Zero or less means that there is no timeout.")
+}
+
+// Context returns a context with the timeout set and a cancel func to cancel
+// the context. If the timeout less or equal to zero, a normal background
+// context is returned.
+func (f *TimeoutFlag) Context() (context.Context, func()) {
+	ctx := context.Background()
+
+	if f.Timeout <= 0 {
+		return context.WithCancel(ctx)
+	}
+
+	return context.WithTimeout(ctx, f.Timeout)
 }

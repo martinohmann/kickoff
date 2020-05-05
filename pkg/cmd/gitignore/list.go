@@ -10,6 +10,8 @@ import (
 )
 
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
+	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
+
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -20,7 +22,10 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			Check out https://www.gitignore.io for more information about .gitignore templates.`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			gitignores, err := gitignore.List()
+			ctx, cancel := timeoutFlag.Context()
+			defer cancel()
+
+			gitignores, err := gitignore.List(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}
@@ -37,6 +42,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
+
+	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

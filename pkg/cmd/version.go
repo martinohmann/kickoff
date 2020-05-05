@@ -35,14 +35,14 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.Flags().BoolVar(&o.Short, "short", false, "Display short version")
 
-	o.OutputFlags.AddFlags(cmd)
+	o.OutputFlag.AddFlag(cmd)
 
 	return cmd
 }
 
 type VersionOptions struct {
 	cli.IOStreams
-	cmdutil.OutputFlags
+	cmdutil.OutputFlag
 
 	Short bool
 }
@@ -52,7 +52,7 @@ func (o *VersionOptions) Validate() error {
 		return ErrIllegalVersionFlagCombination
 	}
 
-	return o.OutputFlags.Validate()
+	return o.OutputFlag.Validate()
 }
 
 func (o *VersionOptions) Run() error {

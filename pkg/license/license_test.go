@@ -49,7 +49,7 @@ func TestAdapter_Get(t *testing.T) {
 
 	svc.On("Get", mock.Anything, "foo").Return(license, &github.Response{}, nil)
 
-	info, err := adapter.Get("foo")
+	info, err := adapter.Get(context.Background(), "foo")
 	require.NoError(t, err)
 
 	expected := &Info{
@@ -69,7 +69,7 @@ func TestAdapter_Get_NotFound(t *testing.T) {
 		Response: &http.Response{StatusCode: 404},
 	})
 
-	_, err := adapter.Get("foo")
+	_, err := adapter.Get(context.Background(), "foo")
 	require.Error(t, err)
 	assert.Equal(t, ErrNotFound, err)
 }
@@ -88,7 +88,7 @@ func TestAdapter_List(t *testing.T) {
 
 	svc.On("List", mock.Anything).Return(licenses, &github.Response{}, nil)
 
-	infos, err := adapter.List()
+	infos, err := adapter.List(context.Background())
 	require.NoError(t, err)
 
 	expected := []*Info{

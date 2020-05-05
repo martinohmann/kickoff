@@ -19,7 +19,9 @@ import (
 )
 
 func NewCreateCmd() *cobra.Command {
-	o := &CreateOptions{}
+	o := &CreateOptions{
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+	}
 
 	cmd := &cobra.Command{
 		Use:   "create <skeleton-name> <output-dir>",
@@ -74,6 +76,7 @@ func NewCreateCmd() *cobra.Command {
 
 	o.AddFlags(cmd)
 	o.ConfigFlags.AddFlags(cmd)
+	o.TimeoutFlag.AddFlag(cmd)
 
 	cmdutil.AddForceFlag(cmd, &o.Force)
 	cmdutil.AddOverwriteFlag(cmd, &o.Overwrite)
@@ -83,6 +86,7 @@ func NewCreateCmd() *cobra.Command {
 
 type CreateOptions struct {
 	cmdutil.ConfigFlags
+	cmdutil.TimeoutFlag
 
 	OutputDir string
 	Skeletons []string
@@ -208,22 +212,46 @@ func (o *CreateOptions) Run() error {
 	}
 
 	if o.Project.HasLicense() {
-		options.License, err = license.Get(o.Project.License)
-		if err == license.ErrNotFound {
-			return fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", o.Project.License)
-		} else if err != nil {
-			return fmt.Errorf("failed to fetch license due to: %v", err)
+		options.License, err = o.fetchLicense(o.Project.License)
+		if err != nil {
+			return err
 		}
 	}
 
 	if o.Project.HasGitignore() {
-		options.Gitignore, err = gitignore.Get(o.Project.Gitignore)
-		if err == gitignore.ErrNotFound {
-			return fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", o.Project.Gitignore)
-		} else if err != nil {
-			return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
+		options.Gitignore, err = o.fetchGitignore(o.Project.Gitignore)
+		if err != nil {
+			return err
 		}
 	}
 
 	return project.Create(skeleton, o.OutputDir, options)
+}
+
+func (o *CreateOptions) fetchLicense(name string) (*license.Info, error) {
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	l, err := license.Get(ctx, name)
+	if err == license.ErrNotFound {
+		return nil, fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", name)
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to fetch license due to: %v", err)
+	}
+
+	return l, nil
+}
+
+func (o *CreateOptions) fetchGitignore(template string) (string, error) {
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	gi, err := gitignore.Get(ctx, template)
+	if err == gitignore.ErrNotFound {
+		return "", fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", template)
+	} else if err != nil {
+		return "", fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
+	}
+
+	return gi, nil
 }

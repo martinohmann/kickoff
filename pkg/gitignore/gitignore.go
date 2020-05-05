@@ -5,6 +5,7 @@ package gitignore
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -29,10 +30,17 @@ var (
 // the http connection fails or if the response status code is not 200. Will
 // return ErrNotFound if any of the requested gitignore templates cannot be
 // found.
-func Get(query string) (string, error) {
+func Get(ctx context.Context, query string) (string, error) {
 	log.WithField("query", query).Debug("fetching template from gitignore.io")
 
-	resp, err := http.Get(fmt.Sprintf("%s/%s", apiBaseURL, query))
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", apiBaseURL, query), nil)
+	if err != nil {
+		return "", err
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -52,10 +60,17 @@ func Get(query string) (string, error) {
 // List obtains a list of available gitignore templates from gitignore.io. Will
 // return an error if the http connection fails or the response status code is
 // not 200.
-func List() ([]string, error) {
+func List(ctx context.Context) ([]string, error) {
 	log.Debug("fetching template list from gitignore.io")
 
-	resp, err := http.Get(fmt.Sprintf("%s/list", apiBaseURL))
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/list", apiBaseURL), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
