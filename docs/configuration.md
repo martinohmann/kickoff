@@ -54,7 +54,6 @@ The kickoff configuration file structure looks like this:
 ```yaml
 ---
 project:
-  email: johndoe@example.com
   gitignore: none
   host: github.com
   license: none
@@ -66,10 +65,13 @@ values: {}
 
 ## Project specific configuration
 
-The `email`, `owner` and `host` configuration fields are useful to be able to
-create project specific links or copyright notices in skeleton templates.
+The `owner` and `host` configuration fields are useful to be able to create
+project specific links in skeleton templates. The `owner` will also be injected
+into the `[fullname]` field of a `LICENSE` file, if you are choosing to
+automatically include one upon project creation, see the next section for
+configuring a default project license.
 
-### Configuring a default `license`
+### Configuring a default project `license`
 
 If you want to set a default license that is used for every new project (unless
 overridden), you can set that in the `license` field of the `project`
@@ -88,7 +90,7 @@ Showing the license text of a specific license works like this:
 $ kickoff license show mit
 ```
 
-### Configuring default `gitignore` templates
+### Configuring default project `gitignore` templates
 
 The `gitignore` field of the `project` configuration lets you specify a
 comma-separated list of `.gitignore` templates that should be added into the

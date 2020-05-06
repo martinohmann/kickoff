@@ -74,7 +74,7 @@ func (c *Creator) CreateProject(s *skeleton.Skeleton, targetDir string) error {
 	}
 
 	if c.Options.License != nil {
-		body := strings.ReplaceAll(c.Options.License.Body, "[fullname]", c.Options.Config.Author())
+		body := strings.ReplaceAll(c.Options.License.Body, "[fullname]", c.Options.Config.Owner)
 		body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
 
 		err = c.writeFile(targetDir, "LICENSE", []byte(body), 0644)

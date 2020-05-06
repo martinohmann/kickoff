@@ -33,7 +33,6 @@ func TestCreate(t *testing.T) {
 				Gitignore: "somegitignorebody",
 				Config: config.Project{
 					Owner: "johndoe",
-					Email: "john@example.com",
 				},
 				License: &license.Info{
 					Body: `some license [fullname] [year]`,
@@ -59,7 +58,7 @@ func TestCreate(t *testing.T) {
 					},
 					{
 						path:     filepath.Join(outputDir, "LICENSE"),
-						contents: []byte(`some license johndoe <john@example.com> ` + strconv.Itoa(time.Now().Year())),
+						contents: []byte(`some license johndoe ` + strconv.Itoa(time.Now().Year())),
 					},
 				}
 
