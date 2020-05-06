@@ -114,19 +114,16 @@ func (o *EditOptions) Run() (err error) {
 
 	// Sanity check: if we fail to load the config from the tmpfile, we
 	// consider it invalid and abort without copying it back.
-	_, err = config.Load(tmpfilePath)
+	cfg, err := config.Load(tmpfilePath)
 	if err != nil {
 		return fmt.Errorf("not saving invalid kickoff config: %v", err)
 	}
 
-	log.WithFields(log.Fields{
-		"tmpfile":    tmpfilePath,
-		"configfile": o.ConfigPath,
-	}).Debug("copying back config file")
+	log.WithField("config", o.ConfigPath).Info("writing config")
 
-	err = file.Copy(tmpfilePath, o.ConfigPath)
+	err = config.Save(&cfg, o.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("error while copying back config file: %v", err)
+		return fmt.Errorf("error while saving config file: %v", err)
 	}
 
 	return nil

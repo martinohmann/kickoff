@@ -93,41 +93,29 @@ func (o *InitOptions) configureProject() error {
 		{
 			Name: "host",
 			Prompt: &survey.Input{
-				Message: "Project host",
+				Message: "Default project host",
 				Default: o.Project.Host,
 				Help: cmdutil.LongDesc(`
-					Project host
+					Default project host
 
 					To be able to build nice links that are related to the source code repo, e.g. links to
 					CI or docs, kickoff needs to know the hostname of your SCM platform. You can override
-					that on project creation.
+					this on project creation.
 				`),
 			},
 		},
 		{
 			Name: "owner",
 			Prompt: &survey.Input{
-				Message: "Project owner",
+				Message: "Default project owner",
 				Default: o.Project.Owner,
 				Help: cmdutil.LongDesc(`
-					Project owner
+					Default project owner
 
 					To be able to build nice links that are related to the source code repo, e.g. links to
 					CI or docs, kickoff needs to know the username that you use on your SCM platform. You
-					can override that on project creation. 
+					can override this on project creation. 
 					The project owner is automatically inserted into license texts if enabled.
-				`),
-			},
-		},
-		{
-			Name: "email",
-			Prompt: &survey.Input{
-				Message: "Project email",
-				Default: o.Project.Email,
-				Help: cmdutil.LongDesc(`
-					Project email
-
-					If set, the project email is automatically inserted into license texts next to the author.
 				`),
 			},
 		},

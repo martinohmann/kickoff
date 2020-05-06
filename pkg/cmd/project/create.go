@@ -103,7 +103,6 @@ type CreateOptions struct {
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 
-	cmd.Flags().StringVar(&o.Project.Email, "email", o.Project.Email, "Project owner's e-mail")
 	cmd.Flags().StringVar(&o.Project.Gitignore, "gitignore", o.Project.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
 	cmd.Flags().StringVar(&o.Project.Host, "host", o.Project.Host, "Project repository host")
 	cmd.Flags().StringVar(&o.Project.License, "license", o.Project.License, "License to use for the project. If set this will automatically populate the LICENSE file")

@@ -46,7 +46,6 @@ $ kickoff init
 
 ? Project host github.com
 ? Project owner johndoe
-? Project email johndoe@example.com
 ? Do you want to set a default project license? No
 ? Do you want to select default .gitignore templates? No
 ```

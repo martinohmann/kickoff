@@ -12,7 +12,6 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 	config := Config{
 		Project: Project{
 			Owner: "johndoe",
-			Email: "john@example.com",
 		},
 	}
 
@@ -22,7 +21,6 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 		Project: Project{
 			Host:      DefaultProjectHost,
 			Owner:     "johndoe",
-			Email:     "john@example.com",
 			License:   NoLicense,
 			Gitignore: NoGitignore,
 		},
@@ -38,7 +36,7 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 func TestConfig_MergeFromFile(t *testing.T) {
 	config := Config{
 		Project: Project{
-			Email: "johndoe@example.com",
+			Host: DefaultProjectHost,
 		},
 	}
 
@@ -47,8 +45,8 @@ func TestConfig_MergeFromFile(t *testing.T) {
 
 	expected := Config{
 		Project: Project{
+			Host:  DefaultProjectHost,
 			Owner: "johndoe",
-			Email: "johndoe@example.com",
 		},
 		Repositories: map[string]string{
 			"local":  "/some/local/path",
@@ -70,12 +68,4 @@ func TestProject_GoPackagePath(t *testing.T) {
 func TestProject_URL(t *testing.T) {
 	p := Project{Owner: "foo", Name: "bar", Host: "github.com"}
 	assert.Equal(t, "https://github.com/foo/bar", p.URL())
-}
-
-func TestProject_Author(t *testing.T) {
-	p1 := Project{Owner: "johndoe", Email: "john@example.com"}
-	assert.Equal(t, "johndoe <john@example.com>", p1.Author())
-
-	p2 := Project{Owner: "janedoe"}
-	assert.Equal(t, "janedoe", p2.Author())
 }

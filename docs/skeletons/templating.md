@@ -118,17 +118,15 @@ myVar: myValue
 Next to the user-defined `.Values`, kickoff makes a couple of variables
 available to template files upon project creation:
 
-| Variable                 | Description                                                                                                                                                                                                        |
-| ---                      | ---                                                                                                                                                                                                                |
-| `.Project.Host`          | The git host you specified during `kickoff init`, e.g. `github.com`                                                                                                                                                |
-| `.Project.Owner`         | The project owner you specified, e.g. `martinohmann`                                                                                                                                                               |
-| `.Project.Email`         | The project email you specified, e.g. `foo@bar.baz`                                                                                                                                                                |
-| `.Project.Name`          | The name you specified when running `kickoff project create`                                                                                                                                                       |
-| `.Project.License`       | The name of the license, if you picked one                                                                                                                                                                         |
-| `.Project.Gitignore`     | Comma-separated list of gitignore templates, if provided                                                                                                                                                           |
-| `.Project.URL`           | The URL to the project repo, e.g. `https://github.com/martinohmann/myproject`                                                                                                                                      |
-| `.Project.GoPackagePath` | The package path for go projects, e.g. `github.com/martinohmann/myproject`                                                                                                                                         |
-| `.Project.Author`        | If an email is present, this will resolve to `project-owner <foo@bar.baz>`, otherwise just `owner`                                                                                                                 |
+| Variable                 | Description                                                                   |
+| ---                      | ---                                                                           |
+| `.Project.Host`          | The git host you specified during `kickoff init`, e.g. `github.com`           |
+| `.Project.Owner`         | The project owner you specified, e.g. `martinohmann`                          |
+| `.Project.Name`          | The name you specified when running `kickoff project create`                  |
+| `.Project.License`       | The name of the license, if you picked one                                    |
+| `.Project.Gitignore`     | Comma-separated list of gitignore templates, if provided                      |
+| `.Project.URL`           | The URL to the project repo, e.g. `https://github.com/martinohmann/myproject` |
+| `.Project.GoPackagePath` | The package path for go projects, e.g. `github.com/martinohmann/myproject`    |
 
 ## Template functions
 

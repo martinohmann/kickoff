@@ -86,20 +86,19 @@ func (c *Config) MergeFromFile(path string) error {
 	return mergo.Merge(c, config)
 }
 
-// Project contains project specific configuration like author, email address
-// and project name.
+// Project contains project specific configuration like git host, owner and
+// project name.
 type Project struct {
 	Host      string `json:"host"`
 	Owner     string `json:"owner"`
-	Email     string `json:"email"`
 	Name      string `json:"-"`
 	License   string `json:"license"`
 	Gitignore string `json:"gitignore"`
 }
 
-// ApplyDefaults applies defaults to unset fields. If the Owner and Email
-// fields are empty ApplyDefaults will attempt to fill them with the git config
-// values of github.user/user.name and user.email if they exist.
+// ApplyDefaults applies defaults to unset fields. If the Owner field is empty
+// ApplyDefaults will attempt to fill it with the git config values of
+// github.user or user.name if exists.
 func (p *Project) ApplyDefaults() {
 	if p.Host == "" {
 		p.Host = DefaultProjectHost
@@ -107,10 +106,6 @@ func (p *Project) ApplyDefaults() {
 
 	if p.Owner == "" {
 		p.Owner = detectProjectOwner()
-	}
-
-	if p.Email == "" {
-		p.Email = detectProjectEmail()
 	}
 
 	if p.License == "" {
@@ -145,16 +140,6 @@ func (p *Project) URL() string {
 // the project.
 func (p *Project) GoPackagePath() string {
 	return fmt.Sprintf("%s/%s/%s", p.Host, p.Owner, p.Name)
-}
-
-// Author returns a string that can be used in licenses. If an email address is
-// configured, this will look like `Owner <Email>`. `Owner` otherwise.
-func (p *Project) Author() string {
-	if p.Email != "" {
-		return fmt.Sprintf("%s <%s>", p.Owner, p.Email)
-	}
-
-	return p.Owner
 }
 
 // Load loads the config from path and returns it.
@@ -201,15 +186,4 @@ func detectProjectOwner() string {
 	}
 
 	return owner
-}
-
-func detectProjectEmail() string {
-	configKeys := []string{"user.email"}
-
-	email := getGitConfigKey(configKeys)
-	if email == "" {
-		log.Debugf("could not infer project email from git config, none of these keys found: ", strings.Join(configKeys, ", "))
-	}
-
-	return email
 }
