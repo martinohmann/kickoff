@@ -159,7 +159,7 @@ project skeletons.
 ## Next steps
 
 * [Project creation](project-creation): Learn more about all the project
-* creation options.
+  creation options.
 * [Project skeletons](skeletons): Learn more about how to create and share your
   own project skeletons.
 * [Working with skeleton repositories](repositories): Using local and remote
