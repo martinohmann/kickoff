@@ -1,5 +1,6 @@
 ---
 title: Creating skeletons
+permalink: /skeletons/creating-skeletons
 parent: Skeletons
 nav_order: 2
 ---

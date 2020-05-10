@@ -1,5 +1,6 @@
 ---
 title: Configuration
+permalink: /skeletons/configuration
 parent: Skeletons
 nav_order: 3
 ---

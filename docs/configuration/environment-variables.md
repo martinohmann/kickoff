@@ -1,5 +1,6 @@
 ---
 title: Environment variables
+permalink: /configuration/environment-variables
 parent: Configuration
 ---
 

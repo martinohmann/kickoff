@@ -1,5 +1,6 @@
 ---
 title: Templating
+permalink: /skeletons/templating
 parent: Skeletons
 nav_order: 4
 ---
@@ -54,7 +55,7 @@ Upon project creation, this gets rendered using the project information made
 available in the `.Project` variable, and user-defined values in the `.Values`
 variable. For example, if the project name is `myproject` and you configured
 the default project owner to be `johndoe` while [initializing the kickoff
-configuration](getting-started.html#initializing-the-kickoff-configuration),
+configuration](/getting-started#initializing-the-kickoff-configuration),
 this gets into the file `README.md` rendered as:
 
 {% raw %}

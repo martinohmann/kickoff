@@ -1,5 +1,6 @@
 ---
 title: Structure
+permalink: /skeletons/structure
 parent: Skeletons
 nav_order: 1
 ---

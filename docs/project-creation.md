@@ -1,5 +1,6 @@
 ---
 title: Project creation
+permalink: /project-creation
 nav_order: 4
 ---
 

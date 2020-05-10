@@ -1,5 +1,6 @@
 ---
 title: Skeletons
+permalink: /skeletons
 nav_order: 6
 has_children: true
 ---

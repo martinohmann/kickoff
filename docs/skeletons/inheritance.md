@@ -1,5 +1,6 @@
 ---
 title: Inheritance
+permalink: /skeletons/inheritance
 parent: Skeletons
 nav_order: 5
 ---

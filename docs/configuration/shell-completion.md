@@ -1,5 +1,6 @@
 ---
 title: Shell completion
+permalink: /configuration/shell-completion
 parent: Configuration
 ---
 

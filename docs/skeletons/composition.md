@@ -1,5 +1,6 @@
 ---
 title: Composition
+permalink: /skeletons/composition
 parent: Skeletons
 nav_order: 6
 ---
