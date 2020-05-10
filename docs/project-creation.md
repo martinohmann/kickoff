@@ -56,7 +56,7 @@ upon project creation. Available values (together with their defaults) can be
 listed by inspecting the skeleton:
 
 ```bash
-$ kickoff skel show myskeleton
+$ kickoff skeleton show myskeleton
 
 ...
 Values          someKey: someValue
@@ -72,8 +72,9 @@ $ kickoff project create myskeleton ~/myproject --value values.yaml
 ```
 
 Refer to the [Accessing and setting template
-variables](/skeletons/templating#accessing-and-setting-template-variables)
-documentation for mor info.
+variables](/skeletons/templating#accessing-and-setting-template-variables) and
+[Configuring default values](/configuration#configuring-default-values)
+documentation for more information.
 
 
 ## Including a `LICENSE`
@@ -108,6 +109,10 @@ For a list of available licenses run:
 $ kickoff licenses list
 ```
 
+You can also [configure a default project
+license](/configuration#configuring-a-default-project-license) that will be
+used for all new projects if not explicitly overridden.
+
 ## Including a `.gitignore`
 
 You can automatically include a `.gitignore` file with your project which can
@@ -124,6 +129,10 @@ For a list of available `.gitignore` templates run:
 ```bash
 $ kickoff gitignores list
 ```
+
+It is also possible to [configure default `.gitignore`
+templates](/configuration#configuring-default-project-gitignore-templates)
+which can be overridden explicitly on project creation.
 
 ## Dry-run project creation
 
