@@ -3,8 +3,6 @@ title: Project creation
 nav_order: 4
 ---
 
-{% include wip.md %}
-
 # Project creation
 {: .no_toc}
 
@@ -53,17 +51,104 @@ $ kickoff project create --help
 
 ## Overriding skeleton values
 
-TODO
+Skeletons can make use of custom values which can be overridden by the user
+upon project creation. Available values (together with their defaults) can be
+listed by inspecting the skeleton:
 
-## Including a license
+```bash
+$ kickoff skel show myskeleton
 
-TODO
+...
+Values          someKey: someValue
+                someOtherKey:
+                  someNestedKey: 42
+```
+
+Using the `--set` and `--values` flags you can override these:
+
+```bash
+$ kickoff project create myskeleton ~/myproject --set someOtherKey.someNestedKey=43
+$ kickoff project create myskeleton ~/myproject --value values.yaml 
+```
+
+Refer to the [Accessing and setting template
+variables](/skeletons/templating#accessing-and-setting-template-variables)
+documentation for mor info.
+
+
+## Including a `LICENSE`
+
+Kickoff can automatically add a `LICENSE` file containing a popular open source
+license which is obtained via the [GitHub Licenses
+API](https://developer.github.com/v3/licenses/).
+
+To add a license to your project, just specify its name using the `--license` flag:
+
+```bash
+$ kickoff project create myskeleton ~/myproject --license MIT
+```
+
+It will automatically fill in the year and project owner into the license if
+these fields are supported by the license, e.g.:
+
+```bash
+$ cat ~/myproject/LICENSE
+
+MIT License
+
+Copyright (c) 2020 johndoe
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+[...]
+```
+
+For a list of available licenses run:
+
+```bash
+$ kickoff licenses list
+```
 
 ## Including a `.gitignore`
 
-TODO
+You can automatically include a `.gitignore` file with your project which can
+be built from one or multiple gitignore templates from
+[gitignore.io](https://gitignore.io/). The templates can be passed as comma
+separated list via the `--gitignore` flag:
+
+```bash
+$ kickoff project create myskeleton ~/myproject --gitignore go,hugo
+```
+
+For a list of available `.gitignore` templates run:
+
+```bash
+$ kickoff gitignores list
+```
+
+## Dry-run project creation
+
+Use the `--dry-run` flag if you just want to see which files and directories
+would be created for your new project:
+
+```bash
+$ kickoff project create myskeleton ~/myproject --dry-run
+```
 
 ## Creating a project from multiple skeletons
 
-TODO
+Projects can be created by composing multiple skeletons together. This is just
+as simple as providing multiple skeletons instead of one as comma separated
+list on project creation:
+
+```bash
+$ kickoff project create skeleton1,skeleton2,skeleton3 ~/myproject
+```
+
+Note that the skeletons are merged left to right, so files and values from
+skeletons on the right will override files and values of the same name from
+other skeletons to the left.
+
+**Caveats:** Creating project from skeletons that are defining the same value
+with different types might cause unexpected behaviour or even fail while
+rendering templates.
 
