@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/apex/log"
-	"github.com/martinohmann/kickoff/pkg/cli"
-	"github.com/martinohmann/kickoff/pkg/cmd"
+	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/cmd"
 )
 
 func main() {

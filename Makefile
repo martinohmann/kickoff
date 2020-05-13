@@ -13,9 +13,9 @@ help:
 build: ## build kickoff
 	go build \
 		-ldflags "-s -w \
-			-X $(PKG_BASE)/pkg/version.gitVersion=$(shell git describe --tags 2>/dev/null || echo v0.0.0-master) \
-			-X $(PKG_BASE)/pkg/version.gitCommit=$(shell git rev-parse HEAD) \
-			-X $(PKG_BASE)/pkg/version.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+			-X $(PKG_BASE)/internal/version.gitVersion=$(shell git describe --tags 2>/dev/null || echo v0.0.0-master) \
+			-X $(PKG_BASE)/internal/version.gitCommit=$(shell git rev-parse HEAD) \
+			-X $(PKG_BASE)/internal/version.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')" \
 		./cmd/kickoff
 
 .PHONY: install
