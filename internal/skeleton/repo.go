@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/apex/log"
 	git "github.com/go-git/go-git/v5"
@@ -167,19 +168,54 @@ func updateLocalGitRepository(info *RepositoryInfo) error {
 }
 
 func openOrCloneGitRepository(info *RepositoryInfo) (*git.Repository, error) {
-	repo, err := git.PlainOpen(info.LocalPath())
+	localPath := info.LocalPath()
+
+	repo, err := git.PlainOpen(localPath)
 	switch {
 	case err == git.ErrRepositoryNotExists:
-		return git.PlainClone(info.LocalPath(), false, &git.CloneOptions{
+		return git.PlainClone(localPath, false, &git.CloneOptions{
 			URL: info.String(),
 		})
 	case err != nil:
 		return nil, err
 	default:
-		err := repo.Fetch(&git.FetchOptions{
+		// As git operations that fetch refs from remotes can be slow, we are
+		// trying to avoid doing too many of them. We are going to only attempt
+		// to fetch refs if the modification timestamp of the checked out local
+		// repo is older than one minute. This should be a reasonable time
+		// frame that is long enough to see a noticeable speed up of issuing
+		// multiple commands that read from repositories (e.g. `kickoff
+		// skeleton list`, `kickoff skeleton show foobar`) shortly after
+		// another, but it is short enough to avoid having a stale version of a
+		// remote repository checked out locally for too long.
+		fileInfo, err := os.Stat(localPath)
+		if err != nil {
+			return nil, err
+		}
+
+		now := time.Now()
+		modTime := fileInfo.ModTime()
+
+		// @TODO(mohmann): maybe make this configurable?
+		if modTime.Add(1 * time.Minute).After(now) {
+			// Refs were already fetched less than a minute ago, bail out early
+			// as there will probably be nothing new most of the time.
+			return repo, nil
+		}
+
+		err = repo.Fetch(&git.FetchOptions{
 			RefSpecs: []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"},
 		})
 		if err != nil && err != git.NoErrAlreadyUpToDate {
+			return nil, err
+		}
+
+		now = time.Now()
+
+		// Important: update the modification date after fetching the refs so
+		// we can actually make use of the improvement above.
+		err = os.Chtimes(localPath, now, now)
+		if err != nil {
 			return nil, err
 		}
 
