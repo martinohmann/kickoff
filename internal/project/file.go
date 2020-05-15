@@ -6,8 +6,7 @@ import (
 	"os"
 )
 
-// File describes the minimal interface for a file that should be processed by the
-// project builder.
+// File describes a file that can be processed by the project builder.
 type File interface {
 	// Path must return the path relative to the new project root.
 	Path() string
