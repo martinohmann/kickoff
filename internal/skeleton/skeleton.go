@@ -6,6 +6,7 @@ package skeleton
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -38,6 +39,21 @@ type File struct {
 
 	// Info is the os.FileInfo for the file
 	Info os.FileInfo `json:"-"`
+}
+
+// Path implements project.File.
+func (f *File) Path() string {
+	return f.RelPath
+}
+
+// Mode implements project.File.
+func (f *File) Mode() os.FileMode {
+	return f.Info.Mode()
+}
+
+// Reader implements project.File.
+func (f *File) Reader() (io.Reader, error) {
+	return os.Open(f.AbsPath)
 }
 
 // Skeleton is the representation of a skeleton returned by Load() with all

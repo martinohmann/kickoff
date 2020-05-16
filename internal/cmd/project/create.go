@@ -7,13 +7,16 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	git "github.com/go-git/go-git/v5"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
@@ -205,30 +208,77 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	options := &project.CreateOptions{
-		DryRun:     o.DryRun,
-		Config:     o.Project,
-		Values:     o.Values,
-		InitGit:    o.initGit,
-		Overwrite:  o.Overwrite,
-		AllowEmpty: o.AllowEmpty,
+	builder := project.NewBuilder(o.Project).
+		AllowEmpty(o.AllowEmpty).
+		OverwriteAll(o.Overwrite).
+		AddValues(skeleton.Values).
+		AddValues(o.Values)
+
+	if o.DryRun {
+		builder.WithFilesystem(afero.NewMemMapFs())
+	}
+
+	for _, file := range skeleton.Files {
+		builder.AddFile(file)
 	}
 
 	if o.Project.HasLicense() {
-		options.License, err = o.fetchLicense(o.Project.License)
+		license, err := o.fetchLicense(o.Project.License)
 		if err != nil {
 			return err
 		}
+
+		builder.WithLicense(license)
 	}
 
 	if o.Project.HasGitignore() {
-		options.Gitignore, err = o.fetchGitignore(o.Project.Gitignore)
+		gitignore, err := o.fetchGitignore(o.Project.Gitignore)
+		if err != nil {
+			return err
+		}
+
+		builder.WithGitignore(gitignore)
+	}
+
+	outputDir, err := homedir.Collapse(o.OutputDir)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("creating project in %s", outputDir)
+
+	stats, err := builder.Build(o.OutputDir)
+	if err != nil {
+		return err
+	}
+
+	if o.initGit {
+		err = o.initGitRepository(o.OutputDir)
 		if err != nil {
 			return err
 		}
 	}
 
-	return project.Create(skeleton, o.OutputDir, options)
+	o.logStats(stats)
+
+	return nil
+}
+
+func (o *CreateOptions) logStats(stats project.Stats) {
+	log.WithFields(log.Fields{
+		"dirs.created":  stats.DirsCreated,
+		"files.created": stats.FilesCreated,
+		"skipped":       stats.Skipped,
+	}).Info("project creation complete")
+
+	if stats.Skipped > 0 {
+		log.Warn("some targets were skipped, use --overwrite or --overwrite-file to overwrite existing " +
+			"files or --allow-empty to allow the creation of empty templates")
+	}
+
+	if o.DryRun {
+		log.Info("dry-run: no changes have been made")
+	}
 }
 
 func (o *CreateOptions) fetchLicense(name string) (*license.Info, error) {
@@ -257,4 +307,17 @@ func (o *CreateOptions) fetchGitignore(template string) (string, error) {
 	}
 
 	return gi, nil
+}
+
+func (o *CreateOptions) initGitRepository(path string) error {
+	log.Info("initializing git repository")
+
+	if !o.DryRun {
+		_, err := git.PlainInit(path, false)
+		if err != nil && err != git.ErrRepositoryAlreadyExists {
+			return err
+		}
+	}
+
+	return nil
 }
