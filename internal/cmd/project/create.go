@@ -60,7 +60,10 @@ func NewCreateCmd() *cobra.Command {
 			kickoff project create myskeleton ~/repos/myproject --force
 
 			# Forces creation of project in existing directory, overwriting existing files
-			kickoff project create myskeleton ~/repos/myproject --force --overwrite`),
+			kickoff project create myskeleton ~/repos/myproject --force --overwrite
+
+			# Forces creation of project in existing directory, selectively overwriting existing files
+			kickoff project create myskeleton ~/repos/myproject --force --overwrite-file README.md`),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
@@ -91,12 +94,13 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
-	OutputDir  string
-	Skeletons  []string
-	DryRun     bool
-	Force      bool
-	Overwrite  bool
-	AllowEmpty bool
+	OutputDir      string
+	Skeletons      []string
+	DryRun         bool
+	Force          bool
+	Overwrite      bool
+	OverwriteFiles []string
+	AllowEmpty     bool
 
 	rawValues   []string
 	valuesFiles []string
@@ -118,6 +122,8 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
 
 	cmd.Flags().BoolVar(&o.AllowEmpty, "allow-empty", o.AllowEmpty, "If true, empty files that are the result of template rendering will still be created in the output directory")
+
+	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory")
 }
 
 func (o *CreateOptions) Complete(args []string) (err error) {
@@ -211,6 +217,7 @@ func (o *CreateOptions) Run() error {
 	builder := project.NewBuilder(o.Project).
 		AllowEmpty(o.AllowEmpty).
 		OverwriteAll(o.Overwrite).
+		OverwriteFiles(o.OverwriteFiles).
 		AddValues(skeleton.Values).
 		AddValues(o.Values)
 

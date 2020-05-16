@@ -26,6 +26,7 @@ type Builder struct {
 
 	allowEmpty   bool
 	overwriteAll bool
+	overwriteMap map[string]bool
 	dirMap       map[string]string
 
 	fs      afero.Fs
@@ -42,9 +43,10 @@ type Builder struct {
 // NewBuilder creates a new *Builder for the given project configuration.
 func NewBuilder(config config.Project) *Builder {
 	return &Builder{
-		config: config,
-		dirMap: make(map[string]string),
-		values: template.Values{},
+		config:       config,
+		dirMap:       make(map[string]string),
+		overwriteMap: make(map[string]bool),
+		values:       template.Values{},
 	}
 }
 
@@ -66,6 +68,29 @@ func (b *Builder) AddFile(file File) *Builder {
 // is to not overwrite existing files.
 func (b *Builder) OverwriteAll(overwrite bool) *Builder {
 	b.overwriteAll = overwrite
+	return b
+}
+
+// OverwriteFiles adds a list of targetPaths to the builder that are allowed to
+// be overwritting if the already exist. This allows for selectively
+// overwriting only specific files, keeping others unchanged. Paths are assumed
+// to be relative to the new project dir. Passing absolute paths will cause
+// successive calls to Build to return an error.
+func (b *Builder) OverwriteFiles(paths []string) *Builder {
+	if b.err != nil {
+		return b
+	}
+
+	for _, path := range paths {
+		if filepath.IsAbs(path) {
+			b.err = fmt.Errorf("found absolute path in overwrites: %s", path)
+			return b
+		}
+
+		relPath := filepath.Clean(path)
+
+		b.overwriteMap[relPath] = true
+	}
 	return b
 }
 
@@ -154,6 +179,11 @@ func (b *Builder) Build(targetDir string) (Stats, error) {
 	return b.stats, nil
 }
 
+// shouldOverwrite returns true if path is allowed to be overwritten.
+func (b *Builder) shouldOverwrite(path string) bool {
+	return b.overwriteAll || b.overwriteMap[path]
+}
+
 // processFile processes f and writes the result to the targetDir.
 func (b *Builder) processFile(f File, targetDir string) error {
 	targetRelPath, err := b.buildTargetRelPath(f)
@@ -179,7 +209,7 @@ func (b *Builder) processFile(f File, targetDir string) error {
 		})
 	}
 
-	if !b.overwriteAll && file.Exists(targetAbsPath) {
+	if !b.shouldOverwrite(targetRelPath) && file.Exists(targetAbsPath) {
 		logger.Warnf("skipping existing %s", fileType(f))
 		b.stats.Skipped++
 		return nil

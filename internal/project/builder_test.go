@@ -93,6 +93,36 @@ func TestBuilder_Build(t *testing.T) {
 			},
 		},
 		{
+			name: "does not overwrite existing files selectively if OverwriteFiles is provided",
+			setup: func(t *dirTester, b *Builder) {
+				b.WithLicense(&license.Info{Body: `some license [fullname] [year]`}).
+					OverwriteFiles([]string{
+						"README.md",
+						"./foobar/../foobar/somefile.yaml",
+					})
+
+				t.mustWriteFile(filepath.Join("foobar", "somefile.yaml"), `do not touch`)
+				t.mustWriteFile("LICENSE", `do not touch`)
+				t.mustWriteFile("README.md", `please overwrite`)
+			},
+			validate: func(t *dirTester, b *Builder) {
+				t.assertFileContains(filepath.Join("foobar", "somefile.yaml"), "---\nsomekey: {{.Values.somekey}}\n")
+				t.assertFileContains("LICENSE", `do not touch`)
+				t.assertFileNotContains("README.md", `please overwrite`)
+			},
+		},
+		{
+			name: "files to overwrite must be relative",
+			setup: func(t *dirTester, b *Builder) {
+				b.OverwriteFiles([]string{
+					"README.md",
+					"./relfile",
+					"/tmp/somefile",
+				})
+			},
+			expectedErr: errors.New("found absolute path in overwrites: /tmp/somefile"),
+		},
+		{
 			name: "does overwrite existing files if OverwriteAll is set",
 			setup: func(t *dirTester, b *Builder) {
 				b.WithLicense(&license.Info{Body: `some license [fullname] [year]`}).
