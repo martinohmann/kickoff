@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewListCmd creates a command that lists all open source licenses available
+// via the GitHub Licenses API.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 

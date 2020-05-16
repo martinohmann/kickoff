@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewRemoveCmd creates a command for removing skeleton repositories from the
+// config.
 func NewRemoveCmd() *cobra.Command {
 	o := &RemoveOptions{}
 
@@ -40,18 +42,21 @@ func NewRemoveCmd() *cobra.Command {
 	return cmd
 }
 
+// RemoveOptions holds the options for the remove command.
 type RemoveOptions struct {
 	cmdutil.ConfigFlags
 
 	RepoName string
 }
 
+// Complete completes the remove options.
 func (o *RemoveOptions) Complete(args []string) error {
 	o.RepoName = args[0]
 
 	return o.ConfigFlags.Complete()
 }
 
+// Validate validates the remove options.
 func (o *RemoveOptions) Validate() error {
 	if o.RepoName == "" {
 		return ErrEmptyRepositoryName
@@ -65,6 +70,7 @@ func (o *RemoveOptions) Validate() error {
 	return nil
 }
 
+// Run removes a skeleton repository from the config.
 func (o *RemoveOptions) Run() error {
 	delete(o.Repositories, o.RepoName)
 

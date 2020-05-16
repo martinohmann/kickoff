@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewConfigCmd creates a new command which provides subcommands for
+// manipulating and inspecting the kickoff config.
 func NewConfigCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "config",

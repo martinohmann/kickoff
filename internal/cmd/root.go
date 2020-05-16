@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewRootCmd creates the root command for kickoff.
 func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	verbose := false
 

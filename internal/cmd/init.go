@@ -18,6 +18,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewInitCmd creates a new command which lets users interactively initialize
+// the kickoff configuration.
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	o := &InitOptions{
 		IOStreams:   streams,
@@ -48,12 +50,14 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// InitOptions holds the options for the init command.
 type InitOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 }
 
+// Complete completes the command options.
 func (o *InitOptions) Complete() (err error) {
 	err = o.ConfigFlags.Complete()
 	if err != nil {
@@ -69,6 +73,7 @@ func (o *InitOptions) Complete() (err error) {
 	return err
 }
 
+// Run runs the interactive configuration of kickoff.
 func (o *InitOptions) Run() error {
 	configureFuncs := []func() error{
 		o.configureProject,

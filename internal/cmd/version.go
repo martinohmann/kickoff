@@ -16,6 +16,7 @@ var (
 	ErrIllegalVersionFlagCombination = errors.New("--short and --output can't be used together")
 )
 
+// NewVersionCmd creates a command which can print the kickoff version.
 func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 	o := &VersionOptions{IOStreams: streams}
 
@@ -40,6 +41,7 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// VersionOptions holds the options for the version command.
 type VersionOptions struct {
 	cli.IOStreams
 	cmdutil.OutputFlag
@@ -47,6 +49,7 @@ type VersionOptions struct {
 	Short bool
 }
 
+// Validate validates the options before executing the command.
 func (o *VersionOptions) Validate() error {
 	if o.Short && o.Output != "" {
 		return ErrIllegalVersionFlagCombination
@@ -55,6 +58,7 @@ func (o *VersionOptions) Validate() error {
 	return o.OutputFlag.Validate()
 }
 
+// Run prints the version in the provided output format.
 func (o *VersionOptions) Run() error {
 	v := version.Get()
 

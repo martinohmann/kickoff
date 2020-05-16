@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewCompletionCmd creates a new command which can set up shell completion.
 func NewCompletionCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion <shell>",

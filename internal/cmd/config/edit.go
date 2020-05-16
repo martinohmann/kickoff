@@ -23,6 +23,8 @@ var (
 	editorEnvs = []string{"KICKOFF_EDITOR", "EDITOR"}
 )
 
+// NewEditCmd creates a new command that opens the kickoff config in a
+// configurable editor so that the user can edit it.
 func NewEditCmd() *cobra.Command {
 	o := &EditOptions{}
 
@@ -52,10 +54,12 @@ func NewEditCmd() *cobra.Command {
 	return cmd
 }
 
+// EditOptions holds the options for the edit command.
 type EditOptions struct {
 	cmdutil.ConfigFlags
 }
 
+// Complete completes the command options.
 func (o *EditOptions) Complete() (err error) {
 	err = o.ConfigFlags.Complete()
 	if err != nil {
@@ -71,6 +75,8 @@ func (o *EditOptions) Complete() (err error) {
 	return err
 }
 
+// Run loads the config file using the configured editor. The config file is
+// saved after the editor is closed.
 func (o *EditOptions) Run() (err error) {
 	var contents []byte
 
