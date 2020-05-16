@@ -7,6 +7,11 @@ go:
 env:
   global:
     - GO111MODULE=on
+branches:
+  # don't build pull requests twice
+  only:
+    - master
+    - /^v\d+\.\d+\.\d+$/
 cache:
   directories:
     - $HOME/.cache/go-build
