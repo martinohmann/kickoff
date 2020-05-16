@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewGitignoreCmd creates a new command which provides subcommands for
+// inspecting gitignore templates provided by gitignore.io.
 func NewGitignoreCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "gitignore",

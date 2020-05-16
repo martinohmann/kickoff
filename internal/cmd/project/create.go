@@ -21,6 +21,8 @@ import (
 	"helm.sh/helm/pkg/strvals"
 )
 
+// NewCreateCmd creates a command that can create projects from project
+// skeletons using a variety of user-defined options.
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{
 		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
@@ -90,6 +92,7 @@ func NewCreateCmd() *cobra.Command {
 	return cmd
 }
 
+// CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
@@ -107,6 +110,7 @@ type CreateOptions struct {
 	initGit     bool
 }
 
+// AddFlags adds flags for all project creation options to cmd.
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 
@@ -126,6 +130,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory")
 }
 
+// Complete completes the project creation options.
 func (o *CreateOptions) Complete(args []string) (err error) {
 	skeletons := args[0]
 	outputDir := args[1]
@@ -174,6 +179,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	return nil
 }
 
+// Validate validates the project creation options.
 func (o *CreateOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
 		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
@@ -196,6 +202,8 @@ func (o *CreateOptions) Validate() error {
 	return nil
 }
 
+// Run loads all project skeletons that the user provided and creates the
+// project at the output directory.
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 

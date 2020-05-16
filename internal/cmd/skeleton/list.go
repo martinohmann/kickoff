@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewListCmd creates a command for listing available project skeletons.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ListOptions{IOStreams: streams}
 
@@ -35,11 +36,14 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// ListOptions holds the options for the list command.
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 }
 
+// Run lists all project skeletons available in the configured skeleton
+// repositories.
 func (o *ListOptions) Run() error {
 	repo, err := skeleton.NewRepositoryAggregate(o.Repositories)
 	if err != nil {

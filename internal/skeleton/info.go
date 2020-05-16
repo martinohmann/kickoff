@@ -27,7 +27,7 @@ func (i *Info) String() string {
 	return fmt.Sprintf("%s:%s", i.Repo.Name, i.Name)
 }
 
-// Config loads the skeleton config for the info.
+// LoadConfig loads the skeleton config for the info.
 func (i *Info) LoadConfig() (Config, error) {
 	configPath := filepath.Join(i.Path, ConfigFileName)
 

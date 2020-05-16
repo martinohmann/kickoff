@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewCreateCmd creates a command for creating a local skeleton repository.
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{SkeletonName: config.DefaultSkeletonName}
 
@@ -48,12 +49,14 @@ func NewCreateCmd() *cobra.Command {
 	return cmd
 }
 
+// CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	OutputDir    string
 	SkeletonName string
 	Force        bool
 }
 
+// Complete completes the options for the create command.
 func (o *CreateOptions) Complete(args []string) (err error) {
 	if args[0] != "" {
 		o.OutputDir, err = filepath.Abs(args[0])
@@ -65,6 +68,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	return nil
 }
 
+// Validate validates the create options.
 func (o *CreateOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
 		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
@@ -90,6 +94,8 @@ func (o *CreateOptions) Validate() error {
 	return nil
 }
 
+// Run creates a new skeleton repository in the provided output directory and
+// seeds it with a default skeleton.
 func (o *CreateOptions) Run() error {
 	return skeleton.CreateRepository(o.OutputDir, o.SkeletonName)
 }

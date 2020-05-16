@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewSkeletonCmd creates a new command which provides subcommands for creating
+// and inspecting project skeletons.
 func NewSkeletonCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "skeleton",

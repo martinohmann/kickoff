@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewShowCmd creates a new command that prints the kickoff config in a
+// configurable output format.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ShowOptions{IOStreams: streams}
 
@@ -43,12 +45,14 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// ShowOptions holds the options for the show command.
 type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 	cmdutil.OutputFlag
 }
 
+// Run prints the kickoff config in the configured format.
 func (o *ShowOptions) Run() (err error) {
 	switch o.Output {
 	case "json":

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewCreateCmd creates a command for creating project skeletons.
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{}
 
@@ -45,11 +46,13 @@ func NewCreateCmd() *cobra.Command {
 	return cmd
 }
 
+// CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	OutputDir string
 	Force     bool
 }
 
+// Complete completes the create options.
 func (o *CreateOptions) Complete(args []string) (err error) {
 	if args[0] != "" {
 		o.OutputDir, err = filepath.Abs(args[0])
@@ -61,6 +64,7 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 	return nil
 }
 
+// Validate validates the create options.
 func (o *CreateOptions) Validate() error {
 	if file.Exists(o.OutputDir) && !o.Force {
 		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
@@ -82,6 +86,7 @@ func (o *CreateOptions) Validate() error {
 	return nil
 }
 
+// Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
 	return skeleton.Create(o.OutputDir)
 }

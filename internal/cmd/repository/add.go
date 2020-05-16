@@ -12,11 +12,17 @@ import (
 )
 
 var (
+	// ErrEmptyRepositoryName is returned during validation if the repository
+	// name is empty.
 	ErrEmptyRepositoryName = errors.New("repository name must not be empty")
 
+	// ErrEmptyRepositoryURL is returned during validation if the repository
+	// URL is empty.
 	ErrEmptyRepositoryURL = errors.New("repository url must not be empty")
 )
 
+// NewAddCmd creates a new command for added a skeleton repository to the
+// kickoff config.
 func NewAddCmd() *cobra.Command {
 	o := &AddOptions{}
 
@@ -49,6 +55,7 @@ func NewAddCmd() *cobra.Command {
 	return cmd
 }
 
+// AddOptions holds the options for the add command.
 type AddOptions struct {
 	cmdutil.ConfigFlags
 
@@ -56,6 +63,7 @@ type AddOptions struct {
 	RepoURL  string
 }
 
+// Complete completes the add options.
 func (o *AddOptions) Complete(args []string) error {
 	o.RepoName = args[0]
 	o.RepoURL = args[1]
@@ -63,6 +71,7 @@ func (o *AddOptions) Complete(args []string) error {
 	return o.ConfigFlags.Complete()
 }
 
+// Validate validates the options before adding a new repository.
 func (o *AddOptions) Validate() error {
 	if o.RepoName == "" {
 		return ErrEmptyRepositoryName
@@ -75,6 +84,7 @@ func (o *AddOptions) Validate() error {
 	return nil
 }
 
+// Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
 	_, err := skeleton.OpenRepository(o.RepoURL)
 	if err != nil {

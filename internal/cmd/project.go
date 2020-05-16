@@ -5,6 +5,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewProjectCmd creates a new command which provides subcommands for working
+// with projects.
 func NewProjectCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "project",

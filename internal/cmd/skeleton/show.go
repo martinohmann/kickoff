@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewShowCmd creates a command for inspecting project skeletons.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ShowOptions{IOStreams: streams}
 
@@ -49,6 +50,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// ShowOptions holds options for the show command.
 type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
@@ -57,12 +59,15 @@ type ShowOptions struct {
 	Skeleton string
 }
 
+// Complete completes the show options.
 func (o *ShowOptions) Complete(args []string) error {
 	o.Skeleton = args[0]
 
 	return o.ConfigFlags.Complete()
 }
 
+// Run prints information about a project skeleton in the output format
+// specified by the user.
 func (o *ShowOptions) Run() error {
 	loader, err := skeleton.NewRepositoryAggregateLoader(o.Repositories)
 	if err != nil {

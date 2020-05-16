@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewRepositoryCmd creates a new command which provides subcommands for
+// managing, creating and inspecting skeleton repositories.
 func NewRepositoryCmd(streams cli.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "repository",

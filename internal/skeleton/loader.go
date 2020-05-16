@@ -55,7 +55,7 @@ func (l *Loader) LoadSkeleton(name string) (*Skeleton, error) {
 	return Load(info)
 }
 
-// LoadSkeleton loads multiple skeletons from the repository. The returned
+// LoadSkeletons loads multiple skeletons from the repository. The returned
 // skeletons already includes the recursively merged list of files and
 // values from potential parents.
 func (l *Loader) LoadSkeletons(names []string) ([]*Skeleton, error) {
