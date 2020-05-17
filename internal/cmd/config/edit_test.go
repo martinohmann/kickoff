@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/template"
+	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,11 +77,19 @@ func TestEditCmd_Run_InvalidEditor(t *testing.T) {
 	os.Setenv("EDITOR", "./nonexistent")
 	os.Setenv("SHELL", "sh")
 
-	configBuf, err := ioutil.ReadFile("../../testdata/config/config.yaml")
+	configFile := testutil.NewConfigFileBuilder(t).
+		WithProjectOwner("johndoe").
+		WithRepository("local", "/some/local/path").
+		WithRepository("remove", "https://git.john.doe/johndoe/remote-repo").
+		WithValues(template.Values{"foo": "bar"}).
+		Create()
+	defer os.Remove(configFile.Name())
+
+	configBuf, err := ioutil.ReadAll(configFile)
 	require.NoError(t, err)
 
 	cmd := NewEditCmd()
-	cmd.SetArgs([]string{"--config", "../../testdata/config/config.yaml"})
+	cmd.SetArgs([]string{"--config", configFile.Name()})
 
 	expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
 
@@ -88,7 +98,7 @@ func TestEditCmd_Run_InvalidEditor(t *testing.T) {
 
 	assert.Regexp(t, expectedErrPattern, err)
 
-	configBuf2, err := ioutil.ReadFile("../../testdata/config/config.yaml")
+	configBuf2, err := ioutil.ReadFile(configFile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")
