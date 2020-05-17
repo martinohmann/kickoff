@@ -35,6 +35,7 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Enable verbose log output")
 
+	cmd.AddCommand(NewCacheCmd())
 	cmd.AddCommand(NewCompletionCmd(streams))
 	cmd.AddCommand(NewConfigCmd(streams))
 	cmd.AddCommand(NewGitignoreCmd(streams))
