@@ -20,7 +20,7 @@ const (
 
 // AddConfigFlag adds the --config flag to cmd and binds it to val.
 func AddConfigFlag(cmd *cobra.Command, val *string) {
-	cmd.Flags().StringVar(val, "config", *val, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", config.DefaultConfigPath))
+	cmd.Flags().StringVarP(val, "config", "c", *val, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", config.DefaultConfigPath))
 	cmd.MarkFlagFilename("config")
 }
 
@@ -97,7 +97,7 @@ type OutputFlag struct {
 
 // AddFlag adds the flag for configuring output format to cmd.
 func (f *OutputFlag) AddFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&f.Output, "output", f.Output, "Output format")
+	cmd.Flags().StringVarP(&f.Output, "output", "o", f.Output, "Output format")
 }
 
 // Validate validates the output format and returns an error if the user
