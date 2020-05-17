@@ -43,6 +43,7 @@ type ConfigFlags struct {
 
 	ConfigPath         string
 	allowMissingConfig bool
+	repositories       []string
 }
 
 // AllowMissingConfig allows the config file at ConfigPath to be absent. A
@@ -56,7 +57,7 @@ func (f *ConfigFlags) AllowMissingConfig() {
 // AddFlags adds flags for configuring the config file location to cmd.
 func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
 	AddConfigFlag(cmd, &f.ConfigPath)
-	cmd.Flags().StringToStringVar(&f.Repositories, "repositories", f.Repositories, "Skeleton repositories of the form name1=url1,name2=url2. The repository urls can be a local path or a remote git repository.")
+	cmd.Flags().StringSliceVarP(&f.repositories, "repository", "r", f.repositories, "Limit to the named repository. Can be specified multiple times to filter for multiple repositories.")
 }
 
 // Complete completes the embedded kickoff configuration. It will load the
@@ -86,6 +87,23 @@ func (f *ConfigFlags) Complete() (err error) {
 	}
 
 	f.ApplyDefaults()
+
+	if len(f.repositories) > 0 {
+		// Ensure that the repos provided by the user are configured.
+		for _, name := range f.repositories {
+			_, ok := f.Repositories[name]
+			if !ok {
+				return fmt.Errorf("repository %q not configured", name)
+			}
+		}
+
+		// Filter out repositories that do not match.
+		for name := range f.Repositories {
+			if !contains(f.repositories, name) {
+				delete(f.Repositories, name)
+			}
+		}
+	}
 
 	return nil
 }
@@ -140,4 +158,14 @@ func (f *TimeoutFlag) Context() (context.Context, func()) {
 	}
 
 	return context.WithTimeout(ctx, f.Timeout)
+}
+
+func contains(haystack []string, needle string) bool {
+	for _, item := range haystack {
+		if item == needle {
+			return true
+		}
+	}
+
+	return false
 }

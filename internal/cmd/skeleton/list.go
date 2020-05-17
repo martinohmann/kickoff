@@ -19,8 +19,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		Long: cmdutil.LongDesc(`
 			Lists all skeletons available in the configured repositories.`),
 		Example: cmdutil.Examples(`
-			# List skeletons from custom repositories
-			kickoff skeleton list --repositories my-repo=https://github.com/martinohmann/kickoff-skeletons`),
+			# List skeletons only from the "myrepo" repository
+			kickoff skeleton list --repository myrepo`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(); err != nil {
