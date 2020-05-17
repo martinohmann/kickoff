@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/apex/log"
@@ -126,15 +125,18 @@ func (b *Builder) WithGitignore(content string) *Builder {
 // [fullname] placeholders are replaced with the owner value from the project
 // config and [year] placeholders are replaced with the current year. The
 // default is to not include a LICENSE file.
-func (b *Builder) WithLicense(license *license.Info) *Builder {
-	b.license = license
+func (b *Builder) WithLicense(info *license.Info) *Builder {
+	b.license = info
 
-	body := strings.ReplaceAll(license.Body, "[fullname]", b.config.Owner)
-	body = strings.ReplaceAll(body, "[year]", strconv.Itoa(time.Now().Year()))
+	text := license.ResolvePlaceholders(info.Body, license.FieldMap{
+		"project": b.config.Name,
+		"author":  b.config.Owner,
+		"year":    strconv.Itoa(time.Now().Year()),
+	})
 
 	return b.AddFile(&fileInfo{
 		relPath: "LICENSE",
-		content: []byte(body),
+		content: []byte(text),
 		mode:    0644,
 	})
 }
