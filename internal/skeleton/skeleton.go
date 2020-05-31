@@ -15,14 +15,8 @@ import (
 	"github.com/martinohmann/kickoff/internal/template"
 )
 
-var (
-	// ErrDirNotFound indicates that a skeleton directory was not found.
-	ErrDirNotFound = errors.New("skeleton dir not found")
-
-	// ErrNoRepositories is returned by NewRepositoryAggregate if no repositories are
-	// configured.
-	ErrNoRepositories = errors.New("no skeleton repositories configured")
-)
+// ErrDirNotFound indicates that a skeleton directory was not found.
+var ErrDirNotFound = errors.New("skeleton dir not found")
 
 // File contains paths and other information about a skeleton file, e.g.
 // whether it was inherited from a parent skeleton or not.
@@ -189,7 +183,7 @@ func FindSkeletonDir(path string) (string, error) {
 	}
 
 	for len(path) > 1 {
-		ok, err := isSkeletonDir(path)
+		ok, err := IsSkeletonDir(path)
 		if err != nil {
 			return "", err
 		}
@@ -224,7 +218,7 @@ func IsInsideSkeletonDir(path string) (bool, error) {
 
 // IsSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
 // detected by the fact that they contain a .kickoff.yaml file.
-func isSkeletonDir(dir string) (bool, error) {
+func IsSkeletonDir(dir string) (bool, error) {
 	configPath := filepath.Join(dir, ConfigFileName)
 
 	info, err := os.Stat(configPath)

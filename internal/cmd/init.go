@@ -14,7 +14,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/license"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
@@ -281,18 +281,18 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return err
 	}
 
-	info, err := skeleton.ParseRepositoryURL(repoURL)
+	info, err := repository.ParseURL(repoURL)
 	if err != nil {
 		return err
 	}
 
 	o.Repositories[config.DefaultRepositoryName] = repoURL
 
-	if !info.Local {
+	if info.IsRemote() {
 		return nil
 	}
 
-	localPath := info.LocalPath()
+	localPath := info.Path
 
 	if file.Exists(localPath) {
 		return nil
@@ -318,7 +318,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return nil
 	}
 
-	return skeleton.CreateRepository(localPath, config.DefaultSkeletonName)
+	return repository.Create(localPath, config.DefaultSkeletonName)
 }
 
 func (o *InitOptions) persistConfiguration() error {

@@ -4,13 +4,16 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
 // NewListCmd creates a command for listing available project skeletons.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ListOptions{IOStreams: streams}
+	o := &ListOptions{
+		IOStreams:   streams,
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+	}
 
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -32,6 +35,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
+	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -40,17 +44,21 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+	cmdutil.TimeoutFlag
 }
 
 // Run lists all project skeletons available in the configured skeleton
 // repositories.
 func (o *ListOptions) Run() error {
-	repo, err := skeleton.NewRepositoryAggregate(o.Repositories)
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	repo, err := repository.NewMultiRepository(o.Repositories)
 	if err != nil {
 		return err
 	}
 
-	skeletons, err := repo.SkeletonInfos()
+	skeletons, err := repo.ListSkeletons(ctx)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
@@ -86,9 +86,9 @@ func (o *AddOptions) Validate() error {
 
 // Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
-	_, err := skeleton.OpenRepository(o.RepoURL)
+	_, err := repository.ParseURL(o.RepoURL)
 	if err != nil {
-		return fmt.Errorf("failed to open repository: %v", err)
+		return fmt.Errorf("failed to parse repository URL: %v", err)
 	}
 
 	o.Repositories[o.RepoName] = o.RepoURL
