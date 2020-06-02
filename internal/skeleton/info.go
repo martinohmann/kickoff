@@ -18,7 +18,7 @@ type Info struct {
 
 // String implements fmt.Stringer.
 func (i *Info) String() string {
-	if i.Repo == nil || len(i.Repo.Name) == 0 {
+	if i.Repo == nil || i.Repo.Name == "" {
 		return i.Name
 	}
 

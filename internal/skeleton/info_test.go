@@ -14,9 +14,10 @@ func TestInfo(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	t.Run("string", func(t *testing.T) {
+	t.Run("string representation", func(t *testing.T) {
 		info := &Info{Name: "default"}
 		assert.Equal("default", info.String())
+
 		info = &Info{Name: "default", Repo: &RepoInfo{Name: "the-repo"}}
 		assert.Equal("the-repo:default", info.String())
 	})
