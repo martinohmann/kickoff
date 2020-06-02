@@ -218,7 +218,7 @@ func resolveRevision(repo git.Repository, revision string) (*plumbing.Hash, erro
 		}
 
 		log.WithFields(log.Fields{
-			"sha1":     hash.String(),
+			"hash":     hash.String(),
 			"revision": rev,
 		}).Debug("resolved revision")
 
@@ -234,7 +234,7 @@ func checkoutRevision(repo git.Repository, revision string) error {
 		return err
 	}
 
-	log.WithField("sha1", hash.String()).Debug("checking out commit")
+	log.WithField("hash", hash.String()).Debug("checking out commit")
 
 	return repo.Checkout(*hash)
 }

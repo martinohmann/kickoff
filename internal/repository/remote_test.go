@@ -321,7 +321,6 @@ func createLocalTestRepoDir(t *testing.T, dir string, modTime time.Time) {
 func createRemoteTestRepo(t *testing.T) (*RemoteRepository, *git.FakeClient, string, func()) {
 	tmpdir, err := ioutil.TempDir("", "kickoff-repos-*")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpdir)
 
 	repo, err := NewRemoteRepository(skeleton.RepoInfo{
 		Path:     tmpdir,

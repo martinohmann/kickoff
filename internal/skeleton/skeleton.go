@@ -1,6 +1,5 @@
-// Package skeleton provides functionality to interact with local and remote
-// skeleton repositories and to fetch the configuration values of any given
-// skeleton.
+// Package skeleton contains types that define the structure of a skeleton and
+// its config. It also provides helpers to find, create and merge skeletons.
 package skeleton
 
 import (
@@ -15,8 +14,13 @@ import (
 	"github.com/martinohmann/kickoff/internal/template"
 )
 
-// ErrDirNotFound indicates that a skeleton directory was not found.
-var ErrDirNotFound = errors.New("skeleton dir not found")
+var (
+	// ErrDirNotFound indicates that a skeleton directory was not found.
+	ErrDirNotFound = errors.New("skeleton dir not found")
+
+	// ErrMergeEmpty is returned by Merge if no skeletons were passed.
+	ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
+)
 
 // File contains paths and other information about a skeleton file, e.g.
 // whether it was inherited from a parent skeleton or not.
@@ -26,10 +30,6 @@ type File struct {
 
 	// AbsPath is the absolute path to the file on disk.
 	AbsPath string `json:"absPath"`
-
-	// Inherited indicates whether the file was inherited from a parent
-	// skeleton or not.
-	Inherited bool `json:"inherited"`
 
 	// Info is the os.FileInfo for the file
 	Info os.FileInfo `json:"-"`
@@ -50,8 +50,8 @@ func (f *File) Reader() (io.Reader, error) {
 	return os.Open(f.AbsPath)
 }
 
-// Skeleton is the representation of a skeleton returned by Load() with all
-// references to parent skeletons (if any) resolved.
+// Skeleton is the representation of a skeleton loaded from a skeleton
+// repository.
 type Skeleton struct {
 	// Description is the skeleton description text obtained from the skeleton
 	// config.
@@ -75,11 +75,16 @@ type Skeleton struct {
 
 // String implements fmt.Stringer.
 func (s *Skeleton) String() string {
-	if s.Parent == nil {
-		return s.Info.String()
+	name := "<anonymous-skeleton>"
+	if s.Info != nil {
+		name = s.Info.String()
 	}
 
-	return fmt.Sprintf("%s->%s", s.Parent, s.Info)
+	if s.Parent == nil {
+		return name
+	}
+
+	return fmt.Sprintf("%s->%s", s.Parent, name)
 }
 
 // Merge merges multiple skeletons together and returns a new *Skeleton.
@@ -93,7 +98,7 @@ func (s *Skeleton) String() string {
 // slice with length of zero will return in an error.
 func Merge(skeletons ...*Skeleton) (*Skeleton, error) {
 	if len(skeletons) == 0 {
-		return nil, errors.New("cannot merge empty list of skeletons")
+		return nil, ErrMergeEmpty
 	}
 
 	if len(skeletons) == 1 {
@@ -135,12 +140,7 @@ func mergeFiles(lhs, rhs []*File) []*File {
 	fileMap := make(map[string]*File)
 
 	for _, f := range lhs {
-		fileMap[f.RelPath] = &File{
-			AbsPath:   f.AbsPath,
-			RelPath:   f.RelPath,
-			Info:      f.Info,
-			Inherited: true,
-		}
+		fileMap[f.RelPath] = f
 	}
 
 	for _, f := range rhs {

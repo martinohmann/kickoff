@@ -28,7 +28,7 @@ import (
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{
 		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
-		gitClient:   git.NewClient(),
+		GitClient:   git.NewClient(),
 	}
 
 	cmd := &cobra.Command{
@@ -100,6 +100,7 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
+	GitClient      git.Client
 	OutputDir      string
 	Skeletons      []string
 	DryRun         bool
@@ -108,7 +109,6 @@ type CreateOptions struct {
 	OverwriteFiles []string
 	AllowEmpty     bool
 
-	gitClient   git.Client
 	rawValues   []string
 	valuesFiles []string
 	initGit     bool
@@ -329,7 +329,7 @@ func (o *CreateOptions) initGitRepository(path string) error {
 	log.Info("initializing git repository")
 
 	if !o.DryRun {
-		_, err := o.gitClient.Init(path)
+		_, err := o.GitClient.Init(path)
 		if err != nil && err != git.ErrRepositoryAlreadyExists {
 			return err
 		}
