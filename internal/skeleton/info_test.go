@@ -3,157 +3,86 @@ package skeleton
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
+
+	"github.com/martinohmann/kickoff/internal/template"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestRepositoryInfo_LocalPath(t *testing.T) {
-	var tests = []struct {
-		name     string
-		given    *RepositoryInfo
-		expected string
-	}{
-		{
-			name: "local",
-			given: &RepositoryInfo{
-				Local: true,
-				Path:  "/tmp/myrepo",
-			},
-			expected: "/tmp/myrepo",
-		},
-		{
-			name: "remote",
-			given: &RepositoryInfo{
-				Scheme: "https",
-				Host:   "github.com",
-				Path:   "user/repo",
-			},
-			expected: filepath.Join(LocalCache, "github.com/user/repo@master"),
-		},
-		{
-			name: "remote with user",
-			given: &RepositoryInfo{
-				Scheme:   "ssh",
-				User:     "git",
-				Host:     "github.com",
-				Path:     "user/repo",
-				Revision: "develop",
-			},
-			expected: filepath.Join(LocalCache, "github.com/user/repo@develop"),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := test.given.LocalPath()
-			if actual != test.expected {
-				t.Fatalf("expected %q but got %q", test.expected, actual)
-			}
-		})
-	}
+func TestInfo(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	t.Run("string representation", func(t *testing.T) {
+		info := &Info{Name: "default"}
+		assert.Equal("default", info.String())
+
+		info = &Info{Name: "default", Repo: &RepoInfo{Name: "the-repo"}}
+		assert.Equal("the-repo:default", info.String())
+	})
+
+	t.Run("load skeleton config from info", func(t *testing.T) {
+		info := &Info{
+			Name: "default",
+			Path: "../testdata/repos/repo1/skeletons/minimal",
+		}
+
+		config, err := info.LoadConfig()
+		require.NoError(err)
+
+		expectedConfig := Config{
+			Values: template.Values{"foo": "bar"},
+		}
+
+		assert.Equal(expectedConfig, config)
+	})
 }
 
-func TestRepositoryInfo_String(t *testing.T) {
-	var tests = []struct {
-		name     string
-		given    *RepositoryInfo
-		expected string
-	}{
-		{
-			name: "local",
-			given: &RepositoryInfo{
-				Local: true,
-				Path:  "/tmp/myrepo",
-			},
-			expected: "/tmp/myrepo",
-		},
-		{
-			name: "remote",
-			given: &RepositoryInfo{
-				Scheme: "https",
-				Host:   "github.com",
-				Path:   "user/repo",
-			},
-			expected: "https://github.com/user/repo",
-		},
-		{
-			name: "remote with user",
-			given: &RepositoryInfo{
-				Scheme: "ssh",
-				User:   "git",
-				Host:   "github.com",
-				Path:   "user/repo",
-			},
-			expected: "ssh://git@github.com/user/repo",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := test.given.String()
-			if actual != test.expected {
-				t.Fatalf("expected %q but got %q", test.expected, actual)
-			}
-		})
-	}
-}
+func TestRepoInfo(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
 
-func TestParseRepositoryURL(t *testing.T) {
-	pwd, _ := os.Getwd()
+	t.Run("is remote?", func(t *testing.T) {
+		info := &RepoInfo{Name: "default"}
+		assert.False(info.IsRemote())
+		info = &RepoInfo{Name: "default", Path: "some/path"}
+		assert.False(info.IsRemote())
+		info = &RepoInfo{Name: "default", Path: "some/path", URL: "https://some/remote/url"}
+		assert.True(info.IsRemote())
+	})
 
-	var tests = []struct {
-		name        string
-		given       string
-		expected    *RepositoryInfo
-		expectedErr error
-	}{
-		{
-			name:  "local",
-			given: "my/repo",
-			expected: &RepositoryInfo{
-				Local: true,
-				Path:  pwd + "/my/repo",
-			},
-		},
-		{
-			name:  "remote https",
-			given: "https://github.com/martinohmann/kickoff-skeletons",
-			expected: &RepositoryInfo{
-				Local:    false,
-				Scheme:   "https",
-				Host:     "github.com",
-				Path:     "martinohmann/kickoff-skeletons",
-				Revision: "master",
-			},
-		},
-		{
-			name:  "remote ssh with revision",
-			given: "ssh://git@github.com:22/martinohmann/kickoff-skeletons?revision=v1.1.1",
-			expected: &RepositoryInfo{
-				Local:    false,
-				Scheme:   "ssh",
-				User:     "git",
-				Host:     "github.com:22",
-				Path:     "martinohmann/kickoff-skeletons",
-				Revision: "v1.1.1",
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual, err := ParseRepositoryURL(test.given)
-			switch {
-			case test.expectedErr != nil && err == nil:
-				t.Fatalf("expected error %#v but got nil", test.expectedErr)
-			case test.expectedErr != nil && err != nil:
-				if !reflect.DeepEqual(test.expectedErr, err) {
-					t.Fatalf("expected error %#v but got %v", test.expectedErr, err)
-				}
-			case test.expectedErr == nil && err != nil:
-				t.Fatalf("expected nil error but got %#v", err)
-			case test.expectedErr == nil && err == nil:
-				if !reflect.DeepEqual(test.expected, actual) {
-					t.Fatalf("expected %#v but got %#v", test.expected, actual)
-				}
-			}
-		})
-	}
+	t.Run("finds all skeletons", func(t *testing.T) {
+		info := &RepoInfo{Path: "../testdata/repos/advanced"}
+
+		skeletons, err := info.FindSkeletons()
+		require.NoError(err)
+
+		pwd, err := os.Getwd()
+		require.NoError(err)
+
+		path := func(name string) string {
+			return filepath.Join(pwd, info.Path, "skeletons", name)
+		}
+
+		expected := []*Info{
+			{Name: "bar", Path: path("bar"), Repo: info},
+			{Name: "child", Path: path("child"), Repo: info},
+			{Name: "childofchild", Path: path("childofchild"), Repo: info},
+			{Name: "cyclea", Path: path("cyclea"), Repo: info},
+			{Name: "cycleb", Path: path("cycleb"), Repo: info},
+			{Name: "cyclec", Path: path("cyclec"), Repo: info},
+			{Name: "foo/bar", Path: path("foo/bar"), Repo: info},
+			{Name: "nested/dir", Path: path("nested/dir"), Repo: info},
+			{Name: "parent", Path: path("parent"), Repo: info},
+		}
+
+		require.Equal(expected, skeletons)
+	})
+
+	t.Run("FindSkeletons returns error if RepoInfo points to nonexistent dir", func(t *testing.T) {
+		info := &RepoInfo{Path: "../nonexistent"}
+		_, err := info.FindSkeletons()
+		require.Error(err)
+	})
 }

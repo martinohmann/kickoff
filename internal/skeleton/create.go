@@ -24,23 +24,6 @@ func Create(path string) error {
 	return writeFiles(path)
 }
 
-// CreateRepository creates a new skeleton repository at path and initializes
-// it with a skeleton located in a subdir named skeletonName.
-func CreateRepository(path, skeletonName string) error {
-	skeletonsDir := filepath.Join(path, "skeletons")
-
-	log.WithField("path", path).Info("creating skeleton repository")
-
-	err := os.MkdirAll(skeletonsDir, 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create skeleton repository %q", err)
-	}
-
-	skeletonDir := filepath.Join(skeletonsDir, skeletonName)
-
-	return Create(skeletonDir)
-}
-
 func writeFiles(dir string) error {
 	filenames := make([]string, 0, len(fileTemplates))
 	for filename := range fileTemplates {
@@ -62,4 +45,32 @@ func writeFiles(dir string) error {
 	}
 
 	return nil
+}
+
+// fileTemplates is a mapping between filenames and the contents for these
+// files when generating a new skeleton.
+var fileTemplates = map[string]string{
+	ConfigFileName: `---
+# Refer to the .kickoff.yaml documentation at https://kickoff.run/skeletons/configuration
+# for a complete list of available skeleton configuration options.
+#
+# ---
+# description: |
+#   Some optional description of the skeleton that might be helpful to users.
+# values:
+#   myVar: 'myValue'
+#   other:
+#     someVar: false
+`,
+	"README.md.skel": `# {{.Project.Name}}
+
+{{ if .License -}}
+![GitHub](https://img.shields.io/github/license/{{.Project.Owner}}/{{.Project.Name}}?color=orange)
+
+## License
+
+The source code of {{.Project.Name}} is released under the {{.License.Name}}. See the bundled
+LICENSE file for details.
+{{- end }}
+`,
 }

@@ -1,6 +1,7 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -14,7 +15,7 @@ import (
 	"github.com/apex/log/handlers/discard"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/license"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -190,20 +191,16 @@ func TestBuilder_Build(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			loader, err := skeleton.NewSingleRepositoryLoader("../testdata/repos/repo1")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ctx := context.Background()
 
-			skeleton, err := loader.LoadSkeleton("advanced")
-			if err != nil {
-				t.Fatal(err)
-			}
+			repo, err := repository.New("../testdata/repos/repo1")
+			require.NoError(t, err)
+
+			skeleton, err := repository.LoadSkeleton(ctx, repo, "advanced")
+			require.NoError(t, err)
 
 			tmpdir, err := ioutil.TempDir("", "kickoff-")
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			defer os.RemoveAll(tmpdir)
 

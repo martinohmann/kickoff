@@ -7,10 +7,8 @@ import (
 	"github.com/martinohmann/kickoff/internal/template"
 )
 
-const (
-	// ConfigFileName is the name of the skeleton's config file.
-	ConfigFileName = ".kickoff.yaml"
-)
+// ConfigFileName is the name of the skeleton's config file.
+const ConfigFileName = ".kickoff.yaml"
 
 // Config describes the schema of a skeleton's .kickoff.yaml.
 type Config struct {

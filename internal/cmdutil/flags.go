@@ -144,7 +144,7 @@ func NewDefaultTimeoutFlag() TimeoutFlag {
 
 // AddFlag adds the timeout flag to cmd.
 func (f *TimeoutFlag) AddFlag(cmd *cobra.Command) {
-	cmd.Flags().DurationVar(&f.Timeout, "timeout", f.Timeout, "Timeout for http requests. Zero or less means that there is no timeout.")
+	cmd.Flags().DurationVar(&f.Timeout, "timeout", f.Timeout, "Timeout for remote operations. Zero or less means that there is no timeout.")
 }
 
 // Context returns a context with the timeout set and a cancel func to cancel

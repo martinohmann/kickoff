@@ -8,6 +8,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -97,5 +98,5 @@ func (o *CreateOptions) Validate() error {
 // Run creates a new skeleton repository in the provided output directory and
 // seeds it with a default skeleton.
 func (o *CreateOptions) Run() error {
-	return skeleton.CreateRepository(o.OutputDir, o.SkeletonName)
+	return repository.Create(o.OutputDir, o.SkeletonName)
 }

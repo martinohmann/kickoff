@@ -1,108 +1,143 @@
 package skeleton
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestIsInsideSkeletonDir(t *testing.T) {
-	tests := []struct {
-		name        string
-		path        string
-		expected    bool
-		expectedErr error
-	}{
-		{
-			name:     "not inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/notaskeleton/somefile",
-			expected: false,
-		},
-		{
-			name:     "inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt",
-			expected: true,
-		},
-		{
-			name:     "path is a skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar",
-			expected: false,
-		},
-		{
-			name:     "file does not exist",
-			path:     "nonexistent",
-			expected: false,
-		},
-	}
+	assert := assert.New(t)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := IsInsideSkeletonDir(test.path)
-			if test.expectedErr != nil {
-				require.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expected, result)
-			}
-		})
-	}
+	t.Run("not inside skeleton dir", func(t *testing.T) {
+		ok, _ := IsInsideSkeletonDir("../testdata/repos/advanced/skeletons/notaskeleton/somefile")
+		assert.False(ok)
+	})
+
+	t.Run("inside skeleton dir", func(t *testing.T) {
+		ok, _ := IsInsideSkeletonDir("../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt")
+		assert.True(ok)
+	})
+
+	t.Run("path is skeleton dir", func(t *testing.T) {
+		ok, _ := IsInsideSkeletonDir("../testdata/repos/advanced/skeletons/bar")
+		assert.False(ok)
+	})
+
+	t.Run("file does not exist", func(t *testing.T) {
+		ok, _ := IsInsideSkeletonDir("nonexistent")
+		assert.False(ok)
+	})
 }
 
 func TestFindSkeletonDir(t *testing.T) {
-	pwd, _ := os.Getwd()
+	assert := assert.New(t)
+	require := require.New(t)
 
-	tests := []struct {
-		name        string
-		path        string
-		expected    string
-		expectedErr error
-	}{
-		{
-			name:        "not inside of skeleton dir",
-			path:        "../testdata/repos/advanced/skeletons/notaskeleton/somefile",
-			expectedErr: ErrDirNotFound,
-		},
-		{
-			name:     "skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
-		},
-		{
-			name:     "dir inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar/subdir",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
-		},
-		{
-			name:     "file in dir inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
-		},
-		{
-			name:     "file inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar/.kickoff.yaml",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
-		},
-		{
-			name:     "nonexistent file inside of skeleton dir",
-			path:     "../testdata/repos/advanced/skeletons/bar/baz/nonexistent.txt",
-			expected: filepath.Join(pwd, "../testdata/repos/advanced/skeletons/bar"),
-		},
+	abspath := func(path string) string {
+		abs, err := filepath.Abs(path)
+		require.NoError(err)
+		return abs
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			result, err := FindSkeletonDir(test.path)
-			if test.expectedErr != nil {
-				require.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expected, result)
-			}
-		})
-	}
+	t.Run("not inside skeleton dir", func(t *testing.T) {
+		_, err := FindSkeletonDir("../testdata/repos/advanced/skeletons/notaskeleton/somefile")
+		assert.Equal(ErrDirNotFound, err)
+	})
+
+	t.Run("skeleton dir", func(t *testing.T) {
+		path, err := FindSkeletonDir("../testdata/repos/advanced/skeletons/bar")
+		require.NoError(err)
+		assert.Equal(abspath("../testdata/repos/advanced/skeletons/bar"), path)
+	})
+
+	t.Run("file in dir inside of skeleton dir", func(t *testing.T) {
+		path, err := FindSkeletonDir("../testdata/repos/advanced/skeletons/bar/subdir/somefile.txt")
+		require.NoError(err)
+		assert.Equal(abspath("../testdata/repos/advanced/skeletons/bar"), path)
+	})
+
+	t.Run("nonexistent file inside of skeleton dir", func(t *testing.T) {
+		path, err := FindSkeletonDir("../testdata/repos/advanced/skeletons/bar/baz/nonexistent.txt")
+		require.NoError(err)
+		assert.Equal(abspath("../testdata/repos/advanced/skeletons/bar"), path)
+	})
+}
+
+func TestSkeleton(t *testing.T) {
+	assert := assert.New(t)
+
+	t.Run("string representation", func(t *testing.T) {
+		s0 := &Skeleton{Info: &Info{Name: "foo"}}
+		assert.Equal("foo", s0.String())
+
+		s1 := &Skeleton{Info: &Info{Name: "bar", Repo: &RepoInfo{Name: "repo"}}, Parent: s0}
+		assert.Equal("foo->repo:bar", s1.String())
+
+		s2 := &Skeleton{Parent: s1}
+		assert.Equal("foo->repo:bar-><anonymous-skeleton>", s2.String())
+	})
+}
+
+func TestMerge(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	t.Run("merging empty list returns error", func(t *testing.T) {
+		_, err := Merge()
+		require.Equal(ErrMergeEmpty, err)
+	})
+
+	t.Run("merging one returns identity", func(t *testing.T) {
+		s0 := &Skeleton{}
+
+		s1, err := Merge(s0)
+		require.NoError(err)
+		assert.Same(s0, s1)
+	})
+
+	t.Run("merges skeleton values", func(t *testing.T) {
+		s0 := &Skeleton{Values: template.Values{"foo": "bar", "baz": false}}
+		s1 := &Skeleton{Values: template.Values{"qux": 42, "baz": true}}
+
+		s, err := Merge(s0, s1)
+		require.NoError(err)
+		assert.Equal(template.Values{"foo": "bar", "baz": true, "qux": 42}, s.Values)
+	})
+
+	t.Run("merges skeleton files", func(t *testing.T) {
+		s0 := &Skeleton{
+			Files: []*File{
+				{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
+				{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+				{RelPath: "somedir", AbsPath: "/s0/somedir"},
+				{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			},
+		}
+		s1 := &Skeleton{
+			Files: []*File{
+				{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+				{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+				{RelPath: "somedir", AbsPath: "/s1/somedir"},
+				{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			},
+		}
+
+		s, err := Merge(s0, s1)
+		require.NoError(err)
+
+		expectedFiles := []*File{
+			{RelPath: "somedir", AbsPath: "/s1/somedir"},
+			{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+			{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+			{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+		}
+
+		assert.Equal(expectedFiles, s.Files)
+	})
 }

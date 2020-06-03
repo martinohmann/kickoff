@@ -1,19 +1,21 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
-	git "github.com/go-git/go-git/v5"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/spf13/afero"
@@ -26,6 +28,7 @@ import (
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{
 		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		GitClient:   git.NewClient(),
 	}
 
 	cmd := &cobra.Command{
@@ -97,6 +100,7 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
+	GitClient      git.Client
 	OutputDir      string
 	Skeletons      []string
 	DryRun         bool
@@ -207,12 +211,15 @@ func (o *CreateOptions) Validate() error {
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
-	loader, err := skeleton.NewRepositoryAggregateLoader(o.Repositories)
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	repo, err := repository.NewMultiRepository(o.Repositories)
 	if err != nil {
 		return err
 	}
 
-	skeletons, err := loader.LoadSkeletons(o.Skeletons)
+	skeletons, err := repository.LoadSkeletons(ctx, repo, o.Skeletons)
 	if err != nil {
 		return err
 	}
@@ -238,7 +245,7 @@ func (o *CreateOptions) Run() error {
 	}
 
 	if o.Project.HasLicense() {
-		license, err := o.fetchLicense(o.Project.License)
+		license, err := o.fetchLicense(ctx, o.Project.License)
 		if err != nil {
 			return err
 		}
@@ -247,7 +254,7 @@ func (o *CreateOptions) Run() error {
 	}
 
 	if o.Project.HasGitignore() {
-		gitignore, err := o.fetchGitignore(o.Project.Gitignore)
+		gitignore, err := o.fetchGitignore(ctx, o.Project.Gitignore)
 		if err != nil {
 			return err
 		}
@@ -296,10 +303,7 @@ func (o *CreateOptions) logStats(stats project.Stats) {
 	}
 }
 
-func (o *CreateOptions) fetchLicense(name string) (*license.Info, error) {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
+func (o *CreateOptions) fetchLicense(ctx context.Context, name string) (*license.Info, error) {
 	l, err := license.Get(ctx, name)
 	if err == license.ErrNotFound {
 		return nil, fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", name)
@@ -310,10 +314,7 @@ func (o *CreateOptions) fetchLicense(name string) (*license.Info, error) {
 	return l, nil
 }
 
-func (o *CreateOptions) fetchGitignore(template string) (string, error) {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
+func (o *CreateOptions) fetchGitignore(ctx context.Context, template string) (string, error) {
 	gi, err := gitignore.Get(ctx, template)
 	if err == gitignore.ErrNotFound {
 		return "", fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", template)
@@ -328,7 +329,7 @@ func (o *CreateOptions) initGitRepository(path string) error {
 	log.Info("initializing git repository")
 
 	if !o.DryRun {
-		_, err := git.PlainInit(path, false)
+		_, err := o.GitClient.Init(path)
 		if err != nil && err != git.ErrRepositoryAlreadyExists {
 			return err
 		}

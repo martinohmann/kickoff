@@ -8,13 +8,16 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
 // NewShowCmd creates a command for inspecting project skeletons.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ShowOptions{IOStreams: streams}
+	o := &ShowOptions{
+		IOStreams:   streams,
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+	}
 
 	cmd := &cobra.Command{
 		Use:   "show <name>",
@@ -46,6 +49,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 
 	o.OutputFlag.AddFlag(cmd)
 	o.ConfigFlags.AddFlags(cmd)
+	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -55,6 +59,7 @@ type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 	cmdutil.OutputFlag
+	cmdutil.TimeoutFlag
 
 	Skeleton string
 }
@@ -69,12 +74,15 @@ func (o *ShowOptions) Complete(args []string) error {
 // Run prints information about a project skeleton in the output format
 // specified by the user.
 func (o *ShowOptions) Run() error {
-	loader, err := skeleton.NewRepositoryAggregateLoader(o.Repositories)
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	repo, err := repository.NewMultiRepository(o.Repositories)
 	if err != nil {
 		return err
 	}
 
-	skeleton, err := loader.LoadSkeleton(o.Skeleton)
+	skeleton, err := repository.LoadSkeleton(ctx, repo, o.Skeleton)
 	if err != nil {
 		return err
 	}

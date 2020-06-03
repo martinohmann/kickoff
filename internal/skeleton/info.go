@@ -2,25 +2,23 @@ package skeleton
 
 import (
 	"fmt"
-	"net/url"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/kirsle/configdir"
-	"github.com/martinohmann/kickoff/internal/homedir"
+	"github.com/apex/log"
 )
 
-// Info holds information about a skeleton.
+// Info holds information about the location of a skeleton.
 type Info struct {
-	Name string
-	Path string
-	Repo *RepositoryInfo
+	Name string    `json:"name"`
+	Path string    `json:"path"`
+	Repo *RepoInfo `json:"repo"`
 }
 
 // String implements fmt.Stringer.
 func (i *Info) String() string {
-	if i.Repo == nil || len(i.Repo.Name) == 0 {
+	if i.Repo == nil || i.Repo.Name == "" {
 		return i.Name
 	}
 
@@ -34,126 +32,77 @@ func (i *Info) LoadConfig() (Config, error) {
 	return LoadConfig(configPath)
 }
 
-var (
-	// LocalCache holds the path to the local repository cache. This is platform
-	// specific.
-	LocalCache = configdir.LocalCache("kickoff", "repositories")
-)
-
-const (
-	defaultRevision = "master"
-)
-
-// RepositoryInfo holds information about a skeleton repository.
-type RepositoryInfo struct {
-	Local    bool   `json:"local"`
+// RepoInfo holds information about a skeleton repository.
+type RepoInfo struct {
 	Name     string `json:"name"`
-	Revision string `json:"revision,omitempty"`
 	Path     string `json:"path"`
-	Scheme   string `json:"scheme,omitempty"`
-	User     string `json:"user,omitempty"`
-	Host     string `json:"host,omitempty"`
+	URL      string `json:"url,omitempty"`
+	Revision string `json:"revision,omitempty"`
 }
 
-// String implements fmt.Stringer.
-func (i *RepositoryInfo) String() string {
-	if i.Local {
-		return i.Path
-	}
-
-	var sb strings.Builder
-
-	sb.WriteString(i.Scheme)
-	sb.WriteString("://")
-
-	if i.User != "" {
-		sb.WriteString(i.User)
-		sb.WriteByte('@')
-	}
-
-	sb.WriteString(i.Host)
-	sb.WriteByte('/')
-	sb.WriteString(i.Path)
-
-	return sb.String()
+// IsRemote returns true if the repo info describes a remote repository.
+func (i *RepoInfo) IsRemote() bool {
+	return i.URL != ""
 }
 
-// LocalPath returns the local path to a repository. For local repositories
-// this is just the actual path on disk, for remote repositories this returns a
-// path within the LocalCache directory.
-func (i *RepositoryInfo) LocalPath() string {
-	if i.Local {
-		return i.Path
-	}
-
-	revision := i.Revision
-	if revision == "" {
-		revision = defaultRevision
-	}
-
-	revision = url.PathEscape(revision)
-
-	return filepath.Join(LocalCache, i.Host, fmt.Sprintf("%s@%s", i.Path, revision))
+// FindSkeletons recursively finds all skeletons in dir and attaches i to the
+// results. Returns any error that may occur while traversing dir.
+func (i *RepoInfo) FindSkeletons() ([]*Info, error) {
+	return findSkeletons(i, filepath.Join(i.Path, "skeletons"))
 }
 
-// SkeletonsDir returns the local path of the skeletons dir within the
-// repository.
-func (i *RepositoryInfo) SkeletonsDir() string {
-	return filepath.Join(i.LocalPath(), "skeletons")
-}
+func findSkeletons(repoInfo *RepoInfo, dir string) ([]*Info, error) {
+	skeletons := make([]*Info, 0)
 
-// Validate validates a repository info. Returns an error if i does not
-// describe a valid skeleton repository.
-func (i *RepositoryInfo) Validate() error {
-	fi, err := os.Stat(i.SkeletonsDir())
-	if os.IsNotExist(err) || !fi.IsDir() {
-		return fmt.Errorf("%s is not a valid skeleton repository, skeletons/ is not a directory", i.LocalPath())
-	}
-
-	return err
-}
-
-// ParseRepositoryURL parses a raw repository url into a repository info.
-func ParseRepositoryURL(rawurl string) (*RepositoryInfo, error) {
-	u, err := url.Parse(rawurl)
+	fileInfos, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(u.Path) == 0 {
-		return nil, fmt.Errorf("unable to parse path from raw url %s", rawurl)
-	}
+	for _, info := range fileInfos {
+		if !info.IsDir() {
+			continue
+		}
 
-	info := &RepositoryInfo{}
+		path := filepath.Join(dir, info.Name())
 
-	if u.Host == "" {
-		path, err := homedir.Expand(u.Path)
+		ok, err := IsSkeletonDir(path)
+		if os.IsPermission(err) {
+			log.Warnf("permission error, skipping dir: %v", err)
+			continue
+		}
+
 		if err != nil {
 			return nil, err
 		}
 
-		abspath, err := filepath.Abs(path)
+		if ok {
+			abspath, err := filepath.Abs(path)
+			if err != nil {
+				return nil, err
+			}
+
+			skeletons = append(skeletons, &Info{
+				Name: info.Name(),
+				Path: abspath,
+				Repo: repoInfo,
+			})
+			continue
+		}
+
+		skels, err := findSkeletons(repoInfo, path)
 		if err != nil {
 			return nil, err
 		}
 
-		info.Local = true
-		info.Path = abspath
-	} else {
-		info.Scheme = u.Scheme
-		info.User = u.User.String()
-		info.Host = u.Host
-		info.Path = u.Path[1:]
-
-		revision, ok := u.Query()["revision"]
-		if ok && len(revision) > 0 {
-			info.Revision = revision[0]
-		}
-
-		if info.Revision == "" {
-			info.Revision = defaultRevision
+		for _, s := range skels {
+			skeletons = append(skeletons, &Info{
+				Name: filepath.Join(info.Name(), s.Name),
+				Path: s.Path,
+				Repo: repoInfo,
+			})
 		}
 	}
 
-	return info, nil
+	return skeletons, nil
 }

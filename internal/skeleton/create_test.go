@@ -6,27 +6,20 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateRepository(t *testing.T) {
-	dir, err := ioutil.TempDir("", "kickoff-*")
-	require.NoError(t, err)
+func TestCreate(t *testing.T) {
+	require := require.New(t)
 
+	dir, err := ioutil.TempDir("", "kickoff-*")
+	require.NoError(err)
 	defer os.RemoveAll(dir)
 
-	outputPath := filepath.Join(dir, "repo")
+	outputPath := filepath.Join(dir, "myskeleton")
 
-	err = CreateRepository(outputPath, "myskeleton")
-	require.NoError(t, err)
-
-	skeletonsDir := filepath.Join(outputPath, "skeletons")
-	skeletonDir := filepath.Join(skeletonsDir, "myskeleton")
-
-	assert.DirExists(t, outputPath)
-	assert.DirExists(t, skeletonsDir)
-	assert.DirExists(t, skeletonDir)
-	assert.FileExists(t, filepath.Join(skeletonDir, "README.md.skel"))
-	assert.FileExists(t, filepath.Join(skeletonDir, ConfigFileName))
+	require.NoError(Create(outputPath))
+	require.DirExists(outputPath)
+	require.FileExists(filepath.Join(outputPath, "README.md.skel"))
+	require.FileExists(filepath.Join(outputPath, ConfigFileName))
 }

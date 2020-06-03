@@ -6,7 +6,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ func (o *ListOptions) Run() error {
 	for _, name := range repoNames {
 		repoURL := o.Repositories[name]
 
-		info, err := skeleton.ParseRepositoryURL(repoURL)
+		info, err := repository.ParseURL(repoURL)
 		if err != nil {
 			return err
 		}
@@ -69,8 +69,8 @@ func (o *ListOptions) Run() error {
 		revision := "-"
 		typ := "local"
 
-		if !info.Local {
-			url = info.String()
+		if info.IsRemote() {
+			url = info.URL
 			typ = "remote"
 
 			if info.Revision != "" {
@@ -78,7 +78,7 @@ func (o *ListOptions) Run() error {
 			}
 		}
 
-		path, err := homedir.Collapse(info.LocalPath())
+		path, err := homedir.Collapse(info.Path)
 		if err != nil {
 			return err
 		}
