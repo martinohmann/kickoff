@@ -142,6 +142,11 @@ func collectFiles(info *skeleton.Info) ([]*skeleton.File, error) {
 			return err
 		}
 
+		if relPath == "." {
+			// ignore skeleton dir itself
+			return nil
+		}
+
 		absPath, err := filepath.Abs(path)
 		if err != nil {
 			return err

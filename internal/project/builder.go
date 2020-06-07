@@ -157,6 +157,11 @@ func (b *Builder) Build(targetDir string) (Stats, error) {
 		b.fs = afero.NewOsFs()
 	}
 
+	err = b.fs.MkdirAll(targetDir, 0755)
+	if err != nil {
+		return Stats{}, err
+	}
+
 	b.templateRenderer = template.NewRenderer(template.Values{
 		"Project": &b.config,
 		"Values":  b.values,

@@ -11,7 +11,6 @@ func TestBuild(t *testing.T) {
 	s := &skeleton.Skeleton{
 		Info: &skeleton.Info{Name: "my/skeleton"},
 		Files: []*skeleton.File{
-			{RelPath: "."},
 			{RelPath: ".kickoff.yaml"},
 			{RelPath: "README.md.skel"},
 			{RelPath: "foo/bar"},

@@ -22,7 +22,7 @@ func TestLoadSkeletons(t *testing.T) {
 
 	assert.Equal(t, "advanced", skeleton.Info.Name)
 	assert.Equal(t, "the-repo", skeleton.Info.Repo.Name)
-	assert.Len(t, skeleton.Files, 5)
+	assert.Len(t, skeleton.Files, 4)
 	assert.Equal(t,
 		template.Values{
 			"somekey":         "somevalue",
