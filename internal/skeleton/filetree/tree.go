@@ -25,11 +25,7 @@ func Build(s *skeleton.Skeleton) gotree.Tree {
 
 	for _, f := range s.Files {
 		parts := strings.Split(f.RelPath, "/")
-		if parts[0] == "." {
-			// @TODO(mohmann): the skeleton dir should be removed from the file
-			// list at one point. We'll ignore it for now.
-			continue
-		}
+
 		for tree := root; len(parts) > 0; parts = parts[1:] {
 			tree = tree.Add(parts[0])
 		}
