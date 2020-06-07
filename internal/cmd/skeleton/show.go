@@ -3,12 +3,12 @@ package skeleton
 import (
 	"strings"
 
-	"github.com/disiqueira/gotree"
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/skeleton/filetree"
 	"github.com/spf13/cobra"
 )
 
@@ -103,16 +103,6 @@ func (o *ShowOptions) Run() error {
 			description = "-"
 		}
 
-		tree := gotree.New(skeleton.Info.Name)
-
-		for _, file := range skeleton.Files {
-			if file.RelPath == "." {
-				continue
-			}
-
-			tree.Add(file.RelPath)
-		}
-
 		parent := "-"
 		if skeleton.Parent != nil {
 			parent, err = homedir.Collapse(skeleton.Parent.Info.Path)
@@ -136,12 +126,14 @@ func (o *ShowOptions) Run() error {
 			return err
 		}
 
+		tree := filetree.Build(skeleton)
+
 		tw.Append("Name", skeleton.Info.Name)
 		tw.Append("Path", path)
 		tw.Append("Description", description)
-		tw.Append("Files", strings.TrimSpace(tree.Print()))
 		tw.Append("Parent", parent)
 		tw.Append("Values", values)
+		tw.Append("Files", tree.Print())
 
 		tw.Render()
 

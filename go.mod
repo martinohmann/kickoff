@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.0.2
 	github.com/apex/log v1.1.1
 	github.com/disiqueira/gotree v1.0.0
+	github.com/disiqueira/gotree/v3 v3.0.2
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.0.0
