@@ -27,8 +27,10 @@ import (
 // skeletons using a variety of user-defined options.
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
-		GitClient:   git.NewClient(),
+		TimeoutFlag:     cmdutil.NewDefaultTimeoutFlag(),
+		GitClient:       git.NewClient(),
+		GitignoreClient: gitignore.NewClient(nil),
+		LicenseClient:   license.NewClient(nil),
 	}
 
 	cmd := &cobra.Command{
@@ -100,7 +102,10 @@ type CreateOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
-	GitClient      git.Client
+	GitClient       git.Client
+	GitignoreClient *gitignore.Client
+	LicenseClient   *license.Client
+
 	OutputDir      string
 	Skeletons      []string
 	DryRun         bool
@@ -304,7 +309,7 @@ func (o *CreateOptions) logStats(stats project.Stats) {
 }
 
 func (o *CreateOptions) fetchLicense(ctx context.Context, name string) (*license.Info, error) {
-	l, err := license.Get(ctx, name)
+	l, err := o.LicenseClient.GetLicense(ctx, name)
 	if err == license.ErrNotFound {
 		return nil, fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", name)
 	} else if err != nil {
@@ -315,7 +320,7 @@ func (o *CreateOptions) fetchLicense(ctx context.Context, name string) (*license
 }
 
 func (o *CreateOptions) fetchGitignore(ctx context.Context, template string) (string, error) {
-	gi, err := gitignore.Get(ctx, template)
+	gi, err := o.GitignoreClient.GetTemplate(ctx, template)
 	if err == gitignore.ErrNotFound {
 		return "", fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", template)
 	} else if err != nil {

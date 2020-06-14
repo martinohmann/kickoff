@@ -14,6 +14,8 @@ import (
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 
+	client := license.NewClient(nil)
+
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -25,7 +27,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
-			licenses, err := license.List(ctx)
+			licenses, err := client.ListLicenses(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch licenses due to: %v", err)
 			}

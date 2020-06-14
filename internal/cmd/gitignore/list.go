@@ -14,6 +14,8 @@ import (
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 
+	client := gitignore.NewClient(nil)
+
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -27,7 +29,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
-			gitignores, err := gitignore.List(ctx)
+			gitignores, err := client.ListTemplates(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}

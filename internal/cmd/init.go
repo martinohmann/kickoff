@@ -22,8 +22,10 @@ import (
 // the kickoff configuration.
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	o := &InitOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams:       streams,
+		TimeoutFlag:     cmdutil.NewDefaultTimeoutFlag(),
+		GitignoreClient: gitignore.NewClient(nil),
+		LicenseClient:   license.NewClient(nil),
 	}
 
 	cmd := &cobra.Command{
@@ -55,6 +57,9 @@ type InitOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
+
+	GitignoreClient *gitignore.Client
+	LicenseClient   *license.Client
 }
 
 // Complete completes the command options.
@@ -139,7 +144,7 @@ func (o *InitOptions) configureLicense() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	licenses, err := license.List(ctx)
+	licenses, err := o.LicenseClient.ListLicenses(ctx)
 	if err != nil {
 		log.Debugf("skipping license configuration due to: %v", err)
 	} else if len(licenses) > 0 {
@@ -207,7 +212,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	gitignoreOptions, err := gitignore.List(ctx)
+	gitignoreOptions, err := o.GitignoreClient.ListTemplates(ctx)
 	if err != nil {
 		log.Debugf("skipping gitignore configuration due to: %v", err)
 	} else if len(gitignoreOptions) > 0 {

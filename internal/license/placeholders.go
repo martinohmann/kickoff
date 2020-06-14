@@ -5,9 +5,9 @@ import "strings"
 // placeholderMap contains a mapping from a field name to known placeholders
 // for it in open source license texts.
 var placeholderMap = map[string][]string{
-	"project": []string{"<program>"},
-	"author":  []string{"<name of author>", "[fullname]", "[name of copyright owner]"},
-	"year":    []string{"<year>", "[year]", "[yyyy]"},
+	"project": {"<program>"},
+	"author":  {"<name of author>", "[fullname]", "[name of copyright owner]"},
+	"year":    {"<year>", "[year]", "[yyyy]"},
 }
 
 // FieldMap is a map of placeholder field name and replacement values.
