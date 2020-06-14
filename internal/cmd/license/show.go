@@ -14,6 +14,8 @@ import (
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 
+	client := license.NewClient(nil)
+
 	cmd := &cobra.Command{
 		Use:   "show <key>",
 		Short: "Fetch a license text",
@@ -27,7 +29,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
-			license, err := license.Get(ctx, args[0])
+			license, err := client.GetLicense(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to fetch license text due to: %v", err)
 			}

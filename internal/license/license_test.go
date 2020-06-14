@@ -37,9 +37,9 @@ func (s *mockService) List(ctx context.Context) (licenses []*github.License, res
 	return licenses, resp, args.Error(2)
 }
 
-func TestAdapter_Get(t *testing.T) {
+func TestClient_GetLicense(t *testing.T) {
 	svc := &mockService{}
-	adapter := NewAdapter(svc)
+	client := &Client{svc}
 
 	license := &github.License{
 		Key:  github.String("foo"),
@@ -49,7 +49,7 @@ func TestAdapter_Get(t *testing.T) {
 
 	svc.On("Get", mock.Anything, "foo").Return(license, &github.Response{}, nil)
 
-	info, err := adapter.Get(context.Background(), "foo")
+	info, err := client.GetLicense(context.Background(), "foo")
 	require.NoError(t, err)
 
 	expected := &Info{
@@ -61,22 +61,22 @@ func TestAdapter_Get(t *testing.T) {
 	assert.Equal(t, expected, info)
 }
 
-func TestAdapter_Get_NotFound(t *testing.T) {
+func TestClient_GetLicense_NotFound(t *testing.T) {
 	svc := &mockService{}
-	adapter := NewAdapter(svc)
+	client := &Client{svc}
 
 	svc.On("Get", mock.Anything, "foo").Return(nil, &github.Response{}, &github.ErrorResponse{
 		Response: &http.Response{StatusCode: 404},
 	})
 
-	_, err := adapter.Get(context.Background(), "foo")
+	_, err := client.GetLicense(context.Background(), "foo")
 	require.Error(t, err)
 	assert.Equal(t, ErrNotFound, err)
 }
 
-func TestAdapter_List(t *testing.T) {
+func TestClient_ListLicenses(t *testing.T) {
 	svc := &mockService{}
-	adapter := NewAdapter(svc)
+	client := &Client{svc}
 
 	licenses := []*github.License{
 		{
@@ -88,7 +88,7 @@ func TestAdapter_List(t *testing.T) {
 
 	svc.On("List", mock.Anything).Return(licenses, &github.Response{}, nil)
 
-	infos, err := adapter.List(context.Background())
+	infos, err := client.ListLicenses(context.Background())
 	require.NoError(t, err)
 
 	expected := []*Info{

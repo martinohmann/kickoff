@@ -14,6 +14,8 @@ import (
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 
+	client := gitignore.NewClient(nil)
+
 	cmd := &cobra.Command{
 		Use:   "show <name>",
 		Short: "Fetch a gitignore template",
@@ -32,7 +34,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
-			gitignore, err := gitignore.Get(ctx, args[0])
+			gitignore, err := client.GetTemplate(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}

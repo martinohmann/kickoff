@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestList(t *testing.T) {
+func TestClient_ListTemplates(t *testing.T) {
 	var tests = []struct {
 		name        string
 		handler     func(t *testing.T) http.HandlerFunc
@@ -40,7 +40,7 @@ func TestList(t *testing.T) {
 		{
 			name:        "returns error on non-200 status codes",
 			expectError: true,
-			expectedErr: errors.New("gitignore.io returned status code 500 while listing gitignore templates"),
+			expectedErr: errors.New("received status code 500 while listing gitignore templates"),
 			handler: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(500)
@@ -60,10 +60,12 @@ func TestList(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			done := testServer(test.handler(t))
-			defer done()
+			server := httptest.NewServer(test.handler(t))
+			defer server.Close()
 
-			gitignores, err := List(context.Background())
+			client := &Client{BaseURL: server.URL}
+
+			gitignores, err := client.ListTemplates(context.Background())
 			if test.expectError {
 				require.Error(t, err)
 
@@ -79,7 +81,7 @@ func TestList(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestClient_GetTemplate(t *testing.T) {
 	var tests = []struct {
 		name        string
 		query       string
@@ -110,7 +112,7 @@ func TestGet(t *testing.T) {
 		{
 			name:        "returns error on non-200 status codes",
 			expectError: true,
-			expectedErr: errors.New("gitignore.io returned status code 500 while fetching gitignore template"),
+			expectedErr: errors.New("received status code 500 while fetching gitignore template"),
 			handler: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(500)
@@ -140,10 +142,12 @@ func TestGet(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			done := testServer(test.handler(t))
-			defer done()
+			server := httptest.NewServer(test.handler(t))
+			defer server.Close()
 
-			gitignores, err := Get(context.Background(), test.query)
+			client := &Client{BaseURL: server.URL}
+
+			gitignores, err := client.GetTemplate(context.Background(), test.query)
 			if test.expectError {
 				require.Error(t, err)
 
@@ -156,16 +160,5 @@ func TestGet(t *testing.T) {
 				assert.Equal(t, test.expected, gitignores)
 			}
 		})
-	}
-}
-
-func testServer(handler http.HandlerFunc) func() {
-	server := httptest.NewServer(handler)
-	originalAPIBaseURL := apiBaseURL
-	apiBaseURL = server.URL
-
-	return func() {
-		apiBaseURL = originalAPIBaseURL
-		server.Close()
 	}
 }

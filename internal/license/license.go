@@ -5,25 +5,15 @@ package license
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/apex/log"
 	"github.com/google/go-github/v28/github"
 )
 
-var (
-	// ErrNotFound is returned by the Adapter if a license cannot be
-	// found via the GitHub Licenses API.
-	ErrNotFound = errors.New("license not found")
-
-	// DefaultAdapter is the default adapter for the GitHub Licenses API.
-	DefaultAdapter = NewAdapter(github.NewClient(nil).Licenses)
-)
-
-// GitHubLicensesService is the interface of the GitHub Licenses API Service.
-type GitHubLicensesService interface {
-	Get(ctx context.Context, licenseName string) (*github.License, *github.Response, error)
-	List(ctx context.Context) ([]*github.License, *github.Response, error)
-}
+// ErrNotFound is returned by the Adapter if a license cannot be
+// found via the GitHub Licenses API.
+var ErrNotFound = errors.New("license not found")
 
 // Info holds information about a single license.
 type Info struct {
@@ -54,24 +44,31 @@ func toInfo(license *github.License) *Info {
 	return &info
 }
 
-// Adapter adapts to the GitHub Licences API.
-type Adapter struct {
-	service GitHubLicensesService
+// GitHubLicensesService is the interface of the GitHub Licenses API Service.
+type GitHubLicensesService interface {
+	Get(ctx context.Context, licenseName string) (*github.License, *github.Response, error)
+	List(ctx context.Context) ([]*github.License, *github.Response, error)
 }
 
-// NewAdapter creates a new *Adapter for service.
-func NewAdapter(service GitHubLicensesService) *Adapter {
-	return &Adapter{
-		service: service,
-	}
+// Client fetches license information from the GitHub Licenses API Service.
+type Client struct {
+	GitHubLicensesService
 }
 
-// Get fetches the info for the license with name. Will return
+// NewClient creates a new *Client which will use httpClient for making http
+// requests. If httpClient is nil, http.DefaultClient will be used instead.
+func NewClient(httpClient *http.Client) *Client {
+	githubClient := github.NewClient(httpClient)
+
+	return &Client{githubClient.Licenses}
+}
+
+// GetLicense fetches the info for the license with name. Will return
 // ErrNotFound if the license is not recognized.
-func (f *Adapter) Get(ctx context.Context, name string) (*Info, error) {
-	log.WithField("license", name).Debugf("fetching license info from GitHub")
+func (c *Client) GetLicense(ctx context.Context, name string) (*Info, error) {
+	log.WithField("license", name).Debugf("fetching license info")
 
-	license, _, err := f.service.Get(ctx, name)
+	license, _, err := c.Get(ctx, name)
 	if err != nil {
 		errResp, ok := err.(*github.ErrorResponse)
 		if ok && errResp.Response.StatusCode == 404 {
@@ -84,13 +81,13 @@ func (f *Adapter) Get(ctx context.Context, name string) (*Info, error) {
 	return toInfo(license), nil
 }
 
-// List lists the infos for all available licenses. These do not include the
-// license body but only the metadata. Use Get to fetch the body of a
-// particular license.
-func (f *Adapter) List(ctx context.Context) ([]*Info, error) {
-	log.Debug("fetching license infos from GitHub")
+// ListLicenses lists the infos for all available licenses. These do not
+// include the license body but only the metadata. Use Get to fetch the
+// body of a particular license.
+func (c *Client) ListLicenses(ctx context.Context) ([]*Info, error) {
+	log.Debug("fetching license infos")
 
-	licenses, _, err := f.service.List(ctx)
+	licenses, _, err := c.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,17 +98,4 @@ func (f *Adapter) List(ctx context.Context) ([]*Info, error) {
 	}
 
 	return infos, nil
-}
-
-// Get fetches the info for the license with name using the DefaultAdapter.
-// Will return ErrNotFound if the license is not recognized.
-func Get(ctx context.Context, name string) (*Info, error) {
-	return DefaultAdapter.Get(ctx, name)
-}
-
-// List lists the infos for all available licenses using the DefaultAdapter.
-// These do not include the license body but only the metadata. Use Get to
-// fetch the body of a particular license.
-func List(ctx context.Context) ([]*Info, error) {
-	return DefaultAdapter.List(ctx)
 }
