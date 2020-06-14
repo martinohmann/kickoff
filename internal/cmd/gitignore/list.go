@@ -6,6 +6,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +14,6 @@ import (
 // gitignore.io.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
-	client := gitignore.NewClient(nil)
 
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -26,6 +25,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			Check out https://www.gitignore.io for more information about .gitignore templates.`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			client := gitignore.NewClient(httpcache.NewClient())
+
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 

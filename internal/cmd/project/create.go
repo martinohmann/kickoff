@@ -13,6 +13,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/repository"
@@ -27,10 +28,7 @@ import (
 // skeletons using a variety of user-defined options.
 func NewCreateCmd() *cobra.Command {
 	o := &CreateOptions{
-		TimeoutFlag:     cmdutil.NewDefaultTimeoutFlag(),
-		GitClient:       git.NewClient(),
-		GitignoreClient: gitignore.NewClient(nil),
-		LicenseClient:   license.NewClient(nil),
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
 	}
 
 	cmd := &cobra.Command{
@@ -184,6 +182,12 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 			}
 		}
 	}
+
+	httpClient := httpcache.NewClient()
+
+	o.GitignoreClient = gitignore.NewClient(httpClient)
+	o.LicenseClient = license.NewClient(httpClient)
+	o.GitClient = git.NewClient()
 
 	return nil
 }

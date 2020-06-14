@@ -6,6 +6,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +14,6 @@ import (
 // gitignore templates.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
-	client := gitignore.NewClient(nil)
 
 	cmd := &cobra.Command{
 		Use:   "show <name>",
@@ -31,6 +30,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff gitignore show go,helm,hugo`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			client := gitignore.NewClient(httpcache.NewClient())
+
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
