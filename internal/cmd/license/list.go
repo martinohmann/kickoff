@@ -5,6 +5,7 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/spf13/cobra"
 )
@@ -14,8 +15,6 @@ import (
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
 
-	client := license.NewClient(nil)
-
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -24,6 +23,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			client := license.NewClient(httpcache.NewClient())
+
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/spf13/cobra"
 )
@@ -13,8 +14,6 @@ import (
 // license.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
-	client := license.NewClient(nil)
 
 	cmd := &cobra.Command{
 		Use:   "show <key>",
@@ -26,6 +25,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff license show mit`),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			client := license.NewClient(httpcache.NewClient())
+
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 

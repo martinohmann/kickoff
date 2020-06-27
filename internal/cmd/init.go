@@ -13,6 +13,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
@@ -22,10 +23,8 @@ import (
 // the kickoff configuration.
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	o := &InitOptions{
-		IOStreams:       streams,
-		TimeoutFlag:     cmdutil.NewDefaultTimeoutFlag(),
-		GitignoreClient: gitignore.NewClient(nil),
-		LicenseClient:   license.NewClient(nil),
+		IOStreams:   streams,
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
 	}
 
 	cmd := &cobra.Command{
@@ -74,8 +73,16 @@ func (o *InitOptions) Complete() (err error) {
 	}
 
 	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
+	if err != nil {
+		return err
+	}
 
-	return err
+	httpClient := httpcache.NewClient()
+
+	o.GitignoreClient = gitignore.NewClient(httpClient)
+	o.LicenseClient = license.NewClient(httpClient)
+
+	return
 }
 
 // Run runs the interactive configuration of kickoff.
