@@ -71,46 +71,49 @@ func (b *Builder) OverwriteAll(overwrite bool) *Builder {
 	return b
 }
 
-// OverwriteFiles adds a list of targetPaths to the builder that are allowed to
+// OverwriteFiles adds a list of paths to the builder that are allowed to
 // be overwritting if the already exist. This allows for selectively
 // overwriting only specific files, keeping others unchanged. Paths are assumed
 // to be relative to the new project dir. Passing absolute paths will cause
-// successive calls to Build to return an error.
+// successive calls to Build to return an error. If any given path represents
+// a directory in the new project dir, all existing files will be recursively
+// overwritten.
 func (b *Builder) OverwriteFiles(paths []string) *Builder {
 	if b.err != nil {
 		return b
 	}
 
-	for _, path := range paths {
-		if filepath.IsAbs(path) {
-			b.err = fmt.Errorf("found absolute path in overwrites: %s", path)
-			return b
-		}
-
-		relPath := filepath.Clean(path)
-
-		b.overwriteMap[relPath] = true
-	}
+	b.err = addCleanRelPathsToFileMap(b.overwriteMap, paths)
 	return b
 }
 
-// @TODO add doc
+// SkipFiles adds a list of paths to the builder that should be skipped. This
+// allows for selectively excluding specific files. Paths are assumed to be
+// relative to the new project dir. Passing absolute paths will cause
+// successive calls to Build to return an error. If any given path represents
+// a directory in the new project dir, all files and dirs that would be written
+// to it will be skipped.
 func (b *Builder) SkipFiles(paths []string) *Builder {
 	if b.err != nil {
 		return b
 	}
 
+	b.err = addCleanRelPathsToFileMap(b.skipMap, paths)
+	return b
+}
+
+func addCleanRelPathsToFileMap(fileMap map[string]bool, paths []string) error {
 	for _, path := range paths {
 		if filepath.IsAbs(path) {
-			b.err = fmt.Errorf("found absolute path in files to skip: %s", path)
-			return b
+			return fmt.Errorf("found illegal absolute path: %s", path)
 		}
 
 		relPath := filepath.Clean(path)
 
-		b.skipMap[relPath] = true
+		fileMap[relPath] = true
 	}
-	return b
+
+	return nil
 }
 
 // AddValues adds values that should be injected into templates. Values will be
@@ -201,12 +204,21 @@ func (b *Builder) Build(targetDir string) (Stats, error) {
 
 // shouldOverwrite returns true if path is allowed to be overwritten.
 func (b *Builder) shouldOverwrite(path string) bool {
-	return b.overwriteAll || b.overwriteMap[path]
+	return b.overwriteAll || matchPathPrefix(b.overwriteMap, path)
 }
 
+// shouldSkip returns true if path should be skipped.
 func (b *Builder) shouldSkip(path string) bool {
+	return matchPathPrefix(b.skipMap, path)
+}
+
+// matchPathPrefix returns true if path or any parent dir of path is set in
+// pathMap.
+// E.g. if path is `pkg/foo/bar` and `pkg` or `pkg/foo` (or `pkg/foo/bar`) is
+// present in pathMap, this returns true, otherwise false.
+func matchPathPrefix(pathMap map[string]bool, path string) bool {
 	for {
-		if b.skipMap[path] {
+		if pathMap[path] {
 			return true
 		}
 
