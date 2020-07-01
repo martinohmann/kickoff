@@ -23,9 +23,9 @@ import (
 type Builder struct {
 	config config.Project
 
-	allowEmpty   bool
 	overwriteAll bool
 	overwriteMap map[string]bool
+	skipMap      map[string]bool
 	dirMap       map[string]string
 
 	fs      afero.Fs
@@ -45,6 +45,7 @@ func NewBuilder(config config.Project) *Builder {
 		config:       config,
 		dirMap:       make(map[string]string),
 		overwriteMap: make(map[string]bool),
+		skipMap:      make(map[string]bool),
 		values:       template.Values{},
 	}
 }
@@ -93,10 +94,22 @@ func (b *Builder) OverwriteFiles(paths []string) *Builder {
 	return b
 }
 
-// AllowEmpty causes templates that render to a length of zero bytes to be
-// written to the project regardless. The default is to skip empty templates.
-func (b *Builder) AllowEmpty(allowEmpty bool) *Builder {
-	b.allowEmpty = allowEmpty
+// @TODO add doc
+func (b *Builder) SkipFiles(paths []string) *Builder {
+	if b.err != nil {
+		return b
+	}
+
+	for _, path := range paths {
+		if filepath.IsAbs(path) {
+			b.err = fmt.Errorf("found absolute path in files to skip: %s", path)
+			return b
+		}
+
+		relPath := filepath.Clean(path)
+
+		b.skipMap[relPath] = true
+	}
 	return b
 }
 
@@ -191,6 +204,20 @@ func (b *Builder) shouldOverwrite(path string) bool {
 	return b.overwriteAll || b.overwriteMap[path]
 }
 
+func (b *Builder) shouldSkip(path string) bool {
+	for {
+		if b.skipMap[path] {
+			return true
+		}
+
+		if path = filepath.Dir(path); path == "." || path == "/" {
+			break
+		}
+	}
+
+	return false
+}
+
 // processFile processes f and writes the result to the targetDir.
 func (b *Builder) processFile(f File, targetDir string) error {
 	targetRelPath, err := b.buildTargetRelPath(f)
@@ -216,6 +243,12 @@ func (b *Builder) processFile(f File, targetDir string) error {
 		})
 	}
 
+	if b.shouldSkip(targetRelPath) {
+		logger.Warnf("skipping exluded %s", fileType(f))
+		b.stats.Skipped++
+		return nil
+	}
+
 	if !b.shouldOverwrite(targetRelPath) && file.Exists(targetAbsPath) {
 		logger.Warnf("skipping existing %s", fileType(f))
 		b.stats.Skipped++
@@ -233,20 +266,14 @@ func (b *Builder) writeFile(logger *log.Entry, f File, targetAbsPath string) (er
 
 		err = b.fs.MkdirAll(targetAbsPath, f.Mode())
 	case filepath.Ext(f.Path()) == ".skel":
+		logger.Info("rendering template")
+
 		var rendered string
 
 		rendered, err = b.renderTemplateFile(f)
 		if err != nil {
 			return err
 		}
-
-		if !b.allowEmpty && len(rendered) == 0 {
-			logger.Warn("skipping empty template")
-			b.stats.Skipped++
-			return nil
-		}
-
-		logger.Info("rendering template")
 
 		err = afero.WriteFile(b.fs, targetAbsPath, []byte(rendered), f.Mode())
 	default:

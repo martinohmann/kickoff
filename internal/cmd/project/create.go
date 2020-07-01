@@ -110,7 +110,7 @@ type CreateOptions struct {
 	Force          bool
 	Overwrite      bool
 	OverwriteFiles []string
-	AllowEmpty     bool
+	SkipFiles      []string
 
 	rawValues   []string
 	valuesFiles []string
@@ -132,9 +132,8 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
 
-	cmd.Flags().BoolVar(&o.AllowEmpty, "allow-empty", o.AllowEmpty, "If true, empty files that are the result of template rendering will still be created in the output directory")
-
 	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory")
+	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles, "Skip writing a specific file to the output directory. File path must be relative to the output directory. If file is a dir, files contained in it will be skipped as well")
 }
 
 // Complete completes the project creation options.
@@ -239,9 +238,9 @@ func (o *CreateOptions) Run() error {
 	}
 
 	builder := project.NewBuilder(o.Project).
-		AllowEmpty(o.AllowEmpty).
 		OverwriteAll(o.Overwrite).
 		OverwriteFiles(o.OverwriteFiles).
+		SkipFiles(o.SkipFiles).
 		AddValues(skeleton.Values).
 		AddValues(o.Values)
 

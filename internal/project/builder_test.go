@@ -138,21 +138,6 @@ func TestBuilder_Build(t *testing.T) {
 			},
 		},
 		{
-			name: "does not create file if template rendered to an empty string",
-			validate: func(t *dirTester, b *Builder) {
-				t.assertFileAbsent("optional-file")
-			},
-		},
-		{
-			name: "does create file if template rendered to an empty string and AllowEmpty is true",
-			setup: func(t *dirTester, b *Builder) {
-				b.AllowEmpty(true)
-			},
-			validate: func(t *dirTester, b *Builder) {
-				t.assertFileEmpty("optional-file")
-			},
-		},
-		{
 			name: "errors during configuration prevent build",
 			setup: func(t *dirTester, b *Builder) {
 				b.err = errors.New("whoops")
