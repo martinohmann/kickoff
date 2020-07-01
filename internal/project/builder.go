@@ -23,9 +23,9 @@ import (
 type Builder struct {
 	config config.Project
 
-	allowEmpty   bool
 	overwriteAll bool
 	overwriteMap map[string]bool
+	skipMap      map[string]bool
 	dirMap       map[string]string
 
 	fs      afero.Fs
@@ -45,6 +45,7 @@ func NewBuilder(config config.Project) *Builder {
 		config:       config,
 		dirMap:       make(map[string]string),
 		overwriteMap: make(map[string]bool),
+		skipMap:      make(map[string]bool),
 		values:       template.Values{},
 	}
 }
@@ -70,34 +71,49 @@ func (b *Builder) OverwriteAll(overwrite bool) *Builder {
 	return b
 }
 
-// OverwriteFiles adds a list of targetPaths to the builder that are allowed to
+// OverwriteFiles adds a list of paths to the builder that are allowed to
 // be overwritting if the already exist. This allows for selectively
 // overwriting only specific files, keeping others unchanged. Paths are assumed
 // to be relative to the new project dir. Passing absolute paths will cause
-// successive calls to Build to return an error.
+// successive calls to Build to return an error. If any given path represents
+// a directory in the new project dir, all existing files will be recursively
+// overwritten.
 func (b *Builder) OverwriteFiles(paths []string) *Builder {
 	if b.err != nil {
 		return b
 	}
 
+	b.err = addCleanRelPathsToFileMap(b.overwriteMap, paths)
+	return b
+}
+
+// SkipFiles adds a list of paths to the builder that should be skipped. This
+// allows for selectively excluding specific files. Paths are assumed to be
+// relative to the new project dir. Passing absolute paths will cause
+// successive calls to Build to return an error. If any given path represents
+// a directory in the new project dir, all files and dirs that would be written
+// to it will be skipped.
+func (b *Builder) SkipFiles(paths []string) *Builder {
+	if b.err != nil {
+		return b
+	}
+
+	b.err = addCleanRelPathsToFileMap(b.skipMap, paths)
+	return b
+}
+
+func addCleanRelPathsToFileMap(fileMap map[string]bool, paths []string) error {
 	for _, path := range paths {
 		if filepath.IsAbs(path) {
-			b.err = fmt.Errorf("found absolute path in overwrites: %s", path)
-			return b
+			return fmt.Errorf("found illegal absolute path: %s", path)
 		}
 
 		relPath := filepath.Clean(path)
 
-		b.overwriteMap[relPath] = true
+		fileMap[relPath] = true
 	}
-	return b
-}
 
-// AllowEmpty causes templates that render to a length of zero bytes to be
-// written to the project regardless. The default is to skip empty templates.
-func (b *Builder) AllowEmpty(allowEmpty bool) *Builder {
-	b.allowEmpty = allowEmpty
-	return b
+	return nil
 }
 
 // AddValues adds values that should be injected into templates. Values will be
@@ -188,7 +204,30 @@ func (b *Builder) Build(targetDir string) (Stats, error) {
 
 // shouldOverwrite returns true if path is allowed to be overwritten.
 func (b *Builder) shouldOverwrite(path string) bool {
-	return b.overwriteAll || b.overwriteMap[path]
+	return b.overwriteAll || matchPathPrefix(b.overwriteMap, path)
+}
+
+// shouldSkip returns true if path should be skipped.
+func (b *Builder) shouldSkip(path string) bool {
+	return matchPathPrefix(b.skipMap, path)
+}
+
+// matchPathPrefix returns true if path or any parent dir of path is set in
+// pathMap.
+// E.g. if path is `pkg/foo/bar` and `pkg` or `pkg/foo` (or `pkg/foo/bar`) is
+// present in pathMap, this returns true, otherwise false.
+func matchPathPrefix(pathMap map[string]bool, path string) bool {
+	for {
+		if pathMap[path] {
+			return true
+		}
+
+		if path = filepath.Dir(path); path == "." || path == "/" {
+			break
+		}
+	}
+
+	return false
 }
 
 // processFile processes f and writes the result to the targetDir.
@@ -216,6 +255,12 @@ func (b *Builder) processFile(f File, targetDir string) error {
 		})
 	}
 
+	if b.shouldSkip(targetRelPath) {
+		logger.Warnf("skipping exluded %s", fileType(f))
+		b.stats.Skipped++
+		return nil
+	}
+
 	if !b.shouldOverwrite(targetRelPath) && file.Exists(targetAbsPath) {
 		logger.Warnf("skipping existing %s", fileType(f))
 		b.stats.Skipped++
@@ -233,20 +278,14 @@ func (b *Builder) writeFile(logger *log.Entry, f File, targetAbsPath string) (er
 
 		err = b.fs.MkdirAll(targetAbsPath, f.Mode())
 	case filepath.Ext(f.Path()) == ".skel":
+		logger.Info("rendering template")
+
 		var rendered string
 
 		rendered, err = b.renderTemplateFile(f)
 		if err != nil {
 			return err
 		}
-
-		if !b.allowEmpty && len(rendered) == 0 {
-			logger.Warn("skipping empty template")
-			b.stats.Skipped++
-			return nil
-		}
-
-		logger.Info("rendering template")
 
 		err = afero.WriteFile(b.fs, targetAbsPath, []byte(rendered), f.Mode())
 	default:

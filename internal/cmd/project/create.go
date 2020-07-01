@@ -68,7 +68,10 @@ func NewCreateCmd() *cobra.Command {
 			kickoff project create myskeleton ~/repos/myproject --force --overwrite
 
 			# Forces creation of project in existing directory, selectively overwriting existing files
-			kickoff project create myskeleton ~/repos/myproject --force --overwrite-file README.md`),
+			kickoff project create myskeleton ~/repos/myproject --force --overwrite-file README.md
+
+			# Selectively skip the creating of certain files or dirs
+			kickoff project create myskeleton ~/repos/myproject --skip-file README.md`),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
@@ -110,7 +113,7 @@ type CreateOptions struct {
 	Force          bool
 	Overwrite      bool
 	OverwriteFiles []string
-	AllowEmpty     bool
+	SkipFiles      []string
 
 	rawValues   []string
 	valuesFiles []string
@@ -132,9 +135,8 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
 
-	cmd.Flags().BoolVar(&o.AllowEmpty, "allow-empty", o.AllowEmpty, "If true, empty files that are the result of template rendering will still be created in the output directory")
-
-	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory")
+	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory. If file is a dir, present files contained in it will be overwritten")
+	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles, "Skip writing a specific file to the output directory. File path must be relative to the output directory. If file is a dir, files contained in it will be skipped as well")
 }
 
 // Complete completes the project creation options.
@@ -239,9 +241,9 @@ func (o *CreateOptions) Run() error {
 	}
 
 	builder := project.NewBuilder(o.Project).
-		AllowEmpty(o.AllowEmpty).
 		OverwriteAll(o.Overwrite).
 		OverwriteFiles(o.OverwriteFiles).
+		SkipFiles(o.SkipFiles).
 		AddValues(skeleton.Values).
 		AddValues(o.Values)
 
@@ -303,8 +305,7 @@ func (o *CreateOptions) logStats(stats project.Stats) {
 	}).Info("project creation complete")
 
 	if stats.Skipped > 0 {
-		log.Warn("some targets were skipped, use --overwrite or --overwrite-file to overwrite existing " +
-			"files or --allow-empty to allow the creation of empty templates")
+		log.Warn("some targets were skipped, use --overwrite or --overwrite-file to overwrite existing files")
 	}
 
 	if o.DryRun {

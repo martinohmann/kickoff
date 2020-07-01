@@ -121,7 +121,7 @@ func TestBuilder_Build(t *testing.T) {
 					"/tmp/somefile",
 				})
 			},
-			expectedErr: errors.New("found absolute path in overwrites: /tmp/somefile"),
+			expectedErr: errors.New("found illegal absolute path: /tmp/somefile"),
 		},
 		{
 			name: "does overwrite existing files if OverwriteAll is set",
@@ -138,18 +138,19 @@ func TestBuilder_Build(t *testing.T) {
 			},
 		},
 		{
-			name: "does not create file if template rendered to an empty string",
-			validate: func(t *dirTester, b *Builder) {
-				t.assertFileAbsent("optional-file")
-			},
-		},
-		{
-			name: "does create file if template rendered to an empty string and AllowEmpty is true",
+			name: "skips files selectively if SkipFiles is provided",
 			setup: func(t *dirTester, b *Builder) {
-				b.AllowEmpty(true)
+				b.WithLicense(&license.Info{Body: `some license [fullname] [year]`}).
+					SkipFiles([]string{
+						"README.md",
+						"./foobar/../foobar",
+					})
 			},
 			validate: func(t *dirTester, b *Builder) {
-				t.assertFileEmpty("optional-file")
+				t.assertFileAbsent("foobar")
+				t.assertFileAbsent(filepath.Join("foobar", "somefile.yaml"))
+				t.assertFileAbsent("README.md")
+				t.assertFileExists("LICENSE")
 			},
 		},
 		{
@@ -251,12 +252,6 @@ func (t *dirTester) assertFileNotContains(file, expectedContent string) {
 	contents, err := ioutil.ReadFile(t.path(file))
 	require.NoError(t, err)
 	assert.NotEqual(t, expectedContent, string(contents))
-}
-
-func (t *dirTester) assertFileEmpty(file string) {
-	contents, err := ioutil.ReadFile(t.path(file))
-	require.NoError(t, err)
-	assert.Len(t, contents, 0)
 }
 
 func (t *dirTester) assertFileExists(file string) {
