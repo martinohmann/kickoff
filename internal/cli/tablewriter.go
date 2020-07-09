@@ -14,6 +14,9 @@ type TableWriter interface {
 	// SetHeader sets the table's header keys.
 	SetHeader(keys ...string)
 
+	// SetTablePadding sets the table's padding character(s).
+	SetTablePadding(padding string)
+
 	// Render renders the table.
 	Render()
 }

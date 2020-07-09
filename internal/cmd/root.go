@@ -41,7 +41,7 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.AddCommand(NewGitignoreCmd(streams))
 	cmd.AddCommand(NewInitCmd(streams))
 	cmd.AddCommand(NewLicenseCmd(streams))
-	cmd.AddCommand(NewProjectCmd())
+	cmd.AddCommand(NewProjectCmd(streams))
 	cmd.AddCommand(NewRepositoryCmd(streams))
 	cmd.AddCommand(NewSkeletonCmd(streams))
 	cmd.AddCommand(NewVersionCmd(streams))

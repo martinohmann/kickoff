@@ -35,19 +35,24 @@ type File struct {
 	Info os.FileInfo `json:"-"`
 }
 
-// Path implements project.File.
+// Path implements project.Source.
 func (f *File) Path() string {
 	return f.RelPath
 }
 
-// Mode implements project.File.
+// Mode implements project.Source.
 func (f *File) Mode() os.FileMode {
 	return f.Info.Mode()
 }
 
-// Reader implements project.File.
+// Reader implements project.Source.
 func (f *File) Reader() (io.Reader, error) {
 	return os.Open(f.AbsPath)
+}
+
+// IsTemplate implements project.Source.
+func (f *File) IsTemplate() bool {
+	return !f.Mode().IsDir() && filepath.Ext(f.RelPath) == ".skel"
 }
 
 // Skeleton is the representation of a skeleton loaded from a skeleton
