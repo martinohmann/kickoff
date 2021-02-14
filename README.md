@@ -1,6 +1,6 @@
 # kickoff
 
-[![Build Status](https://travis-ci.com/martinohmann/kickoff.svg?branch=master)](https://travis-ci.com/martinohmann/kickoff)
+[![Build Status](https://github.com/martinohmann/kickoff/workflows/build/badge.svg)](https://github.com/martinohmann/kickoff/actions?query=workflow%3Abuild)
 [![codecov](https://codecov.io/gh/martinohmann/kickoff/branch/master/graph/badge.svg)](https://codecov.io/gh/martinohmann/kickoff)
 [![Go Report Card](https://goreportcard.com/badge/github.com/martinohmann/kickoff)](https://goreportcard.com/report/github.com/martinohmann/kickoff)
 [![GoDoc](https://godoc.org/github.com/martinohmann/kickoff?status.svg)](https://godoc.org/github.com/martinohmann/kickoff)
