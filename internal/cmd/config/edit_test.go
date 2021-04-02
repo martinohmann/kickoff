@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestGetEditCmdArgs(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		path     string
 		editor   string
@@ -88,7 +89,8 @@ func TestEditCmd_Run_InvalidEditor(t *testing.T) {
 	configBuf, err := ioutil.ReadAll(configFile)
 	require.NoError(t, err)
 
-	cmd := NewEditCmd()
+	streams, _, _, _ := cli.NewTestIOStreams()
+	cmd := NewEditCmd(streams)
 	cmd.SetArgs([]string{"--config", configFile.Name()})
 
 	expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`

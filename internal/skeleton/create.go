@@ -14,7 +14,7 @@ import (
 // example .kickoff.yaml and example README.md.skel as starter. Returns an
 // error if creating path or writing any of the files fails.
 func Create(path string) error {
-	log.WithField("path", path).Info("creating skeleton directory")
+	log.WithField("path", path).Info("creating directory")
 
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
@@ -36,7 +36,7 @@ func writeFiles(dir string) error {
 		path := filepath.Join(dir, filename)
 		contents := fileTemplates[filename]
 
-		log.WithField("path", path).Infof("writing %s", filename)
+		log.WithField("path", path).Info("creating file")
 
 		err := ioutil.WriteFile(path, []byte(contents), 0644)
 		if err != nil {

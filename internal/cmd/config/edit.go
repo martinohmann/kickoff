@@ -10,6 +10,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ghodss/yaml"
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
@@ -25,8 +26,10 @@ var (
 
 // NewEditCmd creates a new command that opens the kickoff config in a
 // configurable editor so that the user can edit it.
-func NewEditCmd() *cobra.Command {
-	o := &EditOptions{}
+func NewEditCmd(streams cli.IOStreams) *cobra.Command {
+	o := &EditOptions{
+		IOStreams: streams,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "edit",
@@ -56,6 +59,7 @@ func NewEditCmd() *cobra.Command {
 
 // EditOptions holds the options for the edit command.
 type EditOptions struct {
+	cli.IOStreams
 	cmdutil.ConfigFlags
 }
 
@@ -131,6 +135,8 @@ func (o *EditOptions) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("error while saving config file: %v", err)
 	}
+
+	fmt.Fprintln(o.Out, "Config saved")
 
 	return nil
 }

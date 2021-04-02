@@ -78,7 +78,7 @@ func (f *ConfigFlags) Complete() (err error) {
 	loadConfig := f.ConfigPath != "" && (!f.allowMissingConfig || file.Exists(f.ConfigPath))
 
 	if loadConfig {
-		log.WithField("path", f.ConfigPath).Debugf("loading config file")
+		log.WithField("path", f.ConfigPath).Debug("loading config file")
 
 		err = f.Config.MergeFromFile(f.ConfigPath)
 		if err != nil {

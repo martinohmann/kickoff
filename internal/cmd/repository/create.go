@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
@@ -14,8 +15,11 @@ import (
 )
 
 // NewCreateCmd creates a command for creating a local skeleton repository.
-func NewCreateCmd() *cobra.Command {
-	o := &CreateOptions{SkeletonName: config.DefaultSkeletonName}
+func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
+	o := &CreateOptions{
+		IOStreams:    streams,
+		SkeletonName: config.DefaultSkeletonName,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "create <output-dir>",
@@ -52,6 +56,7 @@ func NewCreateCmd() *cobra.Command {
 
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
+	cli.IOStreams
 	OutputDir    string
 	SkeletonName string
 	Force        bool
@@ -98,5 +103,12 @@ func (o *CreateOptions) Validate() error {
 // Run creates a new skeleton repository in the provided output directory and
 // seeds it with a default skeleton.
 func (o *CreateOptions) Run() error {
-	return repository.Create(o.OutputDir, o.SkeletonName)
+	err := repository.Create(o.OutputDir, o.SkeletonName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(o.Out, "Created new skeleton repository in %s\n", o.OutputDir)
+
+	return nil
 }
