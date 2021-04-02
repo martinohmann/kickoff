@@ -132,10 +132,11 @@ command it will setup the new project from our skeleton:
 ```bash
 $ kickoff project create default:default ~/projects/myproject
 
-• creating project in /home/johndoe/projects/myproject
-• creating directory                path=.
-• rendering template                path.src=README.md.skel  path.target=README.md
-• project creation complete
+Creating project in ~/projects/myproject.
+
+❯ template README.md.skel =❯ README.md
+
+Project creation complete. Created: 1, Overwritten: 0, Skipped: 0.
 ```
 
 What happened here? Kickoff created the new directory `~/projects/myproject`

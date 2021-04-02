@@ -5,6 +5,8 @@ package template
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -18,6 +20,16 @@ func Render(templateText string, data interface{}) (string, error) {
 	}
 
 	return execute(tpl, data)
+}
+
+// RenderReader renders a template obtained from a reader with data.
+func RenderReader(r io.Reader, data interface{}) (string, error) {
+	buf, err := ioutil.ReadAll(r)
+	if err != nil {
+		return "", err
+	}
+
+	return Render(string(buf), data)
 }
 
 func newTemplate(name string) *template.Template {
@@ -36,20 +48,4 @@ func execute(tpl *template.Template, data interface{}) (string, error) {
 	}
 
 	return buf.String(), nil
-}
-
-// Renderer can render multiple templates with the same values.
-type Renderer struct {
-	values Values
-}
-
-// NewRenderer creates a new *Renderer which injects values in every template
-// it renders.
-func NewRenderer(values Values) *Renderer {
-	return &Renderer{values}
-}
-
-// Render renders templateText.
-func (r *Renderer) Render(templateText string) (string, error) {
-	return Render(templateText, r.values)
 }

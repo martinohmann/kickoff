@@ -3,6 +3,7 @@
 package filetree
 
 import (
+	"regexp"
 	"strings"
 
 	gotree "github.com/disiqueira/gotree/v3"
@@ -10,10 +11,9 @@ import (
 	"github.com/martinohmann/kickoff/internal/skeleton"
 )
 
-var (
-	bold  = color.New(color.Bold)
-	green = color.New(color.FgGreen)
-)
+var highlightRegexp = regexp.MustCompile(`(\{\{[^{]+\}\}|\.skel$)`)
+
+var bold = color.New(color.Bold)
 
 type tree struct {
 	gotree.Tree
@@ -51,11 +51,7 @@ func (t *tree) Text() string {
 		return bold.Sprint(text + "/")
 	}
 
-	if strings.HasSuffix(text, ".skel") {
-		return green.Sprint(text)
-	}
-
-	return text
+	return highlightRegexp.ReplaceAllString(text, color.YellowString(`$1`))
 }
 
 // AddTree implements gotree.Tree.
