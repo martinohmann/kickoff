@@ -3,10 +3,10 @@ package repository
 import (
 	"fmt"
 
-	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

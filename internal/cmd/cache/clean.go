@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/apex/log"
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

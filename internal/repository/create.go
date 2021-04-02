@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/internal/skeleton"
+	log "github.com/sirupsen/logrus"
 )
 
 // Create creates a new skeleton repository at path and initializes

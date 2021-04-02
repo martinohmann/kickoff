@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/apex/log"
+	log "github.com/sirupsen/logrus"
 )
 
 // Create creates a new skeleton at path. The created skeleton contains an

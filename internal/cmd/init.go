@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
-	"github.com/apex/log"
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -16,6 +15,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

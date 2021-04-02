@@ -1,25 +1,29 @@
 package cmd
 
 import (
-	"github.com/apex/log"
+	"fmt"
+	"io"
+	"path"
+	"runtime"
+	"strings"
+
 	"github.com/martinohmann/kickoff/internal/cli"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // NewRootCmd creates the root command for kickoff.
 func NewRootCmd(streams cli.IOStreams) *cobra.Command {
-	logLevel := "warn"
+	logLevel := log.WarnLevel.String()
 
 	cmd := &cobra.Command{
 		Use:           "kickoff",
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			lvl, err := log.ParseLevel(logLevel)
+			err := configureLogger(streams.ErrOut, logLevel)
 			if err != nil {
 				return err
 			}
-
-			log.SetLevel(lvl)
 
 			// We silence usage output here instead of doing so while
 			// initializing the struct above because we want to print the usage
@@ -52,4 +56,35 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.AddCommand(NewVersionCmd(streams))
 
 	return cmd
+}
+
+func configureLogger(out io.Writer, level string) error {
+	lvl, err := log.ParseLevel(level)
+	if err != nil {
+		return fmt.Errorf("%w: available levels: %v", err, log.AllLevels)
+	}
+
+	formatter := &log.TextFormatter{
+		DisableTimestamp:       true,
+		PadLevelText:           true,
+		DisableLevelTruncation: true,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			const pkgBase = "github.com/martinohmann/kickoff/"
+
+			function := strings.TrimPrefix(f.Function, pkgBase)
+			file := fmt.Sprintf("%s:%d", path.Base(f.File), f.Line)
+			return function, file
+		},
+	}
+
+	if lvl >= log.DebugLevel {
+		formatter.DisableTimestamp = false
+		log.SetReportCaller(true)
+	}
+
+	log.SetLevel(lvl)
+	log.SetFormatter(formatter)
+	log.SetOutput(out)
+
+	return nil
 }

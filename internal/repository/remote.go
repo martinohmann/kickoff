@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/skeleton"
+	log "github.com/sirupsen/logrus"
 )
 
 // RemoteRepository is a skeleton repository that resides in a remote git
