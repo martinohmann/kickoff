@@ -369,11 +369,18 @@ func (o *InitOptions) persistConfiguration() error {
 	}
 
 	if !persistConfig {
-		log.Error("did not save config")
+		fmt.Fprintln(o.Out, "Did not save config")
 		return nil
 	}
 
 	log.WithField("path", o.ConfigPath).Info("writing config")
 
-	return config.Save(&o.Config, o.ConfigPath)
+	err = config.Save(&o.Config, o.ConfigPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintln(o.Out, "Config saved")
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/skeleton"
@@ -11,8 +12,10 @@ import (
 )
 
 // NewCreateCmd creates a command for creating project skeletons.
-func NewCreateCmd() *cobra.Command {
-	o := &CreateOptions{}
+func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
+	o := &CreateOptions{
+		IOStreams: streams,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "create <output-dir>",
@@ -48,6 +51,7 @@ func NewCreateCmd() *cobra.Command {
 
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
+	cli.IOStreams
 	OutputDir string
 	Force     bool
 }
@@ -88,5 +92,12 @@ func (o *CreateOptions) Validate() error {
 
 // Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
-	return skeleton.Create(o.OutputDir)
+	err := skeleton.Create(o.OutputDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(o.Out, "Created new skeleton in %s\n", o.OutputDir)
+
+	return nil
 }

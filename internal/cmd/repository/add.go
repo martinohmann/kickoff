@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/repository"
@@ -23,8 +24,10 @@ var (
 
 // NewAddCmd creates a new command for added a skeleton repository to the
 // kickoff config.
-func NewAddCmd() *cobra.Command {
-	o := &AddOptions{}
+func NewAddCmd(streams cli.IOStreams) *cobra.Command {
+	o := &AddOptions{
+		IOStreams: streams,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "add <name> <url>",
@@ -57,6 +60,7 @@ func NewAddCmd() *cobra.Command {
 
 // AddOptions holds the options for the add command.
 type AddOptions struct {
+	cli.IOStreams
 	cmdutil.ConfigFlags
 
 	RepoName string
@@ -102,6 +106,8 @@ func (o *AddOptions) Run() error {
 		"name": o.RepoName,
 		"url":  o.RepoURL,
 	}).Info("repository added")
+
+	fmt.Fprintln(o.Out, "Repository added")
 
 	return nil
 }

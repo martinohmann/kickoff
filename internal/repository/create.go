@@ -14,7 +14,7 @@ import (
 func Create(path, skeletonName string) error {
 	skeletonsDir := filepath.Join(path, "skeletons")
 
-	log.WithField("path", path).Info("creating skeleton repository")
+	log.WithField("path", path).Info("creating repository")
 
 	err := os.MkdirAll(skeletonsDir, 0755)
 	if err != nil {

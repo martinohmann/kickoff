@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
+	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/spf13/cobra"
@@ -11,8 +12,10 @@ import (
 
 // NewRemoveCmd creates a command for removing skeleton repositories from the
 // config.
-func NewRemoveCmd() *cobra.Command {
-	o := &RemoveOptions{}
+func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
+	o := &RemoveOptions{
+		IOStreams: streams,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "remove <name>",
@@ -44,6 +47,7 @@ func NewRemoveCmd() *cobra.Command {
 
 // RemoveOptions holds the options for the remove command.
 type RemoveOptions struct {
+	cli.IOStreams
 	cmdutil.ConfigFlags
 
 	RepoName string
@@ -80,6 +84,8 @@ func (o *RemoveOptions) Run() error {
 	}
 
 	log.WithField("name", o.RepoName).Info("repository removed")
+
+	fmt.Fprintln(o.Out, "Repository removed")
 
 	return nil
 }

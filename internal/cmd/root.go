@@ -8,15 +8,18 @@ import (
 
 // NewRootCmd creates the root command for kickoff.
 func NewRootCmd(streams cli.IOStreams) *cobra.Command {
-	verbose := false
+	logLevel := "warn"
 
 	cmd := &cobra.Command{
 		Use:           "kickoff",
 		SilenceErrors: true,
-		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
-			if verbose {
-				log.SetLevel(log.DebugLevel)
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			lvl, err := log.ParseLevel(logLevel)
+			if err != nil {
+				return err
 			}
+
+			log.SetLevel(lvl)
 
 			// We silence usage output here instead of doing so while
 			// initializing the struct above because we want to print the usage
@@ -30,12 +33,14 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 			// Also see the following issue:
 			// https://github.com/spf13/cobra/issues/340#issuecomment-378726225
 			cmd.SilenceUsage = true
+
+			return nil
 		},
 	}
 
-	cmd.PersistentFlags().BoolVar(&verbose, "verbose", verbose, "Enable verbose log output")
+	cmd.PersistentFlags().StringVar(&logLevel, "log-level", logLevel, "Level for stderr log output")
 
-	cmd.AddCommand(NewCacheCmd())
+	cmd.AddCommand(NewCacheCmd(streams))
 	cmd.AddCommand(NewCompletionCmd(streams))
 	cmd.AddCommand(NewConfigCmd(streams))
 	cmd.AddCommand(NewGitignoreCmd(streams))

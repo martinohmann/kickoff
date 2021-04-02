@@ -15,7 +15,7 @@ func NewConfigCmd(streams cli.IOStreams) *cobra.Command {
 		Short:   "Manage kickoff config",
 	}
 
-	cmd.AddCommand(config.NewEditCmd())
+	cmd.AddCommand(config.NewEditCmd(streams))
 	cmd.AddCommand(config.NewShowCmd(streams))
 
 	return cmd
