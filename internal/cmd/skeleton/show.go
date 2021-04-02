@@ -1,9 +1,10 @@
 package skeleton
 
 import (
+	"bytes"
 	"strings"
 
-	"github.com/ghodss/yaml"
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
@@ -87,8 +88,6 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
-	var buf []byte
-
 	switch o.Output {
 	case "json":
 		return cmdutil.RenderJSON(o.Out, skeleton)
@@ -97,42 +96,54 @@ func (o *ShowOptions) Run() error {
 	default:
 		tw := cli.NewTableWriter(o.Out)
 
-		description := strings.TrimSpace(skeleton.Description)
-
-		if len(description) == 0 {
-			description = "-"
-		}
-
-		parent := "-"
-		if skeleton.Parent != nil {
-			parent, err = homedir.Collapse(skeleton.Parent.Info.Path)
-			if err != nil {
-				return err
-			}
-		}
-
-		values := "-"
-		if len(skeleton.Values) > 0 {
-			buf, err = yaml.Marshal(skeleton.Values)
-			if err != nil {
-				return err
-			}
-
-			values = strings.TrimSpace(string(buf))
-		}
-
 		path, err := homedir.Collapse(skeleton.Info.Path)
 		if err != nil {
 			return err
 		}
 
-		tree := filetree.Build(skeleton)
+		repoInfo := skeleton.Info.Repo
 
 		tw.Append("Name", skeleton.Info.Name)
-		tw.Append("Path", path)
-		tw.Append("Description", description)
-		tw.Append("Parent", parent)
-		tw.Append("Values", values)
+		tw.Append("Repository", repoInfo.Name)
+
+		if repoInfo.IsRemote() {
+			tw.Append("URL", repoInfo.URL)
+			if repoInfo.Revision != "" {
+				tw.Append("Revision", repoInfo.Revision)
+			}
+			tw.Append("Local Path", path)
+		} else {
+			tw.Append("Path", path)
+		}
+
+		description := strings.TrimSpace(skeleton.Description)
+
+		if description != "" {
+			tw.Append("Description", description)
+		}
+
+		if skeleton.Parent != nil {
+			parent, err := homedir.Collapse(skeleton.Parent.Info.Path)
+			if err != nil {
+				return err
+			}
+
+			tw.Append("Parent", parent)
+		}
+
+		if len(skeleton.Values) > 0 {
+			var buf bytes.Buffer
+
+			err := cmdutil.RenderYAML(&buf, skeleton.Values)
+			if err != nil {
+				return err
+			}
+
+			tw.Append("Values", color.BlueString(buf.String()))
+		}
+
+		tree := filetree.Build(skeleton)
+
 		tw.Append("Files", tree.Print())
 
 		tw.Render()
