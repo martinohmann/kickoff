@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apex/log"
+	log "github.com/sirupsen/logrus"
 )
 
 // Info holds information about the location of a skeleton.

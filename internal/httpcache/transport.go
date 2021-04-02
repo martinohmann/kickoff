@@ -5,11 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/martinohmann/httpcache"
+	log "github.com/sirupsen/logrus"
 )
-
-var logger = log.WithField("component", "httpcache")
 
 type staleIfErrorTransport struct {
 	http.RoundTripper
@@ -46,14 +44,14 @@ func (t *staleIfErrorTransport) RoundTrip(req *http.Request) (*http.Response, er
 		req = clonedReq
 	}
 
-	logger.WithFields(log.Fields{
+	log.WithFields(log.Fields{
 		"req.url":    req.URL,
 		"req.method": req.Method,
 	}).Debug("requesting resource")
 
 	resp, err := t.RoundTripper.RoundTrip(req)
 	if err == nil && resp.Header.Get(httpcache.XFromCache) == "1" {
-		logger.WithFields(log.Fields{
+		log.WithFields(log.Fields{
 			"req.url":    req.URL,
 			"req.method": req.Method,
 		}).Debug("got response from cache")

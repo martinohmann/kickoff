@@ -7,8 +7,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/apex/log"
 	"github.com/google/go-github/v28/github"
+	log "github.com/sirupsen/logrus"
 )
 
 // ErrNotFound is returned by the Adapter if a license cannot be

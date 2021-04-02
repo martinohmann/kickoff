@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/apex/log"
+	log "github.com/sirupsen/logrus"
 )
 
 const defaultBaseURL = "https://www.toptal.com/developers/gitignore/api"

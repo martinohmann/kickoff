@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/apex/log"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/repository"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

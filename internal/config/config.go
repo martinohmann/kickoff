@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/apex/log"
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/kickoff/internal/template"
+	log "github.com/sirupsen/logrus"
 	gitconfig "github.com/tcnksm/go-gitconfig"
 )
 
@@ -182,7 +182,7 @@ func detectProjectOwner() string {
 
 	owner := getGitConfigKey(configKeys)
 	if owner == "" {
-		log.Debugf("could not infer project owner from git config, none of these keys found: ", strings.Join(configKeys, ", "))
+		log.Debug("could not infer project owner from git config, none of these keys found: ", strings.Join(configKeys, ", "))
 	}
 
 	return owner

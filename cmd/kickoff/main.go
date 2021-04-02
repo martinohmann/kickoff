@@ -1,21 +1,21 @@
 package main
 
 import (
-	"github.com/apex/log"
+	"fmt"
+	"os"
+
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmd"
 )
 
 func main() {
 	streams := cli.DefaultIOStreams
-	handler := cli.NewLogHandler(streams.ErrOut)
 
-	log.SetHandler(handler)
+	cmd := cmd.NewRootCmd(streams)
 
-	rootCmd := cmd.NewRootCmd(streams)
-
-	err := rootCmd.Execute()
-	if err != nil {
-		log.Fatal(err.Error())
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(streams.ErrOut, color.RedString("error:"), err)
+		os.Exit(1)
 	}
 }
