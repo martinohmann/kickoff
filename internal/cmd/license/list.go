@@ -1,8 +1,6 @@
 package license
 
 import (
-	"fmt"
-
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/httpcache"
@@ -30,7 +28,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 
 			licenses, err := client.ListLicenses(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to fetch licenses due to: %v", err)
+				return err
 			}
 
 			tw := cli.NewTableWriter(streams.Out)

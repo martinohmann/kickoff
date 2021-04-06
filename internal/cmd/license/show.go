@@ -32,7 +32,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 
 			license, err := client.GetLicense(ctx, args[0])
 			if err != nil {
-				return fmt.Errorf("failed to fetch license text due to: %v", err)
+				return err
 			}
 
 			fmt.Fprintln(streams.Out, license.Body)

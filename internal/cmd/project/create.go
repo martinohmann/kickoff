@@ -268,7 +268,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton)
 	}
 
 	if o.Project.HasLicense() {
-		license, err := o.fetchLicense(ctx, o.Project.License)
+		license, err := o.LicenseClient.GetLicense(ctx, o.Project.License)
 		if err != nil {
 			return err
 		}
@@ -277,7 +277,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton)
 	}
 
 	if o.Project.HasGitignore() {
-		template, err := o.fetchGitignoreTemplate(ctx, o.Project.Gitignore)
+		template, err := o.GitignoreClient.GetTemplate(ctx, o.Project.Gitignore)
 		if err != nil {
 			return err
 		}
@@ -308,28 +308,6 @@ func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton)
 	}
 
 	return nil
-}
-
-func (o *CreateOptions) fetchLicense(ctx context.Context, name string) (*license.Info, error) {
-	l, err := o.LicenseClient.GetLicense(ctx, name)
-	if err == license.ErrNotFound {
-		return nil, fmt.Errorf("license %q not found, run `kickoff licenses list` to get a list of available licenses", name)
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to fetch license due to: %v", err)
-	}
-
-	return l, nil
-}
-
-func (o *CreateOptions) fetchGitignoreTemplate(ctx context.Context, query string) (*gitignore.Template, error) {
-	template, err := o.GitignoreClient.GetTemplate(ctx, query)
-	if err == gitignore.ErrNotFound {
-		return nil, fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", query)
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
-	}
-
-	return template, nil
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {

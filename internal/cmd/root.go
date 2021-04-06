@@ -1,13 +1,21 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"net"
+	"os"
 	"path"
 	"runtime"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/license"
+	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -56,6 +64,47 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.AddCommand(NewVersionCmd(streams))
 
 	return cmd
+}
+
+func Execute() {
+	streams := cli.DefaultIOStreams
+
+	cmd := NewRootCmd(streams)
+
+	if err := cmd.Execute(); err != nil {
+		handleError(streams.ErrOut, err)
+		os.Exit(1)
+	}
+}
+
+func handleError(w io.Writer, err error) {
+	fmt.Fprintln(w, color.RedString("error:"), err)
+
+	var (
+		contextMsg           string
+		netErr               net.Error
+		skeletonNotFoundErr  repository.SkeletonNotFoundError
+		repoNotConfiguredErr cmdutil.RepositoryNotConfiguredError
+	)
+
+	switch {
+	case errors.Is(err, gitignore.ErrNotFound):
+		contextMsg = "Run `kickoff gitignore list` to get a list of available templates."
+	case errors.Is(err, license.ErrNotFound):
+		contextMsg = "Run `kickoff licenses list` to get a list of available licenses."
+	case errors.As(err, &skeletonNotFoundErr):
+		contextMsg = "Run `kickoff skeleton list` to get a list of available skeletons."
+	case errors.As(err, &repoNotConfiguredErr):
+		contextMsg = "Run `kickoff repository list` to get a list of available repositories."
+	case errors.As(err, &netErr):
+		if netErr.Temporary() {
+			contextMsg = "Temporary network error. Check your internet connection."
+		}
+	}
+
+	if contextMsg != "" {
+		fmt.Fprintf(w, "\n%s\n", contextMsg)
+	}
 }
 
 func configureLogger(out io.Writer, level string) error {
