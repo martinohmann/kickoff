@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -102,11 +103,14 @@ func (r *MultiRepository) findSkeleton(ctx context.Context, name string) (*skele
 		repo := r.repoMap[repoName]
 
 		skeleton, err := repo.GetSkeleton(ctx, name)
-		if _, ok := err.(SkeletonNotFoundError); ok {
-			// Ignore the error, we will return an error only if the skeleton
-			// was not found in any of the repositories.
-			continue
-		} else if err != nil {
+		if err != nil {
+			var notFoundErr SkeletonNotFoundError
+			if errors.As(err, &notFoundErr) {
+				// Ignore the error, we will return an error only if the skeleton
+				// was not found in any of the repositories.
+				continue
+			}
+
 			return nil, err
 		}
 

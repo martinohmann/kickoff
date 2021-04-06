@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +82,8 @@ func TestMultiRepository_GetSkeleton(t *testing.T) {
 		_, err = repo.GetSkeleton(context.Background(), "nonexistent")
 		require.Error(t, err)
 
-		if _, ok := err.(SkeletonNotFoundError); ok {
+		var notFoundErr SkeletonNotFoundError
+		if errors.As(err, &notFoundErr) {
 			t.Fatal("expected an error different from SkeletonNotFoundError")
 		}
 	})

@@ -80,7 +80,7 @@ func (c *Config) ApplyDefaults() {
 func (c *Config) MergeFromFile(path string) error {
 	config, err := Load(path)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	return mergo.Merge(c, config)

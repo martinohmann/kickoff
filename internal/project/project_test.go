@@ -200,7 +200,7 @@ func TestCreate(t *testing.T) {
 			_, err = Create(skeleton, tmpdir, test.config)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.Equal(t, test.expectedErr, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}

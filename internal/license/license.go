@@ -70,8 +70,8 @@ func (c *Client) GetLicense(ctx context.Context, name string) (*Info, error) {
 
 	license, _, err := c.Get(ctx, name)
 	if err != nil {
-		errResp, ok := err.(*github.ErrorResponse)
-		if ok && errResp.Response.StatusCode == 404 {
+		var errResp *github.ErrorResponse
+		if errors.As(err, &errResp) && errResp.Response.StatusCode == 404 {
 			return nil, ErrNotFound
 		}
 

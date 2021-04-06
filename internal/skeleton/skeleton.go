@@ -127,7 +127,7 @@ func Merge(skeletons ...*Skeleton) (*Skeleton, error) {
 func merge(lhs, rhs *Skeleton) (*Skeleton, error) {
 	values, err := template.MergeValues(lhs.Values, rhs.Values)
 	if err != nil {
-		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %v", lhs.Info, rhs.Info, err)
+		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %w", lhs.Info, rhs.Info, err)
 	}
 
 	s := &Skeleton{
@@ -207,7 +207,7 @@ func FindSkeletonDir(path string) (string, error) {
 // is a skeleton dir itself, this will return false.
 func IsInsideSkeletonDir(path string) (bool, error) {
 	dir, err := FindSkeletonDir(path)
-	if err == ErrDirNotFound {
+	if errors.Is(err, ErrDirNotFound) {
 		return false, nil
 	} else if err != nil {
 		return false, err

@@ -40,7 +40,7 @@ func writeFiles(dir string) error {
 
 		err := ioutil.WriteFile(path, []byte(contents), 0644)
 		if err != nil {
-			return fmt.Errorf("failed to write skeleton file: %v", err)
+			return fmt.Errorf("failed to write skeleton file: %w", err)
 		}
 	}
 

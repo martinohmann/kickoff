@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -98,17 +99,20 @@ func (r *RemoteRepository) syncRemote(ctx context.Context) error {
 		return err
 	}
 
-	if netErr, ok := err.(net.Error); ok && netErr.Temporary() {
+	var netErr net.Error
+
+	if errors.As(err, &netErr) && netErr.Temporary() {
 		// If we have the repository in the local cache and this is a network
 		// error, we will do best effort and try to serve the local cache
 		// instead of failing. At least log a warning.
-		log.WithField("url", r.url).
-			Warnf("falling back to potentially stale repository from local cache due to network error: %v", netErr)
+		log.WithError(netErr).
+			WithField("url", r.url).
+			Warn("failed to update local repository cache")
 
 		return nil
 	}
 
-	if err == plumbing.ErrReferenceNotFound {
+	if errors.Is(err, plumbing.ErrReferenceNotFound) {
 		// A git reference error indicates that we cloned a repository but
 		// the desired revision was not found. The local cache is in a
 		// potentially invalid state now and needs to be cleaned.
@@ -116,7 +120,7 @@ func (r *RemoteRepository) syncRemote(ctx context.Context) error {
 
 		osErr := os.RemoveAll(localPath)
 		if osErr != nil {
-			err = fmt.Errorf("failed to cleanup after error: %v: %v", err, osErr)
+			err = fmt.Errorf("failed to cleanup after error: %v: %w", err, osErr)
 		}
 	}
 

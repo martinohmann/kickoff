@@ -42,7 +42,7 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 
 	s, err := loadSkeleton(ctx, info, visits)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load skeleton: %v", err)
+		return nil, fmt.Errorf("failed to load skeleton: %w", err)
 	}
 
 	return s, nil
@@ -54,7 +54,7 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[skeleton.Reference]struct{}) (*skeleton.Skeleton, error) {
 	config, err := info.LoadConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load skeleton config: %v", err)
+		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
 	}
 
 	files, err := collectFiles(info)

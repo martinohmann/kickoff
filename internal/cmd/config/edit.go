@@ -100,7 +100,7 @@ func (o *EditOptions) Run() (err error) {
 
 	tmpf, err := ioutil.TempFile("", "kickoff-*.yaml")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary file: %v", err)
+		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
 
 	tmpfilePath := tmpf.Name()
@@ -126,14 +126,14 @@ func (o *EditOptions) Run() (err error) {
 	// consider it invalid and abort without copying it back.
 	cfg, err := config.Load(tmpfilePath)
 	if err != nil {
-		return fmt.Errorf("not saving invalid kickoff config: %v", err)
+		return fmt.Errorf("not saving invalid kickoff config: %w", err)
 	}
 
 	log.WithField("config", o.ConfigPath).Info("writing config")
 
 	err = config.Save(&cfg, o.ConfigPath)
 	if err != nil {
-		return fmt.Errorf("error while saving config file: %v", err)
+		return fmt.Errorf("error while saving config file: %w", err)
 	}
 
 	fmt.Fprintln(o.Out, "Config saved")
@@ -155,7 +155,7 @@ func launchEditor(path string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("error while launching editor command %q: %v", commandLine, err)
+		return fmt.Errorf("error while launching editor command %q: %w", commandLine, err)
 	}
 
 	return nil

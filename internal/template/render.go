@@ -16,7 +16,7 @@ import (
 func Render(templateText string, data interface{}) (string, error) {
 	tpl, err := newTemplate("").Parse(templateText)
 	if err != nil {
-		return "", fmt.Errorf("failed to prepare template: %v", err)
+		return "", fmt.Errorf("failed to prepare template: %w", err)
 	}
 
 	return execute(tpl, data)
@@ -44,7 +44,7 @@ func execute(tpl *template.Template, data interface{}) (string, error) {
 
 	err := tpl.Execute(&buf, data)
 	if err != nil {
-		return "", fmt.Errorf("failed to render template: %v", err)
+		return "", fmt.Errorf("failed to render template: %w", err)
 	}
 
 	return buf.String(), nil

@@ -53,7 +53,7 @@ func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*skelet
 func (r *LocalRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, error) {
 	infos, err := r.info.FindSkeletons()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list skeletons: %v", err)
+		return nil, fmt.Errorf("failed to list skeletons: %w", err)
 	}
 
 	return infos, nil
