@@ -81,7 +81,7 @@ func handleError(w io.Writer, err error) {
 	fmt.Fprintln(w, color.RedString("error:"), err)
 
 	var (
-		contextMsg           string
+		errorContext         string
 		netErr               net.Error
 		skeletonNotFoundErr  repository.SkeletonNotFoundError
 		repoNotConfiguredErr cmdutil.RepositoryNotConfiguredError
@@ -89,22 +89,25 @@ func handleError(w io.Writer, err error) {
 
 	switch {
 	case errors.Is(err, gitignore.ErrNotFound):
-		contextMsg = "Run `kickoff gitignore list` to get a list of available templates."
+		errorContext = "Run `kickoff gitignore list` to get a list of available templates."
 	case errors.Is(err, license.ErrNotFound):
-		contextMsg = "Run `kickoff licenses list` to get a list of available licenses."
+		errorContext = "Run `kickoff licenses list` to get a list of available licenses."
 	case errors.As(err, &skeletonNotFoundErr):
-		contextMsg = "Run `kickoff skeleton list` to get a list of available skeletons."
+		errorContext = "Run `kickoff skeleton list` to get a list of available skeletons."
 	case errors.As(err, &repoNotConfiguredErr):
-		contextMsg = "Run `kickoff repository list` to get a list of available repositories."
+		errorContext = "Run `kickoff repository list` to get a list of available repositories."
 	case errors.As(err, &netErr):
 		if netErr.Temporary() {
-			contextMsg = "Temporary network error. Check your internet connection."
+			errorContext = "Temporary network error. Check your internet connection."
 		}
 	}
 
-	if contextMsg != "" {
-		fmt.Fprintf(w, "\n%s\n", contextMsg)
+	if errorContext == "" {
+		return
 	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, errorContext)
 }
 
 func configureLogger(out io.Writer, level string) error {
