@@ -59,13 +59,3 @@ func TestConfig_MergeFromFile(t *testing.T) {
 
 	assert.Equal(t, expected, config)
 }
-
-func TestProject_GoPackagePath(t *testing.T) {
-	p := Project{Owner: "foo", Name: "bar", Host: "github.com"}
-	assert.Equal(t, "github.com/foo/bar", p.GoPackagePath())
-}
-
-func TestProject_URL(t *testing.T) {
-	p := Project{Owner: "foo", Name: "bar", Host: "github.com"}
-	assert.Equal(t, "https://github.com/foo/bar", p.URL())
-}

@@ -91,7 +91,6 @@ func (c *Config) MergeFromFile(path string) error {
 type Project struct {
 	Host      string `json:"host"`
 	Owner     string `json:"owner"`
-	Name      string `json:"-"`
 	License   string `json:"license"`
 	Gitignore string `json:"gitignore"`
 }
@@ -129,17 +128,6 @@ func (p *Project) HasLicense() bool {
 // template into the .gitignore file in the project's output directory.
 func (p *Project) HasGitignore() bool {
 	return p.Gitignore != "" && p.Gitignore != NoGitignore
-}
-
-// URL returns the repository url.
-func (p *Project) URL() string {
-	return fmt.Sprintf("https://%s/%s/%s", p.Host, p.Owner, p.Name)
-}
-
-// GoPackagePath returns a string that can be used as a Golang package path for
-// the project.
-func (p *Project) GoPackagePath() string {
-	return fmt.Sprintf("%s/%s/%s", p.Host, p.Owner, p.Name)
 }
 
 // Load loads the config from path and returns it.

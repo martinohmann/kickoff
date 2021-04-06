@@ -8,87 +8,186 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"time"
 
-	"github.com/martinohmann/kickoff/internal/config"
+	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/spf13/afero"
 )
 
-// Project holds the configuration for a new project that can be created from a
+// Config holds the configuration for a new project that can be created from a
 // *skeleton.Skeleton.
+type Config struct {
+	// ProjectName is made available to templates. If empty the basename of the
+	// target directory is used.
+	ProjectName string
+	// Host is the project host, e.g. github.com. Available in templates.
+	Host string
+	// Owner is the project owner, e.g. SCM username. Available in templates.
+	Owner string
+	// Gitignore template to use for creating .gitignore. If nil, no .gitignore
+	// is created.
+	Gitignore *gitignore.Template
+	// License info for the open source license to use. If nil, no LICENSE file
+	// is created.
+	License *license.Info
+	// If Overwrite is true, existing file in the target directory that matches
+	// the name of one of the skeleton files is overwritten.
+	Overwrite bool
+	// OverwriteFiles can be used to selectively overwrite existing files. File
+	// paths must be relative to the target directory.
+	OverwriteFiles []string
+	// SkipFiles can be used to selectively skip creation of files or
+	// directories. File paths must be relative to the target directory.
+	SkipFiles []string
+	// Filesystem to use for creating the project. Can be set to
+	// *afero.MemMapFs in tests or for dry running project creation. If nil
+	// an *afero.OsFs is used.
+	Filesystem afero.Fs
+	// Values are user defined values that are merged on top of values from the
+	// project skeleton.
+	Values template.Values
+	// Output configures the io.Writer where the project creation summary is
+	// written to. If nil output is discarded.
+	Output io.Writer
+}
+
+// Project is the type responsible for project creation.
 type Project struct {
-	config    config.Project
 	targetDir string
+	name      string
+	host      string
+	owner     string
 
 	dirRewriteMap map[string]string
 	skipMap       map[string]bool
 	overwriteMap  map[string]bool
 	overwrite     bool
 
-	fs          afero.Fs
-	logger      Logger
-	extraFiles  []Source
-	extraValues template.Values
-	license     *license.Info
+	fs        afero.Fs
+	output    io.Writer
+	license   *license.Info
+	gitignore *gitignore.Template
+	values    template.Values
+
+	result *Result
 }
 
-// New creates a new *Project with given config and targetDir.
-func New(config config.Project, targetDir string, options ...Option) (*Project, error) {
+// New creates a new *Project with given targetDir and config.
+func New(targetDir string, config *Config) (*Project, error) {
 	targetDir, err := filepath.Abs(targetDir)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &Project{
-		config:        config,
 		targetDir:     targetDir,
+		name:          config.ProjectName,
+		owner:         config.Owner,
+		host:          config.Host,
+		fs:            config.Filesystem,
+		output:        config.Output,
 		dirRewriteMap: make(map[string]string),
-		overwriteMap:  make(map[string]bool),
 		skipMap:       make(map[string]bool),
-		extraValues:   template.Values{},
+		overwriteMap:  make(map[string]bool),
+		overwrite:     config.Overwrite,
+		values:        config.Values,
+		license:       config.License,
+		gitignore:     config.Gitignore,
+		result:        new(Result),
 	}
 
-	for _, option := range options {
-		if err := option(p); err != nil {
-			return nil, err
-		}
+	err = addCleanRelPathsToFileMap(p.skipMap, config.SkipFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	err = addCleanRelPathsToFileMap(p.overwriteMap, config.OverwriteFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	p.applyDefaults()
+
+	return p, nil
+}
+
+func (p *Project) applyDefaults() {
+	if p.name == "" {
+		p.name = filepath.Base(p.targetDir)
 	}
 
 	if p.fs == nil {
 		p.fs = afero.NewOsFs()
 	}
 
-	if p.logger == nil {
-		p.logger = NewLogger(ioutil.Discard)
+	if p.output == nil {
+		p.output = ioutil.Discard
 	}
-
-	return p, nil
 }
 
-// CreateFromSkeleton creates the project from given skeleton.
-func (p *Project) CreateFromSkeleton(skeleton *skeleton.Skeleton) error {
-	values, err := p.buildTemplateValues(skeleton)
-	if err != nil {
-		return err
-	}
-
-	defer p.logger.Flush()
-
-	sources := p.collectSources(skeleton)
-
-	return p.processSources(sources, values)
-}
-
-func (p *Project) buildTemplateValues(skeleton *skeleton.Skeleton) (template.Values, error) {
-	values, err := template.MergeValues(skeleton.Values, p.extraValues)
+// Create creates a project in targetDir from given skeleton with the provided
+// config. The returned result contains information about all actions that were
+// performed.
+func Create(s *skeleton.Skeleton, targetDir string, config *Config) (*Result, error) {
+	p, err := New(targetDir, config)
 	if err != nil {
 		return nil, err
 	}
 
+	return p.Create(s)
+}
+
+// Create creates the project from given skeleton. The returned result contains
+// information about all actions that were performed.
+func (p *Project) Create(s *skeleton.Skeleton) (*Result, error) {
+	values, err := p.makeTemplateValues(s)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.create(s, values)
+	if err != nil {
+		return nil, err
+	}
+
+	writeSummary(p.output, p.result)
+
+	return p.result, nil
+}
+
+func (p *Project) makeTemplateValues(skeleton *skeleton.Skeleton) (template.Values, error) {
+	values, err := template.MergeValues(skeleton.Values, p.values)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		licenseName    string
+		gitignoreQuery string
+	)
+
+	if p.license != nil {
+		licenseName = p.license.Name
+	}
+
+	if p.gitignore != nil {
+		gitignoreQuery = p.gitignore.Query
+	}
+
 	vals := template.Values{
-		"Project": &p.config,
+		"Project": map[string]string{
+			"Name":          p.name,
+			"Host":          p.host,
+			"Owner":         p.owner,
+			"License":       licenseName,
+			"Gitignore":     gitignoreQuery,
+			"URL":           fmt.Sprintf("https://%s/%s/%s", p.host, p.owner, p.name),
+			"GoPackagePath": fmt.Sprintf("%s/%s/%s", p.host, p.owner, p.name),
+		},
 		"Values":  values,
 		"License": p.license,
 	}
@@ -96,14 +195,26 @@ func (p *Project) buildTemplateValues(skeleton *skeleton.Skeleton) (template.Val
 	return vals, nil
 }
 
-func (p *Project) collectSources(skeleton *skeleton.Skeleton) []Source {
-	sources := make([]Source, 0, len(skeleton.Files)+len(p.extraFiles))
+func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
+	sources := make([]Source, 0, len(skeleton.Files))
 
 	for _, file := range skeleton.Files {
 		sources = append(sources, file)
 	}
 
-	sources = append(sources, p.extraFiles...)
+	if p.license != nil {
+		text := license.ResolvePlaceholders(p.license.Body, license.FieldMap{
+			"project": p.name,
+			"author":  p.owner,
+			"year":    strconv.Itoa(time.Now().Year()),
+		})
+
+		sources = append(sources, NewSource(bytes.NewBufferString(text), "LICENSE", 0644))
+	}
+
+	if p.gitignore != nil {
+		sources = append(sources, NewSource(bytes.NewBuffer(p.gitignore.Content), ".gitignore", 0644))
+	}
 
 	// We sort files by path so we can ensure that parent directories get
 	// created before we attempt to write the files contained in them. This
@@ -116,9 +227,11 @@ func (p *Project) collectSources(skeleton *skeleton.Skeleton) []Source {
 	return sources
 }
 
-func (p *Project) processSources(sources []Source, values template.Values) error {
+func (p *Project) create(s *skeleton.Skeleton, values template.Values) error {
+	sources := p.makeSources(s)
+
 	for _, source := range sources {
-		dest, err := p.buildDestination(source, values)
+		dest, err := p.makeDestination(source, values)
 		if err != nil {
 			return err
 		}
@@ -148,7 +261,7 @@ func (p *Project) processSources(sources []Source, values template.Values) error
 	return nil
 }
 
-func (p *Project) buildDestination(f Source, values template.Values) (Destination, error) {
+func (p *Project) makeDestination(f Source, values template.Values) (Destination, error) {
 	relPath := f.Path()
 	srcFilename := filepath.Base(relPath)
 	srcRelDir := filepath.Dir(relPath)
@@ -201,8 +314,17 @@ func (p *Project) resolveTargetDir(dir string) string {
 	return dir
 }
 
+func (p *Project) trackAction(action Action) {
+	if p.result.Stats == nil {
+		p.result.Stats = make(Stats)
+	}
+
+	p.result.Actions = append(p.result.Actions, action)
+	p.result.Stats[action.Type]++
+}
+
 func (p *Project) executeAction(action Action, values template.Values) error {
-	p.logger.Log(action)
+	p.trackAction(action)
 
 	source := action.Source
 	dest := action.Destination
@@ -268,4 +390,18 @@ func matchPathPrefix(pathMap map[string]bool, path string) bool {
 	}
 
 	return false
+}
+
+func addCleanRelPathsToFileMap(fileMap map[string]bool, paths []string) error {
+	for _, path := range paths {
+		if filepath.IsAbs(path) {
+			return fmt.Errorf("found illegal absolute path: %s", path)
+		}
+
+		relPath := filepath.Clean(path)
+
+		fileMap[relPath] = true
+	}
+
+	return nil
 }
