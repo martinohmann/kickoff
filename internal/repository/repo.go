@@ -79,7 +79,7 @@ func NewNamed(name, url string) (repo Repository, err error) {
 func ParseURL(rawurl string) (*skeleton.RepoInfo, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		return nil, fmt.Errorf("invalid repo URL %q: %v", rawurl, err)
+		return nil, fmt.Errorf("invalid repo URL %q: %w", rawurl, err)
 	}
 
 	if u.Host == "" {
@@ -93,7 +93,7 @@ func ParseURL(rawurl string) (*skeleton.RepoInfo, error) {
 
 	query, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
-		return nil, fmt.Errorf("invalid URL query %q: %v", u.RawQuery, err)
+		return nil, fmt.Errorf("invalid URL query %q: %w", u.RawQuery, err)
 	}
 
 	var revision string

@@ -92,7 +92,7 @@ func (o *AddOptions) Validate() error {
 func (o *AddOptions) Run() error {
 	_, err := repository.ParseURL(o.RepoURL)
 	if err != nil {
-		return fmt.Errorf("failed to parse repository URL: %v", err)
+		return fmt.Errorf("failed to parse repository URL: %w", err)
 	}
 
 	o.Repositories[o.RepoName] = o.RepoURL

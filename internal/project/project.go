@@ -268,7 +268,7 @@ func (p *Project) makeDestination(f Source, values template.Values) (Destination
 
 	targetFilename, err := template.Render(srcFilename, values)
 	if err != nil {
-		return Destination{}, fmt.Errorf("failed to resolve templated filename %q: %v", srcFilename, err)
+		return Destination{}, fmt.Errorf("failed to resolve templated filename %q: %w", srcFilename, err)
 	}
 
 	if len(targetFilename) == 0 {

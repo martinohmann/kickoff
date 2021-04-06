@@ -26,7 +26,7 @@ func NewCleanCmd(streams cli.IOStreams) *cobra.Command {
 
 			err := os.RemoveAll(cacheDir)
 			if err != nil {
-				return fmt.Errorf("failed to clean cache: %v", err)
+				return fmt.Errorf("failed to clean cache: %w", err)
 			}
 
 			fmt.Fprintln(streams.Out, "Cache cleaned")
