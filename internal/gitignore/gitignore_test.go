@@ -12,7 +12,7 @@ import (
 )
 
 func TestClient_ListTemplates(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name        string
 		handler     func(t *testing.T) http.HandlerFunc
 		expected    []string
@@ -82,18 +82,21 @@ func TestClient_ListTemplates(t *testing.T) {
 }
 
 func TestClient_GetTemplate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name        string
 		query       string
 		handler     func(t *testing.T) http.HandlerFunc
-		expected    string
+		expected    *Template
 		expectError bool
 		expectedErr error
 	}{
 		{
-			name:     "returns a gitignore, with space trimmed",
-			query:    "go,python",
-			expected: "coverage.txt\nvendor/\n__pycache__",
+			name:  "returns a gitignore, with space trimmed",
+			query: "go,python",
+			expected: &Template{
+				Query:   "go,python",
+				Content: []byte("coverage.txt\nvendor/\n__pycache__"),
+			},
 			handler: func(t *testing.T) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					if r.RequestURI != "/go,python" {
@@ -147,7 +150,7 @@ func TestClient_GetTemplate(t *testing.T) {
 
 			client := &Client{BaseURL: server.URL}
 
-			gitignores, err := client.GetTemplate(context.Background(), test.query)
+			tpl, err := client.GetTemplate(context.Background(), test.query)
 			if test.expectError {
 				require.Error(t, err)
 
@@ -157,7 +160,7 @@ func TestClient_GetTemplate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 
-				assert.Equal(t, test.expected, gitignores)
+				assert.Equal(t, test.expected, tpl)
 			}
 		})
 	}

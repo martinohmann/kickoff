@@ -284,12 +284,12 @@ func (o *CreateOptions) buildProjectOptions(ctx context.Context) (project.Option
 	}
 
 	if o.Project.HasGitignore() {
-		gitignore, err := o.fetchGitignore(ctx, o.Project.Gitignore)
+		template, err := o.fetchGitignoreTemplate(ctx, o.Project.Gitignore)
 		if err != nil {
 			return nil, err
 		}
 
-		options.Add(project.WithGitignore(gitignore))
+		options.Add(project.WithGitignore(string(template.Content)))
 	}
 
 	return options, nil
@@ -341,15 +341,15 @@ func (o *CreateOptions) fetchLicense(ctx context.Context, name string) (*license
 	return l, nil
 }
 
-func (o *CreateOptions) fetchGitignore(ctx context.Context, template string) (string, error) {
-	gi, err := o.GitignoreClient.GetTemplate(ctx, template)
+func (o *CreateOptions) fetchGitignoreTemplate(ctx context.Context, query string) (*gitignore.Template, error) {
+	template, err := o.GitignoreClient.GetTemplate(ctx, query)
 	if err == gitignore.ErrNotFound {
-		return "", fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", template)
+		return nil, fmt.Errorf("gitignore template %q not found, run `kickoff gitignore list` to get a list of available templates", query)
 	} else if err != nil {
-		return "", fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
+		return nil, fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 	}
 
-	return gi, nil
+	return template, nil
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {

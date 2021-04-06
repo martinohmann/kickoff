@@ -35,12 +35,12 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			ctx, cancel := timeoutFlag.Context()
 			defer cancel()
 
-			gitignore, err := client.GetTemplate(ctx, args[0])
+			template, err := client.GetTemplate(ctx, args[0])
 			if err != nil {
 				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
 			}
 
-			fmt.Fprintln(streams.Out, gitignore)
+			fmt.Fprintln(streams.Out, string(template.Content))
 
 			return nil
 		},

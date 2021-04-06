@@ -5,6 +5,7 @@ package gitignore
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -19,6 +20,13 @@ const defaultBaseURL = "https://www.toptal.com/developers/gitignore/api"
 
 // ErrNotFound is returned if a gitignore template could not be found.
 var ErrNotFound = errors.New("gitignore template not found")
+
+// Template holds the content of a gitignore template and the query that was
+// used to obtain it.
+type Template struct {
+	Query   string
+	Content []byte
+}
 
 // Client can fetch gitignore templates.
 type Client struct {
@@ -41,29 +49,37 @@ func NewClient(httpClient *http.Client) *Client {
 // http connection fails or if the response status code is not 200. Will
 // return ErrNotFound if any of the requested gitignore templates cannot be
 // found.
-func (c *Client) GetTemplate(ctx context.Context, query string) (string, error) {
+func (c *Client) GetTemplate(ctx context.Context, query string) (*Template, error) {
 	log.WithField("query", query).Debug("fetching gitignore template")
 
 	req, err := http.NewRequest("GET", c.buildRequestURL(fmt.Sprintf("/%s", query)), nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	resp, err := c.doRequest(ctx, req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 404 {
-		return "", ErrNotFound
+		return nil, ErrNotFound
 	} else if resp.StatusCode != 200 {
-		return "", fmt.Errorf("received status code %d while fetching gitignore template", resp.StatusCode)
+		return nil, fmt.Errorf("received status code %d while fetching gitignore template", resp.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return strings.TrimSpace(string(body)), err
+	tpl := &Template{
+		Query:   query,
+		Content: bytes.TrimSpace(body),
+	}
+
+	return tpl, err
 }
 
 // ListTemplates obtains a list of available gitignore templates. Will
