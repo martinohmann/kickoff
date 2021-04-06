@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martinohmann/kickoff/internal/config"
+	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
@@ -19,48 +19,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type badReader struct {
-	error
-}
-
-func (r *badReader) Read(buf []byte) (int, error) {
-	return 0, r.error
-}
-
-func TestProject_New(t *testing.T) {
-	options := Options{
-		WithOverwriteFiles([]string{
-			"README.md",
-			"./relfile",
-			"/tmp/somefile",
-		}...),
-	}
-
-	_, err := New(config.Project{}, "", options...)
-	require.Error(t, err)
-	require.Equal(t, "found illegal absolute path: /tmp/somefile", err.Error())
-}
-
-func TestProject_CreateFromSkeleton(t *testing.T) {
+func TestCreate(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      config.Project
+		config      *Config
 		expectedErr error
-		setup       func(*dirTester, *Options)
+		setup       func(*dirTester)
 		validate    func(*dirTester)
 	}{
 		{
-			name: "create with license and gitignore file",
-			config: config.Project{
-				Owner: "johndoe",
+			name:   "empty config is valid",
+			config: &Config{},
+		},
+		{
+			name: "absolute paths on overwrite list cause error",
+			config: &Config{
+				OverwriteFiles: []string{
+					"README.md",
+					"./relfile",
+					"/tmp/somefile",
+				},
 			},
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(
-					WithGitignore("somegitignorebody"),
-					WithLicense(&license.Info{
-						Body: `some license [fullname] [year]`,
-					}),
-				)
+			expectedErr: errors.New("found illegal absolute path: /tmp/somefile"),
+		},
+		{
+			name: "absolute paths on skip list cause error",
+			config: &Config{
+				SkipFiles: []string{
+					"./relfile",
+					"README.md",
+					"/tmp/somefile",
+				},
+			},
+			expectedErr: errors.New("found illegal absolute path: /tmp/somefile"),
+		},
+		{
+			name: "create with license and gitignore file",
+			config: &Config{
+				Owner: "johndoe",
+				Gitignore: &gitignore.Template{
+					Content: []byte("somegitignorebody"),
+				},
+				License: &license.Info{
+					Body: `some license [fullname] [year]`,
+				},
 			},
 			validate: func(t *dirTester) {
 				t.assertFileAbsent(".kickoff.yaml")
@@ -72,8 +74,8 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "dry run does not write files",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithFilesystem(afero.NewMemMapFs()))
+			config: &Config{
+				Filesystem: afero.NewMemMapFs(),
 			},
 			validate: func(t *dirTester) {
 				t.assertDirEmpty()
@@ -81,23 +83,24 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "illegal directory traversals in rendered filenames are detected",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraValues(template.Values{"filename": "../../"}))
+			config: &Config{
+				Values: template.Values{"filename": "../../"},
 			},
 			expectedErr: errors.New(`templated filename "{{.Values.filename}}" injected illegal directory traversal: ../../`),
 		},
 		{
 			name: "rendering empty filename fails",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraValues(template.Values{"filename": ""}))
+			config: &Config{
+				Values: template.Values{"filename": ""},
 			},
 			expectedErr: errors.New(`templated filename "{{.Values.filename}}" resolved to an empty string`),
 		},
 		{
 			name: "does not overwrite existing files",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithLicense(&license.Info{Body: `some license [fullname] [year]`}))
-
+			config: &Config{
+				License: &license.Info{Body: `some license [fullname] [year]`},
+			},
+			setup: func(t *dirTester) {
 				t.mustWriteFile("LICENSE", `do not touch`)
 				t.mustWriteFile("README.md", `do not touch`)
 			},
@@ -108,15 +111,14 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "does not overwrite existing files selectively if WithOverwriteFiles is provided",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(
-					WithLicense(&license.Info{Body: `some license [fullname] [year]`}),
-					WithOverwriteFiles([]string{
-						"README.md",
-						"./foobar/../foobar/somefile.yaml",
-					}...),
-				)
-
+			config: &Config{
+				License: &license.Info{Body: `some license [fullname] [year]`},
+				OverwriteFiles: []string{
+					"README.md",
+					"./foobar/../foobar/somefile.yaml",
+				},
+			},
+			setup: func(t *dirTester) {
 				t.mustWriteFile(filepath.Join("foobar", "somefile.yaml"), `do not touch`)
 				t.mustWriteFile("LICENSE", `do not touch`)
 				t.mustWriteFile("README.md", `please overwrite`)
@@ -129,12 +131,11 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "does overwrite existing files if WithOverwrite option is set",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(
-					WithLicense(&license.Info{Body: `some license [fullname] [year]`}),
-					WithOverwrite,
-				)
-
+			config: &Config{
+				License:   &license.Info{Body: `some license [fullname] [year]`},
+				Overwrite: true,
+			},
+			setup: func(t *dirTester) {
 				t.mustWriteFile("LICENSE", `please overwrite`)
 				t.mustWriteFile("README.md", `please overwrite`)
 			},
@@ -145,14 +146,12 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "skips files selectively if WithSkipFiles is provided",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(
-					WithLicense(&license.Info{Body: `some license [fullname] [year]`}),
-					WithSkipFiles([]string{
-						"README.md",
-						"./foobar/../foobar",
-					}...),
-				)
+			config: &Config{
+				License: &license.Info{Body: `some license [fullname] [year]`},
+				SkipFiles: []string{
+					"README.md",
+					"./foobar/../foobar",
+				},
 			},
 			validate: func(t *dirTester) {
 				t.assertFileAbsent("foobar")
@@ -163,29 +162,15 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 		},
 		{
 			name: "template errors are returned",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraValues(template.Values{"travis": "invalid"}))
+			config: &Config{
+				Values: template.Values{"travis": "invalid"},
 			},
 			expectedErr: errors.New(`failed to render template: template: :4:13: executing "" at <.Values.travis.enabled>: can't evaluate field enabled in type interface {}`),
 		},
 		{
-			name: "file copy errors are returned",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraFile(&badReader{errors.New("badfile")}, "badfile", 0644))
-			},
-			expectedErr: errors.New("badfile"),
-		},
-		{
-			name: "template read errors are returned",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraFile(&badReader{errors.New("badtemplate.skel")}, "badtemplate.skel", 0644))
-			},
-			expectedErr: errors.New("badtemplate.skel"),
-		},
-		{
 			name: "errors while resolving templated filenames are returned",
-			setup: func(t *dirTester, opts *Options) {
-				opts.Add(WithExtraValues(template.Values{"filename": func() {}}))
+			config: &Config{
+				Values: template.Values{"filename": func() {}},
 			},
 			expectedErr: errors.New(`failed to resolve templated filename "{{.Values.filename}}": failed to render template: template: :1:2: executing "" at <{{.Values.filename}}>: can't print {{.Values.filename}} of type func()`),
 		},
@@ -208,16 +193,11 @@ func TestProject_CreateFromSkeleton(t *testing.T) {
 
 			tester := &dirTester{T: t, dir: tmpdir}
 
-			options := Options{}
-
 			if test.setup != nil {
-				test.setup(tester, &options)
+				test.setup(tester)
 			}
 
-			p, err := New(test.config, tmpdir, options...)
-			require.NoError(t, err)
-
-			err = p.CreateFromSkeleton(skeleton)
+			_, err = Create(skeleton, tmpdir, test.config)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.Equal(t, test.expectedErr, err)

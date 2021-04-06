@@ -113,6 +113,7 @@ type CreateOptions struct {
 	GitignoreClient *gitignore.Client
 	LicenseClient   *license.Client
 
+	ProjectName    string
 	OutputDir      string
 	Skeletons      []string
 	DryRun         bool
@@ -133,7 +134,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Project.Gitignore, "gitignore", o.Project.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
 	cmd.Flags().StringVar(&o.Project.Host, "host", o.Project.Host, "Project repository host")
 	cmd.Flags().StringVar(&o.Project.License, "license", o.Project.License, "License to use for the project. If set this will automatically populate the LICENSE file")
-	cmd.Flags().StringVar(&o.Project.Name, "name", o.Project.Name, "Name of the project. Will be inferred from the output dir if not explicitly set")
+	cmd.Flags().StringVar(&o.ProjectName, "name", o.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&o.Project.Owner, "owner", o.Project.Owner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 
 	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles, "Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
@@ -159,8 +160,8 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		}
 	}
 
-	if o.Project.Name == "" {
-		o.Project.Name = filepath.Base(o.OutputDir)
+	if o.ProjectName == "" {
+		o.ProjectName = filepath.Base(o.OutputDir)
 	}
 
 	err = o.ConfigFlags.Complete()
@@ -246,12 +247,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	options, err := o.buildProjectOptions(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = o.createProject(skeleton, options)
+	err = o.createProject(ctx, skeleton)
 	if err != nil || !o.initGit {
 		return err
 	}
@@ -259,52 +255,40 @@ func (o *CreateOptions) Run() error {
 	return o.initGitRepository(o.OutputDir)
 }
 
-func (o *CreateOptions) buildProjectOptions(ctx context.Context) (project.Options, error) {
-	options := project.Options{
-		project.WithOverwriteFiles(o.OverwriteFiles...),
-		project.WithSkipFiles(o.SkipFiles...),
-		project.WithExtraValues(o.Values),
-	}
-
-	if o.Overwrite {
-		options.Add(project.WithOverwrite)
-	}
-
-	if o.DryRun {
-		options.Add(project.WithFilesystem(afero.NewMemMapFs()))
+func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton) error {
+	config := &project.Config{
+		ProjectName:    o.ProjectName,
+		Host:           o.Project.Host,
+		Owner:          o.Project.Owner,
+		Overwrite:      o.Overwrite,
+		OverwriteFiles: o.OverwriteFiles,
+		SkipFiles:      o.SkipFiles,
+		Values:         o.Values,
+		Output:         o.Out,
 	}
 
 	if o.Project.HasLicense() {
 		license, err := o.fetchLicense(ctx, o.Project.License)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		options.Add(project.WithLicense(license))
+		config.License = license
 	}
 
 	if o.Project.HasGitignore() {
 		template, err := o.fetchGitignoreTemplate(ctx, o.Project.Gitignore)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		options.Add(project.WithGitignore(string(template.Content)))
-	}
-
-	return options, nil
-}
-
-func (o *CreateOptions) createProject(skeleton *skeleton.Skeleton, options project.Options) error {
-	logger := project.NewLogger(o.Out)
-
-	proj, err := project.New(o.Project, o.OutputDir, options.Add(project.WithLogger(logger))...)
-	if err != nil {
-		return err
+		config.Gitignore = template
 	}
 
 	if o.DryRun {
-		fmt.Fprintln(o.Out, color.YellowString("[Dry Run] Actions will only be printed but not executed!\n"))
+		fmt.Fprintln(o.Out, color.YellowString("[Dry Run] Actions will only be printed but not executed.\n"))
+
+		config.Filesystem = afero.NewMemMapFs()
 	}
 
 	outputDir, err := homedir.Collapse(o.OutputDir)
@@ -314,16 +298,12 @@ func (o *CreateOptions) createProject(skeleton *skeleton.Skeleton, options proje
 
 	fmt.Fprintf(o.Out, "Creating project in %s.\n\n", colorBold.Sprint(outputDir))
 
-	err = proj.CreateFromSkeleton(skeleton)
+	result, err := project.Create(s, o.OutputDir, config)
 	if err != nil {
 		return err
 	}
 
-	stats := logger.Stats()
-
-	colorBold.Fprintf(o.Out, "Project creation complete. %s.\n", stats.String())
-
-	if stats[project.ActionTypeSkipExisting] > 0 {
+	if result.Stats[project.ActionTypeSkipExisting] > 0 {
 		fmt.Fprintln(o.Out, "\nSome targets were skipped because they already existed, use --overwrite or --overwrite-file to overwrite.")
 	}
 
