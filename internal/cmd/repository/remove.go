@@ -68,7 +68,7 @@ func (o *RemoveOptions) Validate() error {
 
 	_, ok := o.Repositories[o.RepoName]
 	if !ok {
-		return fmt.Errorf("repository %q not configured", o.RepoName)
+		return cmdutil.RepositoryNotConfiguredError{Name: o.RepoName}
 	}
 
 	return nil

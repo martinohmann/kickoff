@@ -1,8 +1,6 @@
 package gitignore
 
 import (
-	"fmt"
-
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
@@ -32,7 +30,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 
 			gitignores, err := client.ListTemplates(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to fetch gitignore templates due to: %v", err)
+				return err
 			}
 
 			tw := cli.NewTableWriter(streams.Out)

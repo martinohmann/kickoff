@@ -93,7 +93,7 @@ func (f *ConfigFlags) Complete() (err error) {
 		for _, name := range f.repositories {
 			_, ok := f.Repositories[name]
 			if !ok {
-				return fmt.Errorf("repository %q not configured", name)
+				return RepositoryNotConfiguredError{Name: name}
 			}
 		}
 
