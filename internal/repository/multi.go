@@ -10,11 +10,13 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
+var _ kickoff.Repository = (*MultiRepository)(nil)
+
 // MultiRepository is a repository that aggregates multiple repositories and
 // implements the Repository interface.
 type MultiRepository struct {
 	repoNames []string
-	repoMap   map[string]Repository
+	repoMap   map[string]kickoff.Repository
 }
 
 // NewMultiRepository creates a *MultiRepository which aggregates the
@@ -28,7 +30,7 @@ func NewMultiRepository(repoURLMap map[string]string) (*MultiRepository, error) 
 
 	r := &MultiRepository{
 		repoNames: make([]string, 0, len(repoURLMap)),
-		repoMap:   make(map[string]Repository, len(repoURLMap)),
+		repoMap:   make(map[string]kickoff.Repository, len(repoURLMap)),
 	}
 
 	for name, url := range repoURLMap {

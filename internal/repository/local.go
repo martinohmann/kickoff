@@ -12,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var _ kickoff.Repository = (*LocalRepository)(nil)
+
 // LocalRepository is a local skeleton repository. A local skeleton repository
 // can be any directory on disk that contains a skeletons/ subdirectory.
 type LocalRepository struct {

@@ -1,9 +1,27 @@
 package kickoff
 
 import (
+	"context"
 	"io"
 	"os"
 )
+
+// Repository is the interface for a skeleton repository.
+type Repository interface {
+	// GetSkeleton retrieves information about a skeleton from the
+	// repository. The passed in context is propagated to all operations that
+	// cross API boundaries (e.g. git operations) and can be used to enforce
+	// timeouts or cancel them. Returns an error of type SkeletonNotFoundError
+	// if the named skeleton was not found in the repository.
+	GetSkeleton(ctx context.Context, name string) (*SkeletonRef, error)
+
+	// ListSkeletons retrieves information about all skeletons in the
+	// repository. The passed in context is propagated to all operations that
+	// cross API boundaries (e.g. git operations) and can be used to enforce
+	// timeouts or cancel them. If the repository is empty, ListSkeletons
+	// will return an empty slice.
+	ListSkeletons(ctx context.Context) ([]*SkeletonRef, error)
+}
 
 // Defaulter can set defaults for unset fields.
 type Defaulter interface {

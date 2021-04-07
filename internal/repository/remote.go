@@ -17,6 +17,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var _ kickoff.Repository = (*RemoteRepository)(nil)
+
 // RemoteRepository is a skeleton repository that resides in a remote git
 // repository.
 type RemoteRepository struct {

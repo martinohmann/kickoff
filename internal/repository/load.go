@@ -14,7 +14,7 @@ import (
 // context is propagated to all operations that cross API boundaries (e.g. git
 // operations) and can be used to enforce timeouts or cancel them. Returns an
 // error if loading of any of the skeletons fails.
-func LoadSkeletons(ctx context.Context, repo Repository, names []string) ([]*skeleton.Skeleton, error) {
+func LoadSkeletons(ctx context.Context, repo kickoff.Repository, names []string) ([]*skeleton.Skeleton, error) {
 	skeletons := make([]*skeleton.Skeleton, len(names))
 
 	for i, name := range names {
@@ -33,7 +33,7 @@ func LoadSkeletons(ctx context.Context, repo Repository, names []string) ([]*ske
 // in context is propagated to all operations that cross API boundaries (e.g.
 // git operations) and can be used to enforce timeouts or cancel them. Returns
 // an error if loading the skeleton fails.
-func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.Skeleton, error) {
+func LoadSkeleton(ctx context.Context, repo kickoff.Repository, name string) (*skeleton.Skeleton, error) {
 	info, err := repo.GetSkeleton(ctx, name)
 	if err != nil {
 		return nil, err

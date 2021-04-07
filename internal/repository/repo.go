@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"path/filepath"
@@ -15,33 +14,16 @@ import (
 // specific.
 var LocalCache = configdir.LocalCache("kickoff", "repositories")
 
-// Repository is the interface for a skeleton repository.
-type Repository interface {
-	// GetSkeleton retrieves information about a skeleton from the repository.
-	// The passed in context is propagated to all operations that cross API
-	// boundaries (e.g. git operations) and can be used to enforce timeouts or
-	// cancel them. Returns an error of type SkeletonNotFoundError if the named
-	// skeleton was not found in the repository.
-	GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error)
-
-	// ListSkeletons retrieves information about all skeletons in the
-	// repository. The passed in context is propagated to all operations that
-	// cross API boundaries (e.g. git operations) and can be used to enforce
-	// timeouts or cancel them. If the repository is empty, ListSkeletons will
-	// return an empty slice.
-	ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error)
-}
-
 // New creates a new Repository for url. Returns an error if url is not a valid
 // local path or remote url.
-func New(url string) (Repository, error) {
+func New(url string) (kickoff.Repository, error) {
 	return NewNamed("", url)
 }
 
 // NewNamed creates a new named Repository. The name is propagated into the
 // repository info that is attached to every skeleton that is retrieved from
 // it. Apart from that is behaves exactly like New.
-func NewNamed(name, url string) (repo Repository, err error) {
+func NewNamed(name, url string) (repo kickoff.Repository, err error) {
 	key := cacheKey{name, url}
 
 	if repo, ok := repoCache.get(key); ok {

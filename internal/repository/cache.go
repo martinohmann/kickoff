@@ -1,6 +1,10 @@
 package repository
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/martinohmann/kickoff/internal/kickoff"
+)
 
 var repoCache cache = &realCache{}
 
@@ -25,26 +29,26 @@ type cacheKey struct {
 }
 
 type cache interface {
-	get(key cacheKey) (Repository, bool)
-	set(key cacheKey, repo Repository)
+	get(key cacheKey) (kickoff.Repository, bool)
+	set(key cacheKey, repo kickoff.Repository)
 }
 
 type realCache struct {
 	sync.Mutex
-	repos map[cacheKey]Repository
+	repos map[cacheKey]kickoff.Repository
 }
 
-func (c *realCache) get(key cacheKey) (Repository, bool) {
+func (c *realCache) get(key cacheKey) (kickoff.Repository, bool) {
 	c.Lock()
 	defer c.Unlock()
 	repo, ok := c.repos[key]
 	return repo, ok
 }
 
-func (c *realCache) set(key cacheKey, repo Repository) {
+func (c *realCache) set(key cacheKey, repo kickoff.Repository) {
 	c.Lock()
 	if c.repos == nil {
-		c.repos = make(map[cacheKey]Repository)
+		c.repos = make(map[cacheKey]kickoff.Repository)
 	}
 	c.repos[key] = repo
 	defer c.Unlock()
@@ -52,5 +56,5 @@ func (c *realCache) set(key cacheKey, repo Repository) {
 
 type nopCache struct{}
 
-func (nopCache) get(key cacheKey) (Repository, bool) { return nil, false }
-func (nopCache) set(key cacheKey, repo Repository)   {}
+func (nopCache) get(key cacheKey) (kickoff.Repository, bool) { return nil, false }
+func (nopCache) set(key cacheKey, repo kickoff.Repository)   {}
