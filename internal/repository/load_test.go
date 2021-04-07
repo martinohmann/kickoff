@@ -55,6 +55,6 @@ func TestLoadSkeleton(t *testing.T) {
 	t.Run("it detects dependency cycles while loading parent skeletons", func(t *testing.T) {
 		_, err := LoadSkeleton(context.Background(), repo, "cyclea")
 		require.Error(err)
-		require.Equal(`failed to load skeleton: dependency cycle detected for parent: skeleton.Reference{RepositoryURL:"../..", SkeletonName:"cycleb"}`, err.Error())
+		require.EqualError(err, `failed to load skeleton: dependency cycle detected for parent: kickoff.ParentRef{SkeletonName:"cycleb", RepositoryURL:"../.."}`)
 	})
 }

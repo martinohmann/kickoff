@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 )
 
@@ -38,7 +39,7 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 		return nil, err
 	}
 
-	visits := make(map[skeleton.Reference]struct{})
+	visits := make(map[kickoff.ParentRef]struct{})
 
 	s, err := loadSkeleton(ctx, info, visits)
 	if err != nil {
@@ -51,7 +52,7 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 // loadSkeleton loads a skeleton and tracks all visited parents in a map. It will
 // recursively load and merge all parents into the skeleton. Returns an error
 // if a dependency cycle is detected while loading a parent.
-func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[skeleton.Reference]struct{}) (*skeleton.Skeleton, error) {
+func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
 	config, err := info.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
@@ -81,7 +82,7 @@ func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[skeleton.
 	return skeleton.Merge(parent, s)
 }
 
-func loadParent(ctx context.Context, info *skeleton.Info, ref skeleton.Reference, visits map[skeleton.Reference]struct{}) (*skeleton.Skeleton, error) {
+func loadParent(ctx context.Context, info *skeleton.Info, ref kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
 	if _, ok := visits[ref]; ok {
 		return nil, DependencyCycleError{ParentRef: ref}
 	}
@@ -132,7 +133,7 @@ func collectFiles(info *skeleton.Info) ([]*skeleton.File, error) {
 			return err
 		}
 
-		if fi.Name() == skeleton.ConfigFileName {
+		if fi.Name() == kickoff.SkeletonConfigFileName {
 			// ignore skeleton config file
 			return nil
 		}

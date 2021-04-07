@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,5 +22,5 @@ func TestCreate(t *testing.T) {
 	require.NoError(Create(outputPath))
 	require.DirExists(outputPath)
 	require.FileExists(filepath.Join(outputPath, "README.md.skel"))
-	require.FileExists(filepath.Join(outputPath, ConfigFileName))
+	require.FileExists(filepath.Join(outputPath, kickoff.SkeletonConfigFileName))
 }

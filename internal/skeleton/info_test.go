@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,7 @@ func TestInfo(t *testing.T) {
 		config, err := info.LoadConfig()
 		require.NoError(err)
 
-		expectedConfig := Config{
+		expectedConfig := &kickoff.SkeletonConfig{
 			Values: template.Values{"foo": "bar"},
 		}
 

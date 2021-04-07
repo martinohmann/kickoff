@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
 var (
@@ -36,7 +36,7 @@ func (e SkeletonNotFoundError) Error() string {
 // DependencyCycleError is the error returned while loading a skeleton's parent
 // if a dependency cycle is detected.
 type DependencyCycleError struct {
-	ParentRef skeleton.Reference
+	ParentRef kickoff.ParentRef
 }
 
 // Error implements error.

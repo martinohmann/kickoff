@@ -11,6 +11,7 @@ import (
 	"sort"
 
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/template"
 )
 
@@ -224,7 +225,7 @@ func IsInsideSkeletonDir(path string) (bool, error) {
 // IsSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
 // detected by the fact that they contain a .kickoff.yaml file.
 func IsSkeletonDir(dir string) (bool, error) {
-	configPath := filepath.Join(dir, ConfigFileName)
+	configPath := filepath.Join(dir, kickoff.SkeletonConfigFileName)
 
 	info, err := os.Stat(configPath)
 	if os.IsNotExist(err) {

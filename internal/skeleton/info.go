@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,10 +27,10 @@ func (i *Info) String() string {
 }
 
 // LoadConfig loads the skeleton config for the info.
-func (i *Info) LoadConfig() (Config, error) {
-	configPath := filepath.Join(i.Path, ConfigFileName)
+func (i *Info) LoadConfig() (*kickoff.SkeletonConfig, error) {
+	configPath := filepath.Join(i.Path, kickoff.SkeletonConfigFileName)
 
-	return LoadConfig(configPath)
+	return kickoff.LoadSkeletonConfig(configPath)
 }
 
 // RepoInfo holds information about a skeleton repository.
