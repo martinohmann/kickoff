@@ -8,6 +8,7 @@ import (
 
 	"github.com/kirsle/configdir"
 	"github.com/martinohmann/kickoff/internal/homedir"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 )
 
@@ -76,7 +77,7 @@ func NewNamed(name, url string) (repo Repository, err error) {
 // optionally include a `revision` query parameter. If absent, `master` will be
 // assumed. Returns an error if url does not match any of the criteria
 // mentioned above.
-func ParseURL(rawurl string) (*skeleton.RepoInfo, error) {
+func ParseURL(rawurl string) (*kickoff.RepoRef, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, fmt.Errorf("invalid repo URL %q: %w", rawurl, err)
@@ -88,7 +89,7 @@ func ParseURL(rawurl string) (*skeleton.RepoInfo, error) {
 			return nil, err
 		}
 
-		return &skeleton.RepoInfo{Path: path}, nil
+		return &kickoff.RepoRef{Path: path}, nil
 	}
 
 	query, err := url.ParseQuery(u.RawQuery)
@@ -109,7 +110,7 @@ func ParseURL(rawurl string) (*skeleton.RepoInfo, error) {
 	// the final repository URL.
 	u.RawQuery = ""
 
-	return &skeleton.RepoInfo{
+	return &kickoff.RepoRef{
 		Path:     buildLocalCacheDir(u.Host, u.Path, revision),
 		URL:      u.String(),
 		Revision: revision,

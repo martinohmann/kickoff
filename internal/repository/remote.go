@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,24 +30,24 @@ type RemoteRepository struct {
 	client git.Client
 }
 
-// NewRemoteRepository creates a *RemoteRepository from info. Returns
-// ErrNotARemoteRepository if info does not describe a remote repository
+// NewRemoteRepository creates a *RemoteRepository from ref. Returns
+// ErrNotARemoteRepository if ref does not describe a remote repository
 // location. Internally creates a *LocalRepository for the cached copy of the
 // remote and returns any error that might occur while creating it.
-func NewRemoteRepository(info skeleton.RepoInfo) (*RemoteRepository, error) {
-	if !info.IsRemote() {
+func NewRemoteRepository(ref kickoff.RepoRef) (*RemoteRepository, error) {
+	if !ref.IsRemote() {
 		return nil, ErrNotARemoteRepository
 	}
 
-	local, err := NewLocalRepository(info)
+	local, err := NewLocalRepository(ref)
 	if err != nil {
 		return nil, err
 	}
 
 	r := &RemoteRepository{
 		LocalRepository: local,
-		url:             info.URL,
-		revision:        info.Revision,
+		url:             ref.URL,
+		revision:        ref.Revision,
 		client:          git.NewClient(),
 	}
 
@@ -88,7 +89,7 @@ func (r *RemoteRepository) syncRemoteOnce(ctx context.Context) error {
 }
 
 func (r *RemoteRepository) syncRemote(ctx context.Context) error {
-	localPath := r.info.Path
+	localPath := r.ref.Path
 
 	err := r.updateLocalCache(ctx, r.url, r.revision)
 	if err == nil {
@@ -137,7 +138,7 @@ func (r *RemoteRepository) updateLocalCache(ctx context.Context, url, revision s
 }
 
 func (r *RemoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (git.Repository, error) {
-	localPath := r.info.Path
+	localPath := r.ref.Path
 
 	repo, err := r.client.Open(localPath)
 	if err == git.ErrRepositoryNotExists {
@@ -162,7 +163,7 @@ func (r *RemoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (
 }
 
 func (r *RemoteRepository) fetchRefs(ctx context.Context, repo git.Repository) error {
-	localPath := r.info.Path
+	localPath := r.ref.Path
 
 	// As git operations that fetch refs from remotes can be slow, we are
 	// trying to avoid doing too many of them. We are going to only attempt

@@ -13,7 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ import (
 
 func TestNewRemoteRepository(t *testing.T) {
 	t.Run("creates remote repository", func(t *testing.T) {
-		repo, err := NewRemoteRepository(skeleton.RepoInfo{
+		repo, err := NewRemoteRepository(kickoff.RepoRef{
 			Path:     "some/local/path",
 			URL:      "https://github.com/martinohmann/kickoff-skeletons",
 			Revision: "de4db3ef",
@@ -31,7 +31,7 @@ func TestNewRemoteRepository(t *testing.T) {
 	})
 
 	t.Run("returns error if info does not describe a remote repo", func(t *testing.T) {
-		_, err := NewRemoteRepository(skeleton.RepoInfo{Path: "some/local/path"})
+		_, err := NewRemoteRepository(kickoff.RepoRef{Path: "some/local/path"})
 		assert.Equal(t, ErrNotARemoteRepository, err)
 	})
 }
@@ -385,7 +385,7 @@ func createRemoteTestRepo(t *testing.T) (*RemoteRepository, *git.FakeClient, str
 	tmpdir, err := ioutil.TempDir("", "kickoff-repos-*")
 	require.NoError(t, err)
 
-	repo, err := NewRemoteRepository(skeleton.RepoInfo{
+	repo, err := NewRemoteRepository(kickoff.RepoRef{
 		Path:     tmpdir,
 		URL:      "https://github.com/martinohmann/kickoff-skeletons",
 		Revision: "master",
