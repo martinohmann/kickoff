@@ -1,4 +1,4 @@
-package config
+package kickoff
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 
 func TestConfig_ApplyDefaults(t *testing.T) {
 	config := Config{
-		Project: Project{
+		Project: ProjectConfig{
 			Owner: "johndoe",
 		},
 	}
@@ -18,7 +18,7 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 	config.ApplyDefaults()
 
 	expected := Config{
-		Project: Project{
+		Project: ProjectConfig{
 			Host:      DefaultProjectHost,
 			Owner:     "johndoe",
 			License:   NoLicense,
@@ -35,7 +35,7 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 
 func TestConfig_MergeFromFile(t *testing.T) {
 	config := Config{
-		Project: Project{
+		Project: ProjectConfig{
 			Host: DefaultProjectHost,
 		},
 	}
@@ -44,7 +44,7 @@ func TestConfig_MergeFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := Config{
-		Project: Project{
+		Project: ProjectConfig{
 			Host:  DefaultProjectHost,
 			Owner: "johndoe",
 		},

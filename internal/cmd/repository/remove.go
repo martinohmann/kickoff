@@ -5,7 +5,7 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/config"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -78,7 +78,7 @@ func (o *RemoveOptions) Validate() error {
 func (o *RemoveOptions) Run() error {
 	delete(o.Repositories, o.RepoName)
 
-	err := config.Save(&o.Config, o.ConfigPath)
+	err := kickoff.SaveConfig(o.ConfigPath, &o.Config)
 	if err != nil {
 		return err
 	}

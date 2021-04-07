@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +20,7 @@ const (
 
 // AddConfigFlag adds the --config flag to cmd and binds it to val.
 func AddConfigFlag(cmd *cobra.Command, val *string) {
-	cmd.Flags().StringVarP(val, "config", "c", *val, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", config.DefaultConfigPath))
+	cmd.Flags().StringVarP(val, "config", "c", *val, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", kickoff.DefaultConfigPath))
 	cmd.MarkFlagFilename("config")
 }
 
@@ -39,7 +39,7 @@ func AddOverwriteFlag(cmd *cobra.Command, val *bool) {
 // and optionally override them if the user passed a different config path via
 // the CLI flag.
 type ConfigFlags struct {
-	config.Config
+	kickoff.Config
 
 	ConfigPath         string
 	allowMissingConfig bool
@@ -70,8 +70,8 @@ func (f *ConfigFlags) Complete() (err error) {
 	if f.ConfigPath == "" {
 		if configPath := os.Getenv("KICKOFF_CONFIG"); configPath != "" {
 			f.ConfigPath = configPath
-		} else if file.Exists(config.DefaultConfigPath) {
-			f.ConfigPath = config.DefaultConfigPath
+		} else if file.Exists(kickoff.DefaultConfigPath) {
+			f.ConfigPath = kickoff.DefaultConfigPath
 		}
 	}
 

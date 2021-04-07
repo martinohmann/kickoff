@@ -11,8 +11,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +71,7 @@ func (o *EditOptions) Complete() (err error) {
 	}
 
 	if o.ConfigPath == "" {
-		o.ConfigPath = config.DefaultConfigPath
+		o.ConfigPath = kickoff.DefaultConfigPath
 	}
 
 	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
@@ -85,7 +85,7 @@ func (o *EditOptions) Run() (err error) {
 	var contents []byte
 
 	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath != config.DefaultConfigPath {
+		if o.ConfigPath != kickoff.DefaultConfigPath {
 			return fmt.Errorf("file %q does not exist", o.ConfigPath)
 		}
 
@@ -124,14 +124,14 @@ func (o *EditOptions) Run() (err error) {
 
 	// Sanity check: if we fail to load the config from the tmpfile, we
 	// consider it invalid and abort without copying it back.
-	cfg, err := config.Load(tmpfilePath)
+	cfg, err := kickoff.LoadConfig(tmpfilePath)
 	if err != nil {
 		return fmt.Errorf("not saving invalid kickoff config: %w", err)
 	}
 
 	log.WithField("config", o.ConfigPath).Info("writing config")
 
-	err = config.Save(&cfg, o.ConfigPath)
+	err = kickoff.SaveConfig(o.ConfigPath, cfg)
 	if err != nil {
 		return fmt.Errorf("error while saving config file: %w", err)
 	}

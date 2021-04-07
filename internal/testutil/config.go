@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/martinohmann/kickoff/internal/config"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/stretchr/testify/require"
 )
@@ -13,7 +13,7 @@ import (
 // ConfigFileBuilder is a utility to build kickoff config files in tests.
 type ConfigFileBuilder struct {
 	*testing.T
-	config.Config
+	kickoff.Config
 }
 
 // NewConfigFileBuilder creates a new *ConfigFileBuilder.
@@ -53,6 +53,6 @@ func (b *ConfigFileBuilder) WithValues(values template.Values) *ConfigFileBuilde
 func (b *ConfigFileBuilder) Create() *os.File {
 	f, err := ioutil.TempFile("", "kickoff-config-*.yaml")
 	require.NoError(b, err)
-	require.NoError(b, config.Save(&b.Config, f.Name()))
+	require.NoError(b, kickoff.SaveConfig(f.Name(), &b.Config))
 	return f
 }
