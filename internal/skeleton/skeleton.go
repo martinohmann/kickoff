@@ -71,15 +71,15 @@ func merge(lhs, rhs *kickoff.Skeleton) (*kickoff.Skeleton, error) {
 	return s, nil
 }
 
-func mergeFiles(lhs, rhs []*kickoff.FileRef) []*kickoff.FileRef {
-	fileMap := make(map[string]*kickoff.FileRef)
+func mergeFiles(lhs, rhs []kickoff.File) []kickoff.File {
+	fileMap := make(map[string]kickoff.File)
 
 	for _, f := range lhs {
-		fileMap[f.RelPath] = f
+		fileMap[f.Path()] = f
 	}
 
 	for _, f := range rhs {
-		fileMap[f.RelPath] = f
+		fileMap[f.Path()] = f
 	}
 
 	filePaths := make([]string, 0, len(fileMap))
@@ -89,7 +89,7 @@ func mergeFiles(lhs, rhs []*kickoff.FileRef) []*kickoff.FileRef {
 
 	sort.Strings(filePaths)
 
-	files := make([]*kickoff.FileRef, len(filePaths))
+	files := make([]kickoff.File, len(filePaths))
 	for i, path := range filePaths {
 		files[i] = fileMap[path]
 	}

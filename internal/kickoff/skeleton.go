@@ -21,7 +21,7 @@ type Skeleton struct {
 	Parent *Skeleton `json:"parent,omitempty"`
 	// The Files slice contains a merged and sorted list of file references
 	// that includes all files from the skeleton and its parents (if any).
-	Files []*FileRef `json:"files,omitempty"`
+	Files []File `json:"files,omitempty"`
 	// Values are the template values from the skeleton's metadata merged with
 	// those of it's parents (if any).
 	Values template.Values `json:"values,omitempty"`

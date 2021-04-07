@@ -125,8 +125,8 @@ func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff
 	return loadSkeleton(ctx, parent, visits)
 }
 
-func collectFiles(ref *kickoff.SkeletonRef) ([]*kickoff.FileRef, error) {
-	files := make([]*kickoff.FileRef, 0)
+func collectFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {
+	files := make([]kickoff.File, 0)
 
 	err := filepath.Walk(ref.Path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {

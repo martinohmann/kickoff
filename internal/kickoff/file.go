@@ -7,11 +7,6 @@ import (
 	"path/filepath"
 )
 
-var (
-	_ File = (*FileRef)(nil)
-	_ File = (*BufferedFile)(nil)
-)
-
 // FileRef contains paths and other information about a skeleton file. May also
 // reference a directory with templated path segments.
 type FileRef struct {

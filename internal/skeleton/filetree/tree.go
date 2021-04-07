@@ -24,7 +24,7 @@ func Build(s *kickoff.Skeleton) gotree.Tree {
 	root := New(s.Ref.Name)
 
 	for _, f := range s.Files {
-		parts := strings.Split(f.RelPath, "/")
+		parts := strings.Split(f.Path(), "/")
 
 		for tree := root; len(parts) > 0; parts = parts[1:] {
 			tree = tree.Add(parts[0])

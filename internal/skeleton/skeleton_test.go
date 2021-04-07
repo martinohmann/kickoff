@@ -96,32 +96,32 @@ func TestMerge(t *testing.T) {
 
 	t.Run("merges skeleton files", func(t *testing.T) {
 		s0 := &kickoff.Skeleton{
-			Files: []*kickoff.FileRef{
-				{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
-				{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
-				{RelPath: "somedir", AbsPath: "/s0/somedir"},
-				{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			Files: []kickoff.File{
+				&kickoff.FileRef{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
+				&kickoff.FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+				&kickoff.FileRef{RelPath: "somedir", AbsPath: "/s0/somedir"},
+				&kickoff.FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
 			},
 		}
 		s1 := &kickoff.Skeleton{
-			Files: []*kickoff.FileRef{
-				{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
-				{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
-				{RelPath: "somedir", AbsPath: "/s1/somedir"},
-				{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			Files: []kickoff.File{
+				&kickoff.FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+				&kickoff.FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+				&kickoff.FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
+				&kickoff.FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
 			},
 		}
 
 		s, err := Merge(s0, s1)
 		require.NoError(err)
 
-		expectedFiles := []*kickoff.FileRef{
-			{RelPath: "somedir", AbsPath: "/s1/somedir"},
-			{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
-			{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
-			{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
-			{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
-			{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+		expectedFiles := []kickoff.File{
+			&kickoff.FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
+			&kickoff.FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			&kickoff.FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			&kickoff.FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+			&kickoff.FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+			&kickoff.FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
 		}
 
 		assert.Equal(expectedFiles, s.Files)
