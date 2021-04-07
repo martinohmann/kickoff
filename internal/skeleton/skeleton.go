@@ -5,7 +5,6 @@ package skeleton
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -23,39 +22,6 @@ var (
 	ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
 )
 
-// File contains paths and other information about a skeleton file, e.g.
-// whether it was inherited from a parent skeleton or not.
-type File struct {
-	// RelPath is the file path relative to root directory of the skeleton.
-	RelPath string `json:"relPath"`
-
-	// AbsPath is the absolute path to the file on disk.
-	AbsPath string `json:"absPath"`
-
-	// Info is the os.FileInfo for the file
-	Info os.FileInfo `json:"-"`
-}
-
-// Path implements project.Source.
-func (f *File) Path() string {
-	return f.RelPath
-}
-
-// Mode implements project.Source.
-func (f *File) Mode() os.FileMode {
-	return f.Info.Mode()
-}
-
-// Reader implements project.Source.
-func (f *File) Reader() (io.Reader, error) {
-	return os.Open(f.AbsPath)
-}
-
-// IsTemplate implements project.Source.
-func (f *File) IsTemplate() bool {
-	return !f.Mode().IsDir() && filepath.Ext(f.RelPath) == ".skel"
-}
-
 // Skeleton is the representation of a skeleton loaded from a skeleton
 // repository.
 type Skeleton struct {
@@ -72,7 +38,7 @@ type Skeleton struct {
 
 	// The Files slice contains a merged and sorted list of file references
 	// that includes all files from the skeleton and its parents (if any).
-	Files []*File `json:"files,omitempty"`
+	Files []*kickoff.FileRef `json:"files,omitempty"`
 
 	// Values are the template values from the skeleton's config merged with
 	// those of it's parents (if any).
@@ -142,8 +108,8 @@ func merge(lhs, rhs *Skeleton) (*Skeleton, error) {
 	return s, nil
 }
 
-func mergeFiles(lhs, rhs []*File) []*File {
-	fileMap := make(map[string]*File)
+func mergeFiles(lhs, rhs []*kickoff.FileRef) []*kickoff.FileRef {
+	fileMap := make(map[string]*kickoff.FileRef)
 
 	for _, f := range lhs {
 		fileMap[f.RelPath] = f
@@ -160,7 +126,7 @@ func mergeFiles(lhs, rhs []*File) []*File {
 
 	sort.Strings(filePaths)
 
-	files := make([]*File, len(filePaths))
+	files := make([]*kickoff.FileRef, len(filePaths))
 	for i, path := range filePaths {
 		files[i] = fileMap[path]
 	}

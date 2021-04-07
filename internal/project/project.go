@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
@@ -195,8 +196,8 @@ func (p *Project) makeTemplateValues(skeleton *skeleton.Skeleton) (template.Valu
 	return vals, nil
 }
 
-func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
-	sources := make([]Source, 0, len(skeleton.Files))
+func (p *Project) makeSources(skeleton *skeleton.Skeleton) []kickoff.File {
+	sources := make([]kickoff.File, 0, len(skeleton.Files))
 
 	for _, file := range skeleton.Files {
 		sources = append(sources, file)
@@ -209,11 +210,11 @@ func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
 			"year":    strconv.Itoa(time.Now().Year()),
 		})
 
-		sources = append(sources, NewSource(bytes.NewBufferString(text), "LICENSE", 0644))
+		sources = append(sources, kickoff.NewBufferedFile("LICENSE", []byte(text), 0644))
 	}
 
 	if p.gitignore != nil {
-		sources = append(sources, NewSource(bytes.NewBuffer(p.gitignore.Content), ".gitignore", 0644))
+		sources = append(sources, kickoff.NewBufferedFile(".gitignore", p.gitignore.Content, 0644))
 	}
 
 	// We sort files by path so we can ensure that parent directories get
@@ -261,7 +262,7 @@ func (p *Project) create(s *skeleton.Skeleton, values template.Values) error {
 	return nil
 }
 
-func (p *Project) makeDestination(f Source, values template.Values) (Destination, error) {
+func (p *Project) makeDestination(f kickoff.File, values template.Values) (Destination, error) {
 	relPath := f.Path()
 	srcFilename := filepath.Base(relPath)
 	srcRelDir := filepath.Dir(relPath)
@@ -347,7 +348,7 @@ func (p *Project) executeAction(action Action, values template.Values) error {
 	}
 }
 
-func (p *Project) sourceReader(source Source, values template.Values) (io.Reader, error) {
+func (p *Project) sourceReader(source kickoff.File, values template.Values) (io.Reader, error) {
 	r, err := source.Reader()
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package filetree
 import (
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/stretchr/testify/assert"
 )
@@ -10,7 +11,7 @@ import (
 func TestBuild(t *testing.T) {
 	s := &skeleton.Skeleton{
 		Info: &skeleton.Info{Name: "my/skeleton"},
-		Files: []*skeleton.File{
+		Files: []*kickoff.FileRef{
 			{RelPath: ".kickoff.yaml"},
 			{RelPath: "README.md.skel"},
 			{RelPath: "foo/bar"},

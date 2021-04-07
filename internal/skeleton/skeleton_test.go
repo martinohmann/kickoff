@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,7 +111,7 @@ func TestMerge(t *testing.T) {
 
 	t.Run("merges skeleton files", func(t *testing.T) {
 		s0 := &Skeleton{
-			Files: []*File{
+			Files: []*kickoff.FileRef{
 				{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
 				{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
 				{RelPath: "somedir", AbsPath: "/s0/somedir"},
@@ -118,7 +119,7 @@ func TestMerge(t *testing.T) {
 			},
 		}
 		s1 := &Skeleton{
-			Files: []*File{
+			Files: []*kickoff.FileRef{
 				{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
 				{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
 				{RelPath: "somedir", AbsPath: "/s1/somedir"},
@@ -129,7 +130,7 @@ func TestMerge(t *testing.T) {
 		s, err := Merge(s0, s1)
 		require.NoError(err)
 
-		expectedFiles := []*File{
+		expectedFiles := []*kickoff.FileRef{
 			{RelPath: "somedir", AbsPath: "/s1/somedir"},
 			{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
 			{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
