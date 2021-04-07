@@ -15,6 +15,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/httpcache"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/repository"
@@ -255,7 +256,7 @@ func (o *CreateOptions) Run() error {
 	return o.initGitRepository(o.OutputDir)
 }
 
-func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton) error {
+func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) error {
 	config := &project.Config{
 		ProjectName:    o.ProjectName,
 		Host:           o.Project.Host,

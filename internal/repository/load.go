@@ -14,8 +14,8 @@ import (
 // context is propagated to all operations that cross API boundaries (e.g. git
 // operations) and can be used to enforce timeouts or cancel them. Returns an
 // error if loading of any of the skeletons fails.
-func LoadSkeletons(ctx context.Context, repo kickoff.Repository, names []string) ([]*skeleton.Skeleton, error) {
-	skeletons := make([]*skeleton.Skeleton, len(names))
+func LoadSkeletons(ctx context.Context, repo kickoff.Repository, names []string) ([]*kickoff.Skeleton, error) {
+	skeletons := make([]*kickoff.Skeleton, len(names))
 
 	for i, name := range names {
 		skeleton, err := LoadSkeleton(ctx, repo, name)
@@ -33,7 +33,7 @@ func LoadSkeletons(ctx context.Context, repo kickoff.Repository, names []string)
 // in context is propagated to all operations that cross API boundaries (e.g.
 // git operations) and can be used to enforce timeouts or cancel them. Returns
 // an error if loading the skeleton fails.
-func LoadSkeleton(ctx context.Context, repo kickoff.Repository, name string) (*skeleton.Skeleton, error) {
+func LoadSkeleton(ctx context.Context, repo kickoff.Repository, name string) (*kickoff.Skeleton, error) {
 	info, err := repo.GetSkeleton(ctx, name)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func LoadSkeleton(ctx context.Context, repo kickoff.Repository, name string) (*s
 // loadSkeleton loads a skeleton and tracks all visited parents in a map. It will
 // recursively load and merge all parents into the skeleton. Returns an error
 // if a dependency cycle is detected while loading a parent.
-func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
+func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kickoff.ParentRef]struct{}) (*kickoff.Skeleton, error) {
 	config, err := ref.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
@@ -63,7 +63,7 @@ func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kick
 		return nil, err
 	}
 
-	s := &skeleton.Skeleton{
+	s := &kickoff.Skeleton{
 		Description: config.Description,
 		Values:      config.Values,
 		Ref:         ref,
@@ -82,7 +82,7 @@ func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kick
 	return skeleton.Merge(parent, s)
 }
 
-func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
+func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*kickoff.Skeleton, error) {
 	if _, ok := visits[parentRef]; ok {
 		return nil, DependencyCycleError{ParentRef: parentRef}
 	}

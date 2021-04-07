@@ -22,55 +22,16 @@ var (
 	ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
 )
 
-// Skeleton is the representation of a skeleton loaded from a skeleton
-// repository.
-type Skeleton struct {
-	// Description is the skeleton description text obtained from the skeleton
-	// config.
-	Description string `json:"description,omitempty"`
-
-	// Parent is a reference to the parent skeleton. Is nil if the skeleton has
-	// no parent.
-	Parent *Skeleton `json:"parent,omitempty"`
-
-	// Ref holds the information about the location that was used to load the
-	// skeleton. May be nil if the skeleton is the merged result of composing
-	// multiple skeletons.
-	Ref *kickoff.SkeletonRef `json:"ref,omitempty"`
-
-	// The Files slice contains a merged and sorted list of file references
-	// that includes all files from the skeleton and its parents (if any).
-	Files []*kickoff.FileRef `json:"files,omitempty"`
-
-	// Values are the template values from the skeleton's config merged with
-	// those of it's parents (if any).
-	Values template.Values `json:"values,omitempty"`
-}
-
-// String implements fmt.Stringer.
-func (s *Skeleton) String() string {
-	name := "<anonymous-skeleton>"
-	if s.Ref != nil {
-		name = s.Ref.String()
-	}
-
-	if s.Parent == nil {
-		return name
-	}
-
-	return fmt.Sprintf("%s->%s", s.Parent, name)
-}
-
-// Merge merges multiple skeletons together and returns a new *Skeleton.
+// Merge merges multiple skeletons together and returns a new *kickoff.Skeleton.
 // The skeletons are merged left to right with template values, skeleton files
 // and skeleton info of the rightmost skeleton taking preference over already
 // existing values. Template values are recursively merged and may cause errors
-// on type mismatch. The resulting *Skeleton will have the second-to-last
+// on type mismatch. The resulting *kickoff.Skeleton will have the second-to-last
 // skeleton set as its parent, the second-to-last will have the third-to-last
 // as parent and so forth. The original skeletons are not altered. If only one
 // skeleton is passed it will be returned as is without modification. Passing a
 // slice with length of zero will return in an error.
-func Merge(skeletons ...*Skeleton) (*Skeleton, error) {
+func Merge(skeletons ...*kickoff.Skeleton) (*kickoff.Skeleton, error) {
 	if len(skeletons) == 0 {
 		return nil, ErrMergeEmpty
 	}
@@ -93,13 +54,13 @@ func Merge(skeletons ...*Skeleton) (*Skeleton, error) {
 	return lhs, nil
 }
 
-func merge(lhs, rhs *Skeleton) (*Skeleton, error) {
+func merge(lhs, rhs *kickoff.Skeleton) (*kickoff.Skeleton, error) {
 	values, err := template.MergeValues(lhs.Values, rhs.Values)
 	if err != nil {
 		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %w", lhs.Ref, rhs.Ref, err)
 	}
 
-	s := &Skeleton{
+	s := &kickoff.Skeleton{
 		Values:      values,
 		Files:       mergeFiles(lhs.Files, rhs.Files),
 		Description: rhs.Description,

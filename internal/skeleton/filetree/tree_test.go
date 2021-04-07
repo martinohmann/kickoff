@@ -4,12 +4,11 @@ import (
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBuild(t *testing.T) {
-	s := &skeleton.Skeleton{
+	s := &kickoff.Skeleton{
 		Ref: &kickoff.SkeletonRef{Name: "my/skeleton"},
 		Files: []*kickoff.FileRef{
 			{RelPath: ".kickoff.yaml"},

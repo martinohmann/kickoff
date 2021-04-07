@@ -8,6 +8,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSkeleton(t *testing.T) {
+	assert := assert.New(t)
+
+	t.Run("string representation", func(t *testing.T) {
+		s0 := &Skeleton{Ref: &SkeletonRef{Name: "foo"}}
+		assert.Equal("foo", s0.String())
+
+		s1 := &Skeleton{Ref: &SkeletonRef{Name: "bar", Repo: &RepoRef{Name: "repo"}}, Parent: s0}
+		assert.Equal("foo->repo:bar", s1.String())
+
+		s2 := &Skeleton{Parent: s1}
+		assert.Equal("foo->repo:bar-><anonymous-skeleton>", s2.String())
+	})
+}
+
 func TestSkeletonRef(t *testing.T) {
 	t.Run("string representation", func(t *testing.T) {
 		info := &SkeletonRef{Name: "default"}

@@ -68,21 +68,6 @@ func TestFindSkeletonDir(t *testing.T) {
 	})
 }
 
-func TestSkeleton(t *testing.T) {
-	assert := assert.New(t)
-
-	t.Run("string representation", func(t *testing.T) {
-		s0 := &Skeleton{Ref: &kickoff.SkeletonRef{Name: "foo"}}
-		assert.Equal("foo", s0.String())
-
-		s1 := &Skeleton{Ref: &kickoff.SkeletonRef{Name: "bar", Repo: &kickoff.RepoRef{Name: "repo"}}, Parent: s0}
-		assert.Equal("foo->repo:bar", s1.String())
-
-		s2 := &Skeleton{Parent: s1}
-		assert.Equal("foo->repo:bar-><anonymous-skeleton>", s2.String())
-	})
-}
-
 func TestMerge(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -93,7 +78,7 @@ func TestMerge(t *testing.T) {
 	})
 
 	t.Run("merging one returns identity", func(t *testing.T) {
-		s0 := &Skeleton{}
+		s0 := &kickoff.Skeleton{}
 
 		s1, err := Merge(s0)
 		require.NoError(err)
@@ -101,8 +86,8 @@ func TestMerge(t *testing.T) {
 	})
 
 	t.Run("merges skeleton values", func(t *testing.T) {
-		s0 := &Skeleton{Values: template.Values{"foo": "bar", "baz": false}}
-		s1 := &Skeleton{Values: template.Values{"qux": 42, "baz": true}}
+		s0 := &kickoff.Skeleton{Values: template.Values{"foo": "bar", "baz": false}}
+		s1 := &kickoff.Skeleton{Values: template.Values{"qux": 42, "baz": true}}
 
 		s, err := Merge(s0, s1)
 		require.NoError(err)
@@ -110,7 +95,7 @@ func TestMerge(t *testing.T) {
 	})
 
 	t.Run("merges skeleton files", func(t *testing.T) {
-		s0 := &Skeleton{
+		s0 := &kickoff.Skeleton{
 			Files: []*kickoff.FileRef{
 				{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
 				{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
@@ -118,7 +103,7 @@ func TestMerge(t *testing.T) {
 				{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
 			},
 		}
-		s1 := &Skeleton{
+		s1 := &kickoff.Skeleton{
 			Files: []*kickoff.FileRef{
 				{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
 				{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
