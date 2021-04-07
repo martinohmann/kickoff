@@ -33,8 +33,10 @@ type Skeleton struct {
 	// no parent.
 	Parent *Skeleton `json:"parent,omitempty"`
 
-	// Info is the skeleton info that was used to load the skeleton.
-	Info *Info `json:"info"`
+	// Ref holds the information about the location that was used to load the
+	// skeleton. May be nil if the skeleton is the merged result of composing
+	// multiple skeletons.
+	Ref *kickoff.SkeletonRef `json:"ref,omitempty"`
 
 	// The Files slice contains a merged and sorted list of file references
 	// that includes all files from the skeleton and its parents (if any).
@@ -48,8 +50,8 @@ type Skeleton struct {
 // String implements fmt.Stringer.
 func (s *Skeleton) String() string {
 	name := "<anonymous-skeleton>"
-	if s.Info != nil {
-		name = s.Info.String()
+	if s.Ref != nil {
+		name = s.Ref.String()
 	}
 
 	if s.Parent == nil {
@@ -94,7 +96,7 @@ func Merge(skeletons ...*Skeleton) (*Skeleton, error) {
 func merge(lhs, rhs *Skeleton) (*Skeleton, error) {
 	values, err := template.MergeValues(lhs.Values, rhs.Values)
 	if err != nil {
-		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %w", lhs.Info, rhs.Info, err)
+		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %w", lhs.Ref, rhs.Ref, err)
 	}
 
 	s := &Skeleton{
@@ -102,7 +104,7 @@ func merge(lhs, rhs *Skeleton) (*Skeleton, error) {
 		Files:       mergeFiles(lhs.Files, rhs.Files),
 		Description: rhs.Description,
 		Parent:      lhs,
-		Info:        rhs.Info,
+		Ref:         rhs.Ref,
 	}
 
 	return s, nil

@@ -72,10 +72,10 @@ func TestSkeleton(t *testing.T) {
 	assert := assert.New(t)
 
 	t.Run("string representation", func(t *testing.T) {
-		s0 := &Skeleton{Info: &Info{Name: "foo"}}
+		s0 := &Skeleton{Ref: &kickoff.SkeletonRef{Name: "foo"}}
 		assert.Equal("foo", s0.String())
 
-		s1 := &Skeleton{Info: &Info{Name: "bar", Repo: &kickoff.RepoRef{Name: "repo"}}, Parent: s0}
+		s1 := &Skeleton{Ref: &kickoff.SkeletonRef{Name: "bar", Repo: &kickoff.RepoRef{Name: "repo"}}, Parent: s0}
 		assert.Equal("foo->repo:bar", s1.String())
 
 		s2 := &Skeleton{Parent: s1}

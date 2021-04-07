@@ -10,7 +10,7 @@ import (
 
 func TestBuild(t *testing.T) {
 	s := &skeleton.Skeleton{
-		Info: &skeleton.Info{Name: "my/skeleton"},
+		Ref: &kickoff.SkeletonRef{Name: "my/skeleton"},
 		Files: []*kickoff.FileRef{
 			{RelPath: ".kickoff.yaml"},
 			{RelPath: "README.md.skel"},

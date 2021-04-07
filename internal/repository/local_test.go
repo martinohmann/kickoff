@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,7 +75,7 @@ func TestFindSkeletons(t *testing.T) {
 			return filepath.Join(pwd, ref.Path, "skeletons", name)
 		}
 
-		expected := []*skeleton.Info{
+		expected := []*kickoff.SkeletonRef{
 			{Name: "bar", Path: path("bar"), Repo: ref},
 			{Name: "child", Path: path("child"), Repo: ref},
 			{Name: "childofchild", Path: path("childofchild"), Repo: ref},

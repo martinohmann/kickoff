@@ -14,7 +14,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,7 +57,7 @@ func NewRemoteRepository(ref kickoff.RepoRef) (*RemoteRepository, error) {
 //
 // Lazily synchronizes the cached local copy of the remote repository before
 // looking up the skeleton.
-func (r *RemoteRepository) GetSkeleton(ctx context.Context, name string) (*skeleton.Info, error) {
+func (r *RemoteRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	err := r.syncRemoteOnce(ctx)
 	if err != nil {
 		return nil, err
@@ -71,7 +70,7 @@ func (r *RemoteRepository) GetSkeleton(ctx context.Context, name string) (*skele
 //
 // Lazily synchronizes the cached local copy of the remote repository before
 // listing skeletons.
-func (r *RemoteRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, error) {
+func (r *RemoteRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
 	err := r.syncRemoteOnce(ctx)
 	if err != nil {
 		return nil, err

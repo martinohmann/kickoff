@@ -32,7 +32,7 @@ func NewLocalRepository(ref kickoff.RepoRef) (*LocalRepository, error) {
 }
 
 // GetSkeleton implements Repository.
-func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*skeleton.Info, error) {
+func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	path := filepath.Join(r.ref.Path, "skeletons", name)
 
 	ok, err := skeleton.IsSkeletonDir(path)
@@ -44,7 +44,7 @@ func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*skelet
 		return nil, SkeletonNotFoundError{name, r.ref.Name}
 	}
 
-	info := &skeleton.Info{
+	info := &kickoff.SkeletonRef{
 		Name: name,
 		Path: path,
 		Repo: &r.ref,
@@ -54,7 +54,7 @@ func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*skelet
 }
 
 // ListSkeletons implements Repository.
-func (r *LocalRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, error) {
+func (r *LocalRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
 	infos, err := findSkeletons(&r.ref, filepath.Join(r.ref.Path, "skeletons"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list skeletons: %w", err)
@@ -63,8 +63,8 @@ func (r *LocalRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, 
 	return infos, nil
 }
 
-func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*skeleton.Info, error) {
-	skeletons := make([]*skeleton.Info, 0)
+func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef, error) {
+	skeletons := make([]*kickoff.SkeletonRef, 0)
 
 	fileInfos, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -94,7 +94,7 @@ func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*skeleton.Info, erro
 				return nil, err
 			}
 
-			skeletons = append(skeletons, &skeleton.Info{
+			skeletons = append(skeletons, &kickoff.SkeletonRef{
 				Name: info.Name(),
 				Path: abspath,
 				Repo: repoRef,
@@ -108,7 +108,7 @@ func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*skeleton.Info, erro
 		}
 
 		for _, s := range skels {
-			skeletons = append(skeletons, &skeleton.Info{
+			skeletons = append(skeletons, &kickoff.SkeletonRef{
 				Name: filepath.Join(info.Name(), s.Name),
 				Path: s.Path,
 				Repo: repoRef,

@@ -21,7 +21,7 @@ type tree struct {
 
 // Build builds a printable file tree for s.
 func Build(s *skeleton.Skeleton) gotree.Tree {
-	root := New(s.Info.Name)
+	root := New(s.Ref.Name)
 
 	for _, f := range s.Files {
 		parts := strings.Split(f.RelPath, "/")

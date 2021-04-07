@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
 // MultiRepository is a repository that aggregates multiple repositories and
@@ -60,7 +60,7 @@ func NewMultiRepository(repoURLMap map[string]string) (*MultiRepository, error) 
 // be looked up in the repository that matched repoName. Returns
 // SkeletonNotFoundError if the skeleton was not found in any of the configured
 // repositories.
-func (r *MultiRepository) GetSkeleton(ctx context.Context, name string) (*skeleton.Info, error) {
+func (r *MultiRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	repoName, skeletonName := splitName(name)
 	if repoName == "" {
 		return r.findSkeleton(ctx, skeletonName)
@@ -78,8 +78,8 @@ func (r *MultiRepository) GetSkeleton(ctx context.Context, name string) (*skelet
 //
 // Lists the skeletons of all configured repositories lexicographically sorted
 // by repository name.
-func (r *MultiRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, error) {
-	allSkeletons := make([]*skeleton.Info, 0)
+func (r *MultiRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
+	allSkeletons := make([]*kickoff.SkeletonRef, 0)
 
 	for _, repoName := range r.repoNames {
 		repo := r.repoMap[repoName]
@@ -95,8 +95,8 @@ func (r *MultiRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, 
 	return allSkeletons, nil
 }
 
-func (r *MultiRepository) findSkeleton(ctx context.Context, name string) (*skeleton.Info, error) {
-	candidates := make([]*skeleton.Info, 0)
+func (r *MultiRepository) findSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
+	candidates := make([]*kickoff.SkeletonRef, 0)
 	seenRepos := make([]string, 0)
 
 	for _, repoName := range r.repoNames {

@@ -96,14 +96,14 @@ func (o *ShowOptions) Run() error {
 	default:
 		tw := cli.NewTableWriter(o.Out)
 
-		path, err := homedir.Collapse(skeleton.Info.Path)
+		path, err := homedir.Collapse(skeleton.Ref.Path)
 		if err != nil {
 			return err
 		}
 
-		repoInfo := skeleton.Info.Repo
+		repoInfo := skeleton.Ref.Repo
 
-		tw.Append("Name", skeleton.Info.Name)
+		tw.Append("Name", skeleton.Ref.Name)
 		tw.Append("Repository", repoInfo.Name)
 
 		if repoInfo.IsRemote() {
@@ -123,7 +123,7 @@ func (o *ShowOptions) Run() error {
 		}
 
 		if skeleton.Parent != nil {
-			parent, err := homedir.Collapse(skeleton.Parent.Info.Path)
+			parent, err := homedir.Collapse(skeleton.Parent.Ref.Path)
 			if err != nil {
 				return err
 			}

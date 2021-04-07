@@ -52,13 +52,13 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 // loadSkeleton loads a skeleton and tracks all visited parents in a map. It will
 // recursively load and merge all parents into the skeleton. Returns an error
 // if a dependency cycle is detected while loading a parent.
-func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
-	config, err := info.LoadConfig()
+func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
+	config, err := ref.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
 	}
 
-	files, err := collectFiles(info)
+	files, err := collectFiles(ref)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[kickoff.P
 	s := &skeleton.Skeleton{
 		Description: config.Description,
 		Values:      config.Values,
-		Info:        info,
+		Ref:         ref,
 		Files:       files,
 	}
 
@@ -74,7 +74,7 @@ func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[kickoff.P
 		return s, nil
 	}
 
-	parent, err := loadParent(ctx, info, *config.Parent, visits)
+	parent, err := loadParent(ctx, ref, *config.Parent, visits)
 	if err != nil {
 		return nil, err
 	}
@@ -82,19 +82,19 @@ func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[kickoff.P
 	return skeleton.Merge(parent, s)
 }
 
-func loadParent(ctx context.Context, info *skeleton.Info, ref kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
-	if _, ok := visits[ref]; ok {
-		return nil, DependencyCycleError{ParentRef: ref}
+func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*skeleton.Skeleton, error) {
+	if _, ok := visits[parentRef]; ok {
+		return nil, DependencyCycleError{ParentRef: parentRef}
 	}
 
-	repoURL := ref.RepositoryURL
+	repoURL := parentRef.RepositoryURL
 	repoName := ""
 
 	if len(repoURL) == 0 {
 		// If no repository url is provided we assume that the parent resides
 		// in the same repo as the child.
-		repoURL = info.Repo.Path
-		repoName = info.Repo.Name
+		repoURL = ref.Repo.Path
+		repoName = ref.Repo.Name
 	}
 
 	repoInfo, err := ParseURL(repoURL)
@@ -106,8 +106,8 @@ func loadParent(ctx context.Context, info *skeleton.Info, ref kickoff.ParentRef,
 	// using relative URLs, so we have to account for that and prefix
 	// the URL with the path of the child skeleton.
 	if !repoInfo.IsRemote() && !filepath.IsAbs(repoURL) {
-		repoURL = filepath.Join(info.Path, repoURL)
-		repoName = info.Repo.Name
+		repoURL = filepath.Join(ref.Path, repoURL)
+		repoName = ref.Repo.Name
 	}
 
 	repo, err := NewNamed(repoName, repoURL)
@@ -115,20 +115,20 @@ func loadParent(ctx context.Context, info *skeleton.Info, ref kickoff.ParentRef,
 		return nil, err
 	}
 
-	parent, err := repo.GetSkeleton(ctx, ref.SkeletonName)
+	parent, err := repo.GetSkeleton(ctx, parentRef.SkeletonName)
 	if err != nil {
 		return nil, err
 	}
 
-	visits[ref] = struct{}{}
+	visits[parentRef] = struct{}{}
 
 	return loadSkeleton(ctx, parent, visits)
 }
 
-func collectFiles(info *skeleton.Info) ([]*kickoff.FileRef, error) {
+func collectFiles(ref *kickoff.SkeletonRef) ([]*kickoff.FileRef, error) {
 	files := make([]*kickoff.FileRef, 0)
 
-	err := filepath.Walk(info.Path, func(path string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(ref.Path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -138,7 +138,7 @@ func collectFiles(info *skeleton.Info) ([]*kickoff.FileRef, error) {
 			return nil
 		}
 
-		relPath, err := filepath.Rel(info.Path, path)
+		relPath, err := filepath.Rel(ref.Path, path)
 		if err != nil {
 			return err
 		}
