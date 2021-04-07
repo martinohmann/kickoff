@@ -10,25 +10,21 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
-var _ kickoff.Repository = (*MultiRepository)(nil)
+var _ kickoff.Repository = (*multiRepository)(nil)
 
-// MultiRepository is a repository that aggregates multiple repositories and
+// multiRepository is a repository that aggregates multiple repositories and
 // implements the Repository interface.
-type MultiRepository struct {
+type multiRepository struct {
 	repoNames []string
 	repoMap   map[string]kickoff.Repository
 }
 
-// NewMultiRepository creates a *MultiRepository which aggregates the
-// repositores from the repoURLMap. The repoURLMap is a mapping of repository
-// name to its url. Returns an error if repoURLMap contains empty keys or if
-// creating individual repositories fails, or if repoURLMap is empty.
-func NewMultiRepository(repoURLMap map[string]string) (*MultiRepository, error) {
+func newMulti(repoURLMap map[string]string) (*multiRepository, error) {
 	if len(repoURLMap) == 0 {
 		return nil, ErrNoRepositories
 	}
 
-	r := &MultiRepository{
+	r := &multiRepository{
 		repoNames: make([]string, 0, len(repoURLMap)),
 		repoMap:   make(map[string]kickoff.Repository, len(repoURLMap)),
 	}
@@ -53,7 +49,7 @@ func NewMultiRepository(repoURLMap map[string]string) (*MultiRepository, error) 
 	return r, nil
 }
 
-// GetSkeleton implements Repository.
+// GetSkeleton implements kickoff.Repository.
 //
 // Attempts to find the named skeleton in any of the backing repositories and
 // returns it. If the skeleton name is ambiguous, GetSkeleton will return an
@@ -62,7 +58,7 @@ func NewMultiRepository(repoURLMap map[string]string) (*MultiRepository, error) 
 // be looked up in the repository that matched repoName. Returns
 // SkeletonNotFoundError if the skeleton was not found in any of the configured
 // repositories.
-func (r *MultiRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
+func (r *multiRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	repoName, skeletonName := splitName(name)
 	if repoName == "" {
 		return r.findSkeleton(ctx, skeletonName)
@@ -76,11 +72,11 @@ func (r *MultiRepository) GetSkeleton(ctx context.Context, name string) (*kickof
 	return repo.GetSkeleton(ctx, skeletonName)
 }
 
-// ListSkeletons implements Repository.
+// ListSkeletons implements kickoff.Repository.
 //
 // Lists the skeletons of all configured repositories lexicographically sorted
 // by repository name.
-func (r *MultiRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
+func (r *multiRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
 	allSkeletons := make([]*kickoff.SkeletonRef, 0)
 
 	for _, repoName := range r.repoNames {
@@ -97,7 +93,7 @@ func (r *MultiRepository) ListSkeletons(ctx context.Context) ([]*kickoff.Skeleto
 	return allSkeletons, nil
 }
 
-func (r *MultiRepository) findSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
+func (r *multiRepository) findSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	candidates := make([]*kickoff.SkeletonRef, 0)
 	seenRepos := make([]string, 0)
 

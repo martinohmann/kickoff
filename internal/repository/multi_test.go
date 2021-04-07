@@ -11,7 +11,7 @@ import (
 
 func TestNewMultiRepository(t *testing.T) {
 	t.Run("fails to create if one of the repositories is invalid", func(t *testing.T) {
-		_, err := NewMultiRepository(map[string]string{
+		_, err := NewFromMap(map[string]string{
 			"repo1": "../testdata/repos/repo1",
 			"repo2": "\nhttpxd::/asdf\\invalid",
 		})
@@ -19,20 +19,20 @@ func TestNewMultiRepository(t *testing.T) {
 	})
 
 	t.Run("fails to create if one of the repositories has an empty key", func(t *testing.T) {
-		_, err := NewMultiRepository(map[string]string{
+		_, err := NewFromMap(map[string]string{
 			"": "../testdata/repos/repo1",
 		})
 		require.Error(t, err)
 	})
 
 	t.Run("fails to create if repo map is empty", func(t *testing.T) {
-		_, err := NewMultiRepository(nil)
+		_, err := NewFromMap(nil)
 		require.Error(t, err)
 	})
 }
 
 func TestMultiRepository_GetSkeleton(t *testing.T) {
-	repo, err := NewMultiRepository(map[string]string{
+	repo, err := NewFromMap(map[string]string{
 		"repo1": "../testdata/repos/repo1",
 		"repo2": "../testdata/repos/repo2",
 	})
@@ -74,7 +74,7 @@ func TestMultiRepository_GetSkeleton(t *testing.T) {
 	})
 
 	t.Run("invalid repository causes error on GetSkeleton", func(t *testing.T) {
-		repo, err := NewMultiRepository(map[string]string{
+		repo, err := NewFromMap(map[string]string{
 			"invalid": "multi_test.go", // file instead of dir
 		})
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestMultiRepository_GetSkeleton(t *testing.T) {
 }
 
 func TestMultiRepository_ListSkeletons(t *testing.T) {
-	repo, err := NewMultiRepository(map[string]string{
+	repo, err := NewFromMap(map[string]string{
 		"repo1": "../testdata/repos/repo1",
 		"repo2": "../testdata/repos/repo2",
 	})
@@ -110,7 +110,7 @@ func TestMultiRepository_ListSkeletons(t *testing.T) {
 	})
 
 	t.Run("invalid repository causes error on ListSkeletons", func(t *testing.T) {
-		repo, err := NewMultiRepository(map[string]string{
+		repo, err := NewFromMap(map[string]string{
 			"invalid": "multi_test.go", // file instead of dir
 		})
 		require.NoError(t, err)

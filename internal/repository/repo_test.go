@@ -17,13 +17,13 @@ func TestNew(t *testing.T) {
 	t.Run("creates local repositories", func(t *testing.T) {
 		repo, err := New("../testdata/repos/repo1")
 		require.NoError(t, err)
-		assert.IsType(t, &LocalRepository{}, repo)
+		assert.IsType(t, &localRepository{}, repo)
 	})
 
 	t.Run("creates remote repositories", func(t *testing.T) {
 		repo, err := New("https://github.com/martinohmann/kickoff-skeletons")
 		require.NoError(t, err)
-		assert.IsType(t, &RemoteRepository{}, repo)
+		assert.IsType(t, &remoteRepository{}, repo)
 	})
 
 	t.Run("enabled repository cache", func(t *testing.T) {

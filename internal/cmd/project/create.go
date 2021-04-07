@@ -233,7 +233,7 @@ func (o *CreateOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewMultiRepository(o.Repositories)
+	repo, err := repository.NewFromMap(o.Repositories)
 	if err != nil {
 		return err
 	}

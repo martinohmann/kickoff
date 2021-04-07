@@ -18,6 +18,9 @@ const (
 	// gotemplate files in skeletons which must not be evaluated by kickoff,
 	// hence we use .skel to avoid issues here.
 	SkeletonTemplateExtension = ".skel"
+	// SkeletonsDir is the subdirectory of a repository where skeletons
+	// can be found.
+	SkeletonsDir = "skeletons"
 )
 
 const (

@@ -118,9 +118,25 @@ func LoadConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
-// Save saves config to path.
+// SaveConfig saves config to path.
 func SaveConfig(path string, config *Config) error {
-	buf, err := yaml.Marshal(config)
+	return Save(path, config)
+}
+
+// Load loads a file from path into v. Returns an error if reading the file
+// fails. Does not perform any defaulting or validation.
+func Load(path string, v interface{}) error {
+	buf, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	return yaml.Unmarshal(buf, &v)
+}
+
+// Save saves v to path.
+func Save(path string, v interface{}) error {
+	buf, err := yaml.Marshal(v)
 	if err != nil {
 		return err
 	}
@@ -149,15 +165,4 @@ func lookupGitConfig(configKeys []string) string {
 	}
 
 	return ""
-}
-
-// Load loads a file from path into v. Returns an error if reading the file
-// fails. Does not perform any defaulting or validation.
-func Load(path string, v interface{}) error {
-	buf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	return yaml.Unmarshal(buf, &v)
 }

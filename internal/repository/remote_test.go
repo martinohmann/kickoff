@@ -21,7 +21,7 @@ import (
 
 func TestNewRemoteRepository(t *testing.T) {
 	t.Run("creates remote repository", func(t *testing.T) {
-		repo, err := NewRemoteRepository(kickoff.RepoRef{
+		repo, err := newRemote(kickoff.RepoRef{
 			Path:     "some/local/path",
 			URL:      "https://github.com/martinohmann/kickoff-skeletons",
 			Revision: "de4db3ef",
@@ -31,7 +31,7 @@ func TestNewRemoteRepository(t *testing.T) {
 	})
 
 	t.Run("returns error if info does not describe a remote repo", func(t *testing.T) {
-		_, err := NewRemoteRepository(kickoff.RepoRef{Path: "some/local/path"})
+		_, err := newRemote(kickoff.RepoRef{Path: "some/local/path"})
 		assert.Equal(t, ErrNotARemoteRepository, err)
 	})
 }
@@ -381,11 +381,11 @@ func createLocalTestRepoDir(t *testing.T, dir string, modTime time.Time) {
 	require.NoError(t, os.Chtimes(dir, modTime, modTime))
 }
 
-func createRemoteTestRepo(t *testing.T) (*RemoteRepository, *git.FakeClient, string, func()) {
+func createRemoteTestRepo(t *testing.T) (*remoteRepository, *git.FakeClient, string, func()) {
 	tmpdir, err := ioutil.TempDir("", "kickoff-repos-*")
 	require.NoError(t, err)
 
-	repo, err := NewRemoteRepository(kickoff.RepoRef{
+	repo, err := newRemote(kickoff.RepoRef{
 		Path:     tmpdir,
 		URL:      "https://github.com/martinohmann/kickoff-skeletons",
 		Revision: "master",

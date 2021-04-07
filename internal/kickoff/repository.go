@@ -22,6 +22,19 @@ type RepoRef struct {
 	Revision string `json:"revision,omitempty"`
 }
 
+// String implements fmt.Stringer.
+func (r RepoRef) String() string {
+	if r.URL == "" {
+		return r.Path
+	}
+
+	if r.Revision == "" {
+		return r.URL
+	}
+
+	return fmt.Sprintf("%s?revision=%s", r.URL, r.Revision)
+}
+
 // IsRemote returns true if the repo ref describes a remote repository.
 func (r *RepoRef) IsRemote() bool {
 	return r.URL != ""

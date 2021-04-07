@@ -12,17 +12,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var _ kickoff.Repository = (*LocalRepository)(nil)
+var _ kickoff.Repository = (*localRepository)(nil)
 
-// LocalRepository is a local skeleton repository. A local skeleton repository
+// localRepository is a local skeleton repository. A local skeleton repository
 // can be any directory on disk that contains a skeletons/ subdirectory.
-type LocalRepository struct {
+type localRepository struct {
 	ref kickoff.RepoRef
 }
 
-// NewLocalRepository creates a *LocalRepository from ref. Returns an error if
+// newLocal creates a *localRepository from ref. Returns an error if
 // resolving the absolute path to the skeleton repository fails.
-func NewLocalRepository(ref kickoff.RepoRef) (*LocalRepository, error) {
+func newLocal(ref kickoff.RepoRef) (*localRepository, error) {
 	var err error
 
 	ref.Path, err = filepath.Abs(ref.Path)
@@ -30,12 +30,12 @@ func NewLocalRepository(ref kickoff.RepoRef) (*LocalRepository, error) {
 		return nil, err
 	}
 
-	return &LocalRepository{ref: ref}, nil
+	return &localRepository{ref: ref}, nil
 }
 
-// GetSkeleton implements Repository.
-func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
-	path := filepath.Join(r.ref.Path, "skeletons", name)
+// GetSkeleton implements kickoff.Repository.
+func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
+	path := filepath.Join(r.ref.Path, kickoff.SkeletonsDir, name)
 
 	ok, err := skeleton.IsSkeletonDir(path)
 	if err != nil {
@@ -55,9 +55,9 @@ func (r *LocalRepository) GetSkeleton(ctx context.Context, name string) (*kickof
 	return info, nil
 }
 
-// ListSkeletons implements Repository.
-func (r *LocalRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
-	infos, err := findSkeletons(&r.ref, filepath.Join(r.ref.Path, "skeletons"))
+// ListSkeletons implements kickoff.Repository.
+func (r *localRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
+	infos, err := findSkeletons(&r.ref, filepath.Join(r.ref.Path, kickoff.SkeletonsDir))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list skeletons: %w", err)
 	}
