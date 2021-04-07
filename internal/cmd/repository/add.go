@@ -7,7 +7,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -90,7 +89,7 @@ func (o *AddOptions) Validate() error {
 
 // Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
-	_, err := repository.ParseURL(o.RepoURL)
+	_, err := kickoff.ParseRepoRef(o.RepoURL)
 	if err != nil {
 		return fmt.Errorf("failed to parse repository URL: %w", err)
 	}

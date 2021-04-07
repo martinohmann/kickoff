@@ -1,12 +1,7 @@
 package repository
 
 import (
-	"fmt"
-	"net/url"
-	"path/filepath"
-
 	"github.com/kirsle/configdir"
-	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
@@ -30,17 +25,17 @@ func NewNamed(name, url string) (repo kickoff.Repository, err error) {
 		return repo, nil
 	}
 
-	info, err := ParseURL(url)
+	ref, err := kickoff.ParseRepoRef(url)
 	if err != nil {
 		return nil, err
 	}
 
-	info.Name = name
+	ref.Name = name
 
-	if info.IsRemote() {
-		repo, err = NewRemoteRepository(*info)
+	if ref.IsRemote() {
+		repo, err = NewRemoteRepository(*ref)
 	} else {
-		repo, err = NewLocalRepository(*info)
+		repo, err = NewLocalRepository(*ref)
 	}
 
 	if err != nil {
@@ -50,56 +45,4 @@ func NewNamed(name, url string) (repo kickoff.Repository, err error) {
 	repoCache.set(key, repo)
 
 	return repo, nil
-}
-
-// ParseURL parses a raw repository url and returns a repository info
-// describing a local or remote skeleton repository. The rawurl parameter must
-// be either a local path or a remote url to a git repository. Remote url may
-// optionally include a `revision` query parameter. If absent, `master` will be
-// assumed. Returns an error if url does not match any of the criteria
-// mentioned above.
-func ParseURL(rawurl string) (*kickoff.RepoRef, error) {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return nil, fmt.Errorf("invalid repo URL %q: %w", rawurl, err)
-	}
-
-	if u.Host == "" {
-		path, err := homedir.Expand(u.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		return &kickoff.RepoRef{Path: path}, nil
-	}
-
-	query, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		return nil, fmt.Errorf("invalid URL query %q: %w", u.RawQuery, err)
-	}
-
-	var revision string
-	if rev, ok := query["revision"]; ok && len(rev) > 0 {
-		revision = rev[0]
-	}
-
-	if revision == "" {
-		revision = "master"
-	}
-
-	// Query is only used to pass an optional revision and needs to be empty in
-	// the final repository URL.
-	u.RawQuery = ""
-
-	return &kickoff.RepoRef{
-		Path:     buildLocalCacheDir(u.Host, u.Path, revision),
-		URL:      u.String(),
-		Revision: revision,
-	}, nil
-}
-
-func buildLocalCacheDir(host, path, revision string) string {
-	revision = url.PathEscape(revision)
-
-	return filepath.Join(LocalCache, host, fmt.Sprintf("%s@%s", path, revision))
 }

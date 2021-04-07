@@ -50,4 +50,9 @@ var (
 	// DefaultRepositoryURL is the url of the default skeleton repository if
 	// the user did not configure anything else.
 	DefaultRepositoryURL = "https://github.com/martinohmann/kickoff-skeletons"
+	// LocalCacheDir points to the user's local cache dir which is
+	// platform specific.
+	LocalCacheDir = configdir.LocalCache("kickoff")
+
+	LocalRepositoryCacheDir = filepath.Join(LocalCacheDir, "repositories")
 )

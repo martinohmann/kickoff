@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,65 +72,5 @@ func TestNewNamed(t *testing.T) {
 		info, err := repo.GetSkeleton(context.Background(), "minimal")
 		require.NoError(t, err)
 		assert.Equal(t, "the-name", info.Repo.Name)
-	})
-}
-
-func TestParseURL(t *testing.T) {
-	// override local user cache dir to be able to make test assertions on
-	// paths.
-	oldCacheDir := LocalCache
-	LocalCache = "/home/someuser/.cache/kickoff/repositories"
-	defer func() { LocalCache = oldCacheDir }()
-
-	t.Run("parses absolute paths", func(t *testing.T) {
-		info, err := ParseURL("/some/absolute/path")
-		require.NoError(t, err)
-		require.False(t, info.IsRemote())
-		assert.Equal(t, "/some/absolute/path", info.Path)
-	})
-
-	t.Run("parses relative paths", func(t *testing.T) {
-		info, err := ParseURL("../some/relative/path")
-		require.NoError(t, err)
-		require.False(t, info.IsRemote())
-		assert.Equal(t, "../some/relative/path", info.Path)
-	})
-
-	t.Run("parses absolute paths", func(t *testing.T) {
-		info, err := ParseURL("/some/absolute/path")
-		require.NoError(t, err)
-		require.False(t, info.IsRemote())
-		assert.Equal(t, "/some/absolute/path", info.Path)
-	})
-
-	t.Run("parses homedir paths", func(t *testing.T) {
-		os.Setenv("HOME", "/home/user")
-		info, err := ParseURL("~/repo")
-		require.NoError(t, err)
-		require.False(t, info.IsRemote())
-		assert.Equal(t, "/home/user/repo", info.Path)
-	})
-
-	t.Run("parses remote urls", func(t *testing.T) {
-		info, err := ParseURL("https://example.com/some/repo")
-		require.NoError(t, err)
-		require.True(t, info.IsRemote())
-		assert.Equal(t, "/home/someuser/.cache/kickoff/repositories/example.com/some/repo@master", info.Path)
-		assert.Equal(t, "https://example.com/some/repo", info.URL)
-		assert.Equal(t, "master", info.Revision)
-	})
-
-	t.Run("parses revision from remote urls", func(t *testing.T) {
-		info, err := ParseURL("https://example.com/some/repo?revision=de4db3ef")
-		require.NoError(t, err)
-		require.True(t, info.IsRemote())
-		assert.Equal(t, "/home/someuser/.cache/kickoff/repositories/example.com/some/repo@de4db3ef", info.Path)
-		assert.Equal(t, "https://example.com/some/repo", info.URL)
-		assert.Equal(t, "de4db3ef", info.Revision)
-	})
-
-	t.Run("returns errors on invalid query", func(t *testing.T) {
-		_, err := ParseURL("https://example.com/some/repo?%")
-		require.Error(t, err)
 	})
 }

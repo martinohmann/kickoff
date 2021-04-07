@@ -293,18 +293,18 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return err
 	}
 
-	info, err := repository.ParseURL(repoURL)
+	ref, err := kickoff.ParseRepoRef(repoURL)
 	if err != nil {
 		return err
 	}
 
 	o.Repositories[kickoff.DefaultRepositoryName] = repoURL
 
-	if info.IsRemote() {
+	if ref.IsRemote() {
 		return nil
 	}
 
-	localPath := info.Path
+	localPath := ref.Path
 
 	if file.Exists(localPath) {
 		return nil

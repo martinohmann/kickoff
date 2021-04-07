@@ -6,7 +6,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ func (o *ListOptions) Run() error {
 	for _, name := range repoNames {
 		repoURL := o.Repositories[name]
 
-		info, err := repository.ParseURL(repoURL)
+		ref, err := kickoff.ParseRepoRef(repoURL)
 		if err != nil {
 			return err
 		}
@@ -69,16 +69,16 @@ func (o *ListOptions) Run() error {
 		revision := "-"
 		typ := "local"
 
-		if info.IsRemote() {
-			url = info.URL
+		if ref.IsRemote() {
+			url = ref.URL
 			typ = "remote"
 
-			if info.Revision != "" {
-				revision = info.Revision
+			if ref.Revision != "" {
+				revision = ref.Revision
 			}
 		}
 
-		path, err := homedir.Collapse(info.Path)
+		path, err := homedir.Collapse(ref.Path)
 		if err != nil {
 			return err
 		}

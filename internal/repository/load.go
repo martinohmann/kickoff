@@ -97,7 +97,7 @@ func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff
 		repoName = ref.Repo.Name
 	}
 
-	repoInfo, err := ParseURL(repoURL)
+	repoRef, err := kickoff.ParseRepoRef(repoURL)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff
 	// It is allowed to reference skeletons in the same repository
 	// using relative URLs, so we have to account for that and prefix
 	// the URL with the path of the child skeleton.
-	if !repoInfo.IsRemote() && !filepath.IsAbs(repoURL) {
+	if !repoRef.IsRemote() && !filepath.IsAbs(repoURL) {
 		repoURL = filepath.Join(ref.Path, repoURL)
 		repoName = ref.Repo.Name
 	}
