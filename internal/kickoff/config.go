@@ -3,6 +3,7 @@ package kickoff
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -45,6 +46,21 @@ func (c *Config) ApplyDefaults() {
 	c.Project.ApplyDefaults()
 }
 
+// Validate implements the Validator interface.
+func (c *Config) Validate() error {
+	for name, repoURL := range c.Repositories {
+		if name == "" {
+			return newRepositoryRefError("repository name must not be empty")
+		}
+
+		if _, err := url.Parse(repoURL); err != nil {
+			return newRepositoryRefError("invalid URL: %w", err)
+		}
+	}
+
+	return c.Project.Validate()
+}
+
 // MergeFromFile loads the config from path and merges it into c. Returns any
 // errors that may occur during loading or merging. Non-zero fields in c will
 // not be overridden if present in the file at path.
@@ -83,13 +99,24 @@ func (p *ProjectConfig) ApplyDefaults() {
 		p.Owner = detectDefaultProjectOwner()
 	}
 
-	if p.License == "" {
-		p.License = NoLicense
+	if p.License == NoLicense {
+		p.License = ""
 	}
 
-	if p.Gitignore == "" {
-		p.Gitignore = NoGitignore
+	if p.Gitignore == NoGitignore {
+		p.Gitignore = ""
 	}
+}
+
+// Validate implements the Validator interface.
+func (c *ProjectConfig) Validate() error {
+	if c.Host != "" {
+		if _, err := url.Parse(c.Host); err != nil {
+			return newProjectConfigError("invalid Host: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // HasLicense returns true if an open source license is specified in the
@@ -114,6 +141,13 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	err = config.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	config.ApplyDefaults()
 
 	return &config, nil
 }

@@ -23,7 +23,7 @@ type RepoRef struct {
 }
 
 // String implements fmt.Stringer.
-func (r RepoRef) String() string {
+func (r *RepoRef) String() string {
 	if r.URL == "" {
 		return r.Path
 	}
@@ -33,6 +33,27 @@ func (r RepoRef) String() string {
 	}
 
 	return fmt.Sprintf("%s?revision=%s", r.URL, r.Revision)
+}
+
+// Validate implements the Validator interface.
+func (r *RepoRef) Validate() error {
+	if r.IsEmpty() {
+		return newRepositoryRefError("URL or Path must be set")
+	}
+
+	if r.IsRemote() {
+		if _, err := url.Parse(r.URL); err != nil {
+			return newRepositoryRefError("invalid URL: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// IsEmpty return true if l is empty, that is: it neither describes a local nor
+// remote repository.
+func (r *RepoRef) IsEmpty() bool {
+	return r.URL == "" && r.Path == ""
 }
 
 // IsRemote returns true if the repo ref describes a remote repository.

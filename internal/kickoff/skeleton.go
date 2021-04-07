@@ -61,6 +61,19 @@ func (r *SkeletonRef) String() string {
 	return fmt.Sprintf("%s:%s", r.Repo.Name, r.Name)
 }
 
+// Validate implements the Validator interface.
+func (r *SkeletonRef) Validate() error {
+	if r.Name == "" {
+		return newSkeletonRefError("Name must not be empty")
+	}
+
+	if r.Repo != nil {
+		return r.Repo.Validate()
+	}
+
+	return nil
+}
+
 // LoadConfig loads the skeleton config for the info.
 func (r *SkeletonRef) LoadConfig() (*SkeletonConfig, error) {
 	configPath := filepath.Join(r.Path, SkeletonConfigFileName)

@@ -11,7 +11,9 @@ import (
 func TestConfig_ApplyDefaults(t *testing.T) {
 	config := Config{
 		Project: ProjectConfig{
-			Owner: "johndoe",
+			Owner:     "johndoe",
+			License:   NoLicense,
+			Gitignore: NoGitignore,
 		},
 	}
 
@@ -19,10 +21,8 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 
 	expected := Config{
 		Project: ProjectConfig{
-			Host:      DefaultProjectHost,
-			Owner:     "johndoe",
-			License:   NoLicense,
-			Gitignore: NoGitignore,
+			Host:  DefaultProjectHost,
+			Owner: "johndoe",
 		},
 		Repositories: map[string]string{
 			DefaultRepositoryName: DefaultRepositoryURL,
@@ -58,4 +58,68 @@ func TestConfig_MergeFromFile(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, config)
+}
+
+type validatorTestCase struct {
+	name string
+	v    Validator
+	err  error
+}
+
+func runValidatorTests(t *testing.T, testCases []validatorTestCase) {
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tc.v.Validate()
+			if tc.err == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.EqualError(t, err, tc.err.Error())
+			}
+		})
+	}
+}
+
+func TestConfig_Validate(t *testing.T) {
+	testCases := []validatorTestCase{
+		{
+			name: "config with defaults is valid",
+			v: func() *Config {
+				c := Config{}
+				c.ApplyDefaults()
+				return &c
+			}(),
+		},
+		{
+			name: "config with invalid defaults",
+			v:    &Config{Project: ProjectConfig{Host: "inval\\:"}},
+			err:  newProjectConfigError(`invalid Host: parse "inval\\:": first path segment in URL cannot contain colon`),
+		},
+		{
+			name: "config with empty repository name",
+			v: &Config{
+				Repositories: map[string]string{"": "/tmp/foo"},
+			},
+			err: newRepositoryRefError(`repository name must not be empty`),
+		},
+		{
+			name: "config with invalid repository url",
+			v: &Config{
+				Repositories: map[string]string{"default": "inval\\:"},
+			},
+			err: newRepositoryRefError(`invalid URL: parse "inval\\:": first path segment in URL cannot contain colon`),
+		},
+		{
+			name: "config with repository ref",
+			v: &Config{
+				Repositories: map[string]string{"default": "/tmp/foo"},
+			},
+		},
+	}
+
+	runValidatorTests(t, testCases)
 }

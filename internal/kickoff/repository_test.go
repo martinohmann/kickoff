@@ -67,3 +67,42 @@ func TestParseRepoRef(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestRepoRef_Validate(t *testing.T) {
+	testCases := []validatorTestCase{
+		{
+			name: "empty location is invalid",
+			v:    &RepoRef{},
+			err:  newRepositoryRefError("URL or Path must be set"),
+		},
+		{
+			name: "ref with URL is valid",
+			v:    &RepoRef{URL: DefaultRepositoryURL},
+		},
+		{
+			name: "ref with local path is valid",
+			v:    &RepoRef{Path: "/tmp"},
+		},
+		{
+			name: "ref with URL and local path is valid",
+			v: &RepoRef{
+				URL:  DefaultRepositoryURL,
+				Path: "/tmp",
+			},
+		},
+		{
+			name: "ref with URL and revision is valid",
+			v: &RepoRef{
+				URL:      DefaultRepositoryURL,
+				Revision: "master",
+			},
+		},
+		{
+			name: "ref with invalid URL",
+			v:    &RepoRef{URL: "inval\\:"},
+			err:  newRepositoryRefError(`invalid URL: parse "inval\\:": first path segment in URL cannot contain colon`),
+		},
+	}
+
+	runValidatorTests(t, testCases)
+}

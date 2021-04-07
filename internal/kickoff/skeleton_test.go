@@ -48,3 +48,24 @@ func TestSkeletonRef(t *testing.T) {
 		assert.Equal(t, expectedConfig, config)
 	})
 }
+
+func TestSkeletonRef_Validate(t *testing.T) {
+	testCases := []validatorTestCase{
+		{
+			name: "empty name is invalid",
+			v:    &SkeletonRef{},
+			err:  newSkeletonRefError("Name must not be empty"),
+		},
+		{
+			name: "non-empty name is valid",
+			v:    &SkeletonRef{Name: "foo"},
+		},
+		{
+			name: "ref with non-nil but empty repo ref is invalid",
+			v:    &SkeletonRef{Name: "foo", Repo: &RepoRef{}},
+			err:  newRepositoryRefError("URL or Path must be set"),
+		},
+	}
+
+	runValidatorTests(t, testCases)
+}

@@ -30,6 +30,12 @@ type Defaulter interface {
 	ApplyDefaults()
 }
 
+// Validator can validate itself to ensure the absence of invalid values.
+type Validator interface {
+	// Validate returns an error if the data structure contains invalid values.
+	Validate() error
+}
+
 // File is the interface for a file that should be created in new projects.
 type File interface {
 	// Path must return the path relative to the new project root.
