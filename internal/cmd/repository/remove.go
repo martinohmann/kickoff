@@ -2,6 +2,8 @@ package repository
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -76,14 +78,32 @@ func (o *RemoveOptions) Validate() error {
 
 // Run removes a skeleton repository from the config.
 func (o *RemoveOptions) Run() error {
-	delete(o.Repositories, o.RepoName)
-
-	err := kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	repoRef, err := kickoff.ParseRepoRef(o.Repositories[o.RepoName])
 	if err != nil {
 		return err
 	}
 
-	log.WithField("name", o.RepoName).Info("repository removed")
+	if repoRef.IsRemote() {
+		// Prevent removal of anything outside of the local user cache dir.
+		// Remote repos should never ever reside outside of the user cache dir.
+		// If they do this is a programmer error.
+		if !strings.HasPrefix(repoRef.Path, kickoff.LocalRepositoryCacheDir) {
+			log.WithField("path", repoRef.Path).Fatal("found remote repository cache outside of user cache dir, refusing to delete")
+		}
+
+		log.WithField("path", repoRef.Path).Debug("deleting repository cache dir")
+
+		if err := os.RemoveAll(repoRef.Path); err != nil {
+			return fmt.Errorf("failed to delete repository cache dir: %w", err)
+		}
+	}
+
+	delete(o.Repositories, o.RepoName)
+
+	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	if err != nil {
+		return err
+	}
 
 	fmt.Fprintln(o.Out, "Repository removed")
 
