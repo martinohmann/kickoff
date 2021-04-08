@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -50,7 +51,7 @@ func writeFiles(dir string) error {
 // fileTemplates is a mapping between filenames and the contents for these
 // files when generating a new skeleton.
 var fileTemplates = map[string]string{
-	ConfigFileName: `---
+	kickoff.SkeletonConfigFileName: `---
 # Refer to the .kickoff.yaml documentation at https://kickoff.run/skeletons/configuration
 # for a complete list of available skeleton configuration options.
 #

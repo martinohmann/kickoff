@@ -8,7 +8,7 @@ import (
 
 	gotree "github.com/disiqueira/gotree/v3"
 	"github.com/fatih/color"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
 var highlightRegexp = regexp.MustCompile(`(\{\{[^{]+\}\}|\.skel$)`)
@@ -20,11 +20,11 @@ type tree struct {
 }
 
 // Build builds a printable file tree for s.
-func Build(s *skeleton.Skeleton) gotree.Tree {
-	root := New(s.Info.Name)
+func Build(s *kickoff.Skeleton) gotree.Tree {
+	root := New(s.Ref.Name)
 
 	for _, f := range s.Files {
-		parts := strings.Split(f.RelPath, "/")
+		parts := strings.Split(f.Path(), "/")
 
 		for tree := root; len(parts) > 0; parts = parts[1:] {
 			tree = tree.Add(parts[0])

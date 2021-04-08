@@ -15,10 +15,10 @@ import (
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/httpcache"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/repository"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -232,7 +232,7 @@ func (o *CreateOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewMultiRepository(o.Repositories)
+	repo, err := repository.NewFromMap(o.Repositories)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := skeleton.Merge(skeletons...)
+	skeleton, err := kickoff.MergeSkeletons(skeletons...)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (o *CreateOptions) Run() error {
 	return o.initGitRepository(o.OutputDir)
 }
 
-func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton) error {
+func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) error {
 	config := &project.Config{
 		ProjectName:    o.ProjectName,
 		Host:           o.Project.Host,
@@ -267,7 +267,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton)
 		Output:         o.Out,
 	}
 
-	if o.Project.HasLicense() {
+	if o.Project.License != "" && o.Project.License != kickoff.NoLicense {
 		license, err := o.LicenseClient.GetLicense(ctx, o.Project.License)
 		if err != nil {
 			return err
@@ -276,7 +276,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *skeleton.Skeleton)
 		config.License = license
 	}
 
-	if o.Project.HasGitignore() {
+	if o.Project.Gitignore != "" && o.Project.Gitignore != kickoff.NoGitignore {
 		template, err := o.GitignoreClient.GetTemplate(ctx, o.Project.Gitignore)
 		if err != nil {
 			return err

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,6 +18,6 @@ func TestCreate(t *testing.T) {
 
 	require.NoError(Create(tmpdir, "default"))
 
-	require.DirExists(filepath.Join(tmpdir, "skeletons"))
-	require.DirExists(filepath.Join(tmpdir, "skeletons", "default"))
+	require.DirExists(filepath.Join(tmpdir, kickoff.SkeletonsDir))
+	require.DirExists(filepath.Join(tmpdir, kickoff.SkeletonsDir, "default"))
 }

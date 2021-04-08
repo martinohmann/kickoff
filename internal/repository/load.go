@@ -6,15 +6,15 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
 // LoadSkeletons loads multiple skeletons from given repository. The passed in
 // context is propagated to all operations that cross API boundaries (e.g. git
 // operations) and can be used to enforce timeouts or cancel them. Returns an
 // error if loading of any of the skeletons fails.
-func LoadSkeletons(ctx context.Context, repo Repository, names []string) ([]*skeleton.Skeleton, error) {
-	skeletons := make([]*skeleton.Skeleton, len(names))
+func LoadSkeletons(ctx context.Context, repo kickoff.Repository, names []string) ([]*kickoff.Skeleton, error) {
+	skeletons := make([]*kickoff.Skeleton, len(names))
 
 	for i, name := range names {
 		skeleton, err := LoadSkeleton(ctx, repo, name)
@@ -32,13 +32,13 @@ func LoadSkeletons(ctx context.Context, repo Repository, names []string) ([]*ske
 // in context is propagated to all operations that cross API boundaries (e.g.
 // git operations) and can be used to enforce timeouts or cancel them. Returns
 // an error if loading the skeleton fails.
-func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.Skeleton, error) {
+func LoadSkeleton(ctx context.Context, repo kickoff.Repository, name string) (*kickoff.Skeleton, error) {
 	info, err := repo.GetSkeleton(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
-	visits := make(map[skeleton.Reference]struct{})
+	visits := make(map[kickoff.ParentRef]struct{})
 
 	s, err := loadSkeleton(ctx, info, visits)
 	if err != nil {
@@ -51,21 +51,21 @@ func LoadSkeleton(ctx context.Context, repo Repository, name string) (*skeleton.
 // loadSkeleton loads a skeleton and tracks all visited parents in a map. It will
 // recursively load and merge all parents into the skeleton. Returns an error
 // if a dependency cycle is detected while loading a parent.
-func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[skeleton.Reference]struct{}) (*skeleton.Skeleton, error) {
-	config, err := info.LoadConfig()
+func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kickoff.ParentRef]struct{}) (*kickoff.Skeleton, error) {
+	config, err := ref.LoadConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
 	}
 
-	files, err := collectFiles(info)
+	files, err := collectFiles(ref)
 	if err != nil {
 		return nil, err
 	}
 
-	s := &skeleton.Skeleton{
+	s := &kickoff.Skeleton{
 		Description: config.Description,
 		Values:      config.Values,
-		Info:        info,
+		Ref:         ref,
 		Files:       files,
 	}
 
@@ -73,30 +73,30 @@ func loadSkeleton(ctx context.Context, info *skeleton.Info, visits map[skeleton.
 		return s, nil
 	}
 
-	parent, err := loadParent(ctx, info, *config.Parent, visits)
+	parent, err := loadParent(ctx, ref, *config.Parent, visits)
 	if err != nil {
 		return nil, err
 	}
 
-	return skeleton.Merge(parent, s)
+	return parent.Merge(s)
 }
 
-func loadParent(ctx context.Context, info *skeleton.Info, ref skeleton.Reference, visits map[skeleton.Reference]struct{}) (*skeleton.Skeleton, error) {
-	if _, ok := visits[ref]; ok {
-		return nil, DependencyCycleError{ParentRef: ref}
+func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*kickoff.Skeleton, error) {
+	if _, ok := visits[parentRef]; ok {
+		return nil, DependencyCycleError{ParentRef: parentRef}
 	}
 
-	repoURL := ref.RepositoryURL
+	repoURL := parentRef.RepositoryURL
 	repoName := ""
 
 	if len(repoURL) == 0 {
 		// If no repository url is provided we assume that the parent resides
 		// in the same repo as the child.
-		repoURL = info.Repo.Path
-		repoName = info.Repo.Name
+		repoURL = ref.Repo.Path
+		repoName = ref.Repo.Name
 	}
 
-	repoInfo, err := ParseURL(repoURL)
+	repoRef, err := kickoff.ParseRepoRef(repoURL)
 	if err != nil {
 		return nil, err
 	}
@@ -104,9 +104,9 @@ func loadParent(ctx context.Context, info *skeleton.Info, ref skeleton.Reference
 	// It is allowed to reference skeletons in the same repository
 	// using relative URLs, so we have to account for that and prefix
 	// the URL with the path of the child skeleton.
-	if !repoInfo.IsRemote() && !filepath.IsAbs(repoURL) {
-		repoURL = filepath.Join(info.Path, repoURL)
-		repoName = info.Repo.Name
+	if !repoRef.IsRemote() && !filepath.IsAbs(repoURL) {
+		repoURL = filepath.Join(ref.Path, repoURL)
+		repoName = ref.Repo.Name
 	}
 
 	repo, err := NewNamed(repoName, repoURL)
@@ -114,30 +114,30 @@ func loadParent(ctx context.Context, info *skeleton.Info, ref skeleton.Reference
 		return nil, err
 	}
 
-	parent, err := repo.GetSkeleton(ctx, ref.SkeletonName)
+	parent, err := repo.GetSkeleton(ctx, parentRef.SkeletonName)
 	if err != nil {
 		return nil, err
 	}
 
-	visits[ref] = struct{}{}
+	visits[parentRef] = struct{}{}
 
 	return loadSkeleton(ctx, parent, visits)
 }
 
-func collectFiles(info *skeleton.Info) ([]*skeleton.File, error) {
-	files := make([]*skeleton.File, 0)
+func collectFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {
+	files := make([]kickoff.File, 0)
 
-	err := filepath.Walk(info.Path, func(path string, fi os.FileInfo, err error) error {
+	err := filepath.Walk(ref.Path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if fi.Name() == skeleton.ConfigFileName {
+		if fi.Name() == kickoff.SkeletonConfigFileName {
 			// ignore skeleton config file
 			return nil
 		}
 
-		relPath, err := filepath.Rel(info.Path, path)
+		relPath, err := filepath.Rel(ref.Path, path)
 		if err != nil {
 			return err
 		}
@@ -152,10 +152,10 @@ func collectFiles(info *skeleton.Info) ([]*skeleton.File, error) {
 			return err
 		}
 
-		files = append(files, &skeleton.File{
-			RelPath: relPath,
-			AbsPath: absPath,
-			Info:    fi,
+		files = append(files, &kickoff.FileRef{
+			RelPath:  relPath,
+			AbsPath:  absPath,
+			FileMode: fi.Mode(),
 		})
 
 		return nil

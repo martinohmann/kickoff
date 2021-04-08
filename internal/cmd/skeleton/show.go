@@ -7,9 +7,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/filetree"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/repository"
-	"github.com/martinohmann/kickoff/internal/skeleton/filetree"
 	"github.com/spf13/cobra"
 )
 
@@ -78,7 +78,7 @@ func (o *ShowOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewMultiRepository(o.Repositories)
+	repo, err := repository.NewFromMap(o.Repositories)
 	if err != nil {
 		return err
 	}
@@ -96,14 +96,14 @@ func (o *ShowOptions) Run() error {
 	default:
 		tw := cli.NewTableWriter(o.Out)
 
-		path, err := homedir.Collapse(skeleton.Info.Path)
+		path, err := homedir.Collapse(skeleton.Ref.Path)
 		if err != nil {
 			return err
 		}
 
-		repoInfo := skeleton.Info.Repo
+		repoInfo := skeleton.Ref.Repo
 
-		tw.Append("Name", skeleton.Info.Name)
+		tw.Append("Name", skeleton.Ref.Name)
 		tw.Append("Repository", repoInfo.Name)
 
 		if repoInfo.IsRemote() {
@@ -123,7 +123,7 @@ func (o *ShowOptions) Run() error {
 		}
 
 		if skeleton.Parent != nil {
-			parent, err := homedir.Collapse(skeleton.Parent.Info.Path)
+			parent, err := homedir.Collapse(skeleton.Parent.Ref.Path)
 			if err != nil {
 				return err
 			}

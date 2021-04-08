@@ -7,8 +7,8 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/spf13/cobra"
@@ -18,7 +18,7 @@ import (
 func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	o := &CreateOptions{
 		IOStreams:    streams,
-		SkeletonName: config.DefaultSkeletonName,
+		SkeletonName: kickoff.DefaultSkeletonName,
 	}
 
 	cmd := &cobra.Command{

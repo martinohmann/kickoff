@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/spf13/afero"
 )
 
 // Config holds the configuration for a new project that can be created from a
-// *skeleton.Skeleton.
+// *kickoff.Skeleton.
 type Config struct {
 	// ProjectName is made available to templates. If empty the basename of the
 	// target directory is used.
@@ -132,7 +132,7 @@ func (p *Project) applyDefaults() {
 // Create creates a project in targetDir from given skeleton with the provided
 // config. The returned result contains information about all actions that were
 // performed.
-func Create(s *skeleton.Skeleton, targetDir string, config *Config) (*Result, error) {
+func Create(s *kickoff.Skeleton, targetDir string, config *Config) (*Result, error) {
 	p, err := New(targetDir, config)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func Create(s *skeleton.Skeleton, targetDir string, config *Config) (*Result, er
 
 // Create creates the project from given skeleton. The returned result contains
 // information about all actions that were performed.
-func (p *Project) Create(s *skeleton.Skeleton) (*Result, error) {
+func (p *Project) Create(s *kickoff.Skeleton) (*Result, error) {
 	values, err := p.makeTemplateValues(s)
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (p *Project) Create(s *skeleton.Skeleton) (*Result, error) {
 	return p.result, nil
 }
 
-func (p *Project) makeTemplateValues(skeleton *skeleton.Skeleton) (template.Values, error) {
+func (p *Project) makeTemplateValues(skeleton *kickoff.Skeleton) (template.Values, error) {
 	values, err := template.MergeValues(skeleton.Values, p.values)
 	if err != nil {
 		return nil, err
@@ -195,12 +195,9 @@ func (p *Project) makeTemplateValues(skeleton *skeleton.Skeleton) (template.Valu
 	return vals, nil
 }
 
-func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
-	sources := make([]Source, 0, len(skeleton.Files))
-
-	for _, file := range skeleton.Files {
-		sources = append(sources, file)
-	}
+func (p *Project) makeSources(skeleton *kickoff.Skeleton) []kickoff.File {
+	sources := make([]kickoff.File, 0, len(skeleton.Files))
+	sources = append(sources, skeleton.Files...)
 
 	if p.license != nil {
 		text := license.ResolvePlaceholders(p.license.Body, license.FieldMap{
@@ -209,11 +206,11 @@ func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
 			"year":    strconv.Itoa(time.Now().Year()),
 		})
 
-		sources = append(sources, NewSource(bytes.NewBufferString(text), "LICENSE", 0644))
+		sources = append(sources, kickoff.NewBufferedFile("LICENSE", []byte(text), 0644))
 	}
 
 	if p.gitignore != nil {
-		sources = append(sources, NewSource(bytes.NewBuffer(p.gitignore.Content), ".gitignore", 0644))
+		sources = append(sources, kickoff.NewBufferedFile(".gitignore", p.gitignore.Content, 0644))
 	}
 
 	// We sort files by path so we can ensure that parent directories get
@@ -227,7 +224,7 @@ func (p *Project) makeSources(skeleton *skeleton.Skeleton) []Source {
 	return sources
 }
 
-func (p *Project) create(s *skeleton.Skeleton, values template.Values) error {
+func (p *Project) create(s *kickoff.Skeleton, values template.Values) error {
 	sources := p.makeSources(s)
 
 	for _, source := range sources {
@@ -261,7 +258,7 @@ func (p *Project) create(s *skeleton.Skeleton, values template.Values) error {
 	return nil
 }
 
-func (p *Project) makeDestination(f Source, values template.Values) (Destination, error) {
+func (p *Project) makeDestination(f kickoff.File, values template.Values) (Destination, error) {
 	relPath := f.Path()
 	srcFilename := filepath.Base(relPath)
 	srcRelDir := filepath.Dir(relPath)
@@ -347,7 +344,7 @@ func (p *Project) executeAction(action Action, values template.Values) error {
 	}
 }
 
-func (p *Project) sourceReader(source Source, values template.Values) (io.Reader, error) {
+func (p *Project) sourceReader(source kickoff.File, values template.Values) (io.Reader, error) {
 	r, err := source.Reader()
 	if err != nil {
 		return nil, err

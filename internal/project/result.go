@@ -7,6 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
 var (
@@ -28,7 +29,7 @@ const (
 // Action defines an action that should be performed on project creation.
 type Action struct {
 	Type        ActionType
-	Source      Source
+	Source      kickoff.File
 	Destination Destination
 }
 

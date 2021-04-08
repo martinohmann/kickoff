@@ -2,18 +2,19 @@ package repository
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLocalRepository_GetSkeleton(t *testing.T) {
-	info := skeleton.RepoInfo{Path: "../testdata/repos/repo1"}
+	info := kickoff.RepoRef{Path: "../testdata/repos/repo1"}
 
-	repo, err := NewLocalRepository(info)
+	repo, err := newLocal(info)
 	require.NoError(t, err)
 
 	abspath, err := filepath.Abs("../testdata/repos/repo1")
@@ -24,7 +25,7 @@ func TestLocalRepository_GetSkeleton(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, abspath, info.Repo.Path)
-		assert.Equal(t, filepath.Join(abspath, "skeletons", "minimal"), info.Path)
+		assert.Equal(t, filepath.Join(abspath, kickoff.SkeletonsDir, "minimal"), info.Path)
 		assert.Equal(t, "minimal", info.Name)
 	})
 
@@ -38,9 +39,9 @@ func TestLocalRepository_GetSkeleton(t *testing.T) {
 
 func TestLocalRepository_ListSkeletons(t *testing.T) {
 	t.Run("can list all skeletons", func(t *testing.T) {
-		info := skeleton.RepoInfo{Path: "../testdata/repos/repo1"}
+		ref := kickoff.RepoRef{Path: "../testdata/repos/repo1"}
 
-		repo, err := NewLocalRepository(info)
+		repo, err := newLocal(ref)
 		require.NoError(t, err)
 
 		infos, err := repo.ListSkeletons(context.Background())
@@ -52,10 +53,46 @@ func TestLocalRepository_ListSkeletons(t *testing.T) {
 	})
 
 	t.Run("listing nonexistent repository causes error", func(t *testing.T) {
-		repo, err := NewLocalRepository(skeleton.RepoInfo{})
+		repo, err := newLocal(kickoff.RepoRef{})
 		require.NoError(t, err)
 
 		_, err = repo.ListSkeletons(context.Background())
+		require.Error(t, err)
+	})
+}
+
+func TestFindSkeletons(t *testing.T) {
+	t.Run("finds all skeletons", func(t *testing.T) {
+		ref := &kickoff.RepoRef{Path: "../testdata/repos/advanced"}
+
+		skeletons, err := findSkeletons(ref, filepath.Join(ref.Path, kickoff.SkeletonsDir))
+		require.NoError(t, err)
+
+		pwd, err := os.Getwd()
+		require.NoError(t, err)
+
+		path := func(name string) string {
+			return filepath.Join(pwd, ref.Path, kickoff.SkeletonsDir, name)
+		}
+
+		expected := []*kickoff.SkeletonRef{
+			{Name: "bar", Path: path("bar"), Repo: ref},
+			{Name: "child", Path: path("child"), Repo: ref},
+			{Name: "childofchild", Path: path("childofchild"), Repo: ref},
+			{Name: "cyclea", Path: path("cyclea"), Repo: ref},
+			{Name: "cycleb", Path: path("cycleb"), Repo: ref},
+			{Name: "cyclec", Path: path("cyclec"), Repo: ref},
+			{Name: "foo/bar", Path: path("foo/bar"), Repo: ref},
+			{Name: "nested/dir", Path: path("nested/dir"), Repo: ref},
+			{Name: "parent", Path: path("parent"), Repo: ref},
+		}
+
+		require.Equal(t, expected, skeletons)
+	})
+
+	t.Run("FindSkeletons returns error if RepoInfo points to nonexistent dir", func(t *testing.T) {
+		ref := &kickoff.RepoRef{Path: "../nonexistent"}
+		_, err := findSkeletons(ref, filepath.Join(ref.Path, kickoff.SkeletonsDir))
 		require.Error(t, err)
 	})
 }

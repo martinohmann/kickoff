@@ -13,14 +13,16 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 )
 
-// RemoteRepository is a skeleton repository that resides in a remote git
+var _ kickoff.Repository = (*remoteRepository)(nil)
+
+// remoteRepository is a skeleton repository that resides in a remote git
 // repository.
-type RemoteRepository struct {
-	*LocalRepository
+type remoteRepository struct {
+	*localRepository
 	revision string
 	url      string
 
@@ -29,57 +31,57 @@ type RemoteRepository struct {
 	client git.Client
 }
 
-// NewRemoteRepository creates a *RemoteRepository from info. Returns
-// ErrNotARemoteRepository if info does not describe a remote repository
+// newRemote creates a *remoteRepository from ref. Returns
+// ErrNotARemoteRepository if ref does not describe a remote repository
 // location. Internally creates a *LocalRepository for the cached copy of the
 // remote and returns any error that might occur while creating it.
-func NewRemoteRepository(info skeleton.RepoInfo) (*RemoteRepository, error) {
-	if !info.IsRemote() {
+func newRemote(ref kickoff.RepoRef) (*remoteRepository, error) {
+	if !ref.IsRemote() {
 		return nil, ErrNotARemoteRepository
 	}
 
-	local, err := NewLocalRepository(info)
+	local, err := newLocal(ref)
 	if err != nil {
 		return nil, err
 	}
 
-	r := &RemoteRepository{
-		LocalRepository: local,
-		url:             info.URL,
-		revision:        info.Revision,
+	r := &remoteRepository{
+		localRepository: local,
+		url:             ref.URL,
+		revision:        ref.Revision,
 		client:          git.NewClient(),
 	}
 
 	return r, nil
 }
 
-// GetSkeleton implements Repository.
+// GetSkeleton implements kickoff.Repository.
 //
 // Lazily synchronizes the cached local copy of the remote repository before
 // looking up the skeleton.
-func (r *RemoteRepository) GetSkeleton(ctx context.Context, name string) (*skeleton.Info, error) {
+func (r *remoteRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	err := r.syncRemoteOnce(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.LocalRepository.GetSkeleton(ctx, name)
+	return r.localRepository.GetSkeleton(ctx, name)
 }
 
-// ListSkeletons implements Repository.
+// ListSkeletons implements kickoff.Repository.
 //
 // Lazily synchronizes the cached local copy of the remote repository before
 // listing skeletons.
-func (r *RemoteRepository) ListSkeletons(ctx context.Context) ([]*skeleton.Info, error) {
+func (r *remoteRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
 	err := r.syncRemoteOnce(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.LocalRepository.ListSkeletons(ctx)
+	return r.localRepository.ListSkeletons(ctx)
 }
 
-func (r *RemoteRepository) syncRemoteOnce(ctx context.Context) error {
+func (r *remoteRepository) syncRemoteOnce(ctx context.Context) error {
 	r.once.Do(func() {
 		r.err = r.syncRemote(ctx)
 	})
@@ -87,8 +89,8 @@ func (r *RemoteRepository) syncRemoteOnce(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RemoteRepository) syncRemote(ctx context.Context) error {
-	localPath := r.info.Path
+func (r *remoteRepository) syncRemote(ctx context.Context) error {
+	localPath := r.ref.Path
 
 	err := r.updateLocalCache(ctx, r.url, r.revision)
 	if err == nil {
@@ -127,7 +129,7 @@ func (r *RemoteRepository) syncRemote(ctx context.Context) error {
 	return err
 }
 
-func (r *RemoteRepository) updateLocalCache(ctx context.Context, url, revision string) error {
+func (r *remoteRepository) updateLocalCache(ctx context.Context, url, revision string) error {
 	repo, err := r.fetchOrCloneRemote(ctx, url)
 	if err != nil {
 		return err
@@ -136,8 +138,8 @@ func (r *RemoteRepository) updateLocalCache(ctx context.Context, url, revision s
 	return checkoutRevision(repo, revision)
 }
 
-func (r *RemoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (git.Repository, error) {
-	localPath := r.info.Path
+func (r *remoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (git.Repository, error) {
+	localPath := r.ref.Path
 
 	repo, err := r.client.Open(localPath)
 	if err == git.ErrRepositoryNotExists {
@@ -161,8 +163,8 @@ func (r *RemoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (
 	return repo, nil
 }
 
-func (r *RemoteRepository) fetchRefs(ctx context.Context, repo git.Repository) error {
-	localPath := r.info.Path
+func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) error {
+	localPath := r.ref.Path
 
 	// As git operations that fetch refs from remotes can be slow, we are
 	// trying to avoid doing too many of them. We are going to only attempt

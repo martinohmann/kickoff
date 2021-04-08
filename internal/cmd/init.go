@@ -9,10 +9,10 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/config"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/httpcache"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
@@ -69,7 +69,7 @@ func (o *InitOptions) Complete() (err error) {
 	}
 
 	if o.ConfigPath == "" {
-		o.ConfigPath = config.DefaultConfigPath
+		o.ConfigPath = kickoff.DefaultConfigPath
 	}
 
 	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
@@ -186,7 +186,7 @@ func (o *InitOptions) configureLicense() error {
 	}
 
 	if !chooseLicense {
-		o.Project.License = config.NoLicense
+		o.Project.License = kickoff.NoLicense
 		return nil
 	}
 
@@ -248,7 +248,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 	}
 
 	if !selectGitignores {
-		o.Project.Gitignore = config.NoGitignore
+		o.Project.Gitignore = kickoff.NoGitignore
 		return nil
 	}
 
@@ -281,7 +281,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 
 	err := survey.AskOne(&survey.Input{
 		Message: "Default skeleton repository",
-		Default: o.Repositories[config.DefaultRepositoryName],
+		Default: o.Repositories[kickoff.DefaultRepositoryName],
 		Help: cmdutil.LongDesc(`
 			Default skeleton repository
 
@@ -293,18 +293,18 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return err
 	}
 
-	info, err := repository.ParseURL(repoURL)
+	ref, err := kickoff.ParseRepoRef(repoURL)
 	if err != nil {
 		return err
 	}
 
-	o.Repositories[config.DefaultRepositoryName] = repoURL
+	o.Repositories[kickoff.DefaultRepositoryName] = repoURL
 
-	if info.IsRemote() {
+	if ref.IsRemote() {
 		return nil
 	}
 
-	localPath := info.Path
+	localPath := ref.Path
 
 	if file.Exists(localPath) {
 		return nil
@@ -330,7 +330,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return nil
 	}
 
-	return repository.Create(localPath, config.DefaultSkeletonName)
+	return repository.Create(localPath, kickoff.DefaultSkeletonName)
 }
 
 func (o *InitOptions) persistConfiguration() error {
@@ -375,7 +375,7 @@ func (o *InitOptions) persistConfiguration() error {
 
 	log.WithField("path", o.ConfigPath).Info("writing config")
 
-	err = config.Save(&o.Config, o.ConfigPath)
+	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
 	if err != nil {
 		return err
 	}
