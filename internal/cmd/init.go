@@ -44,7 +44,6 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	o.AllowMissingConfig()
 	o.TimeoutFlag.AddFlag(cmd)
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
