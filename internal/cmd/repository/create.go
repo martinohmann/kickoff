@@ -48,6 +48,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.MarkZshCompPositionalArgumentFile(2)
 
 	cmd.Flags().StringVarP(&o.SkeletonName, "skeleton-name", "s", o.SkeletonName, "Name of the default skeleton that will be created in the new repository.")
+	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
