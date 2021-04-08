@@ -1,12 +1,14 @@
 package skeleton
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/spf13/cobra"
 )
@@ -18,17 +20,14 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "create <output-dir>",
-		Short: "Create a new skeleton directory",
+		Use:   "create <repo-name> <skeleton-name>",
+		Short: "Create a new skeleton in a local repository",
 		Long: cmdutil.LongDesc(`
-			Creates a new skeleton directory with some boilerplate to get started.`),
+			Creates a new skeleton directory in a local repository with some boilerplate to get started.`),
 		Example: cmdutil.Examples(`
-			# Create a new skeleton
-			kickoff skeleton create /skeleton/output/path
-
-			# Overwrite an existing skeleton
-			kickoff skeleton create /existing/skeleton --force`),
-		Args: cobra.ExactArgs(1),
+			# Create a new skeleton in myrepo
+			kickoff skeleton create myrepo myskeleton`),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -42,9 +41,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.MarkZshCompPositionalArgumentFile(1)
-
-	cmdutil.AddForceFlag(cmd, &o.Force)
+	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
@@ -52,52 +49,60 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	cli.IOStreams
-	OutputDir string
-	Force     bool
+	cmdutil.ConfigFlags
+	RepoName     string
+	SkeletonName string
 }
 
 // Complete completes the create options.
 func (o *CreateOptions) Complete(args []string) (err error) {
-	if args[0] != "" {
-		o.OutputDir, err = filepath.Abs(args[0])
-		if err != nil {
-			return err
-		}
-	}
+	o.RepoName = args[0]
+	o.SkeletonName = args[1]
 
-	return nil
+	return o.ConfigFlags.Complete()
 }
 
 // Validate validates the create options.
 func (o *CreateOptions) Validate() error {
-	if file.Exists(o.OutputDir) && !o.Force {
-		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
+	if o.RepoName == "" {
+		return errors.New("repository name must not be empty")
 	}
 
-	ok, err := skeleton.IsInsideSkeletonDir(o.OutputDir)
-	if err != nil {
-		return err
+	if o.SkeletonName == "" {
+		return errors.New("skeleton name must not be empty")
 	}
 
-	if ok {
-		return fmt.Errorf("output dir %s is inside a skeleton dir", o.OutputDir)
+	if _, ok := o.Repositories[o.RepoName]; !ok {
+		return fmt.Errorf("repository with name %q does not exist", o.RepoName)
 	}
 
-	if o.OutputDir == "" {
-		return cmdutil.ErrEmptyOutputDir
-	}
-
-	return nil
+	return o.ConfigFlags.Validate()
 }
 
 // Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
-	err := skeleton.Create(o.OutputDir)
+	repoRef, err := kickoff.ParseRepoRef(o.Repositories[o.RepoName])
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Created new skeleton in %s\n", o.OutputDir)
+	if repoRef.IsRemote() {
+		return fmt.Errorf("repository %q is remote. skeletons can only be created in local repositories", o.RepoName)
+	}
+
+	skeletonDir := filepath.Join(repoRef.Path, kickoff.SkeletonsDir, o.SkeletonName)
+
+	if file.Exists(skeletonDir) {
+		return fmt.Errorf("skeleton %q already exists in repository %q", o.SkeletonName, o.RepoName)
+	}
+
+	err = skeleton.Create(skeletonDir)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(o.Out, "Created new skeleton %q in repository %q\n\n", o.SkeletonName, o.RepoName)
+	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton show %s:%s`.\n", o.RepoName, o.SkeletonName)
 
 	return nil
 }
