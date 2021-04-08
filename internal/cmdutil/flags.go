@@ -8,7 +8,6 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -41,17 +40,8 @@ func AddOverwriteFlag(cmd *cobra.Command, val *bool) {
 type ConfigFlags struct {
 	kickoff.Config
 
-	ConfigPath         string
-	allowMissingConfig bool
-	repositories       []string
-}
-
-// AllowMissingConfig allows the config file at ConfigPath to be absent. A
-// nonexistent config file will not cause errors but is simply ignored. This is
-// useful for initialization commands to be able to specify an alternative
-// config file which may not exist yet.
-func (f *ConfigFlags) AllowMissingConfig() {
-	f.allowMissingConfig = true
+	ConfigPath   string
+	repositories []string
 }
 
 // AddFlags adds flags for configuring the config file location to cmd.
@@ -68,20 +58,21 @@ func (f *ConfigFlags) AddFlags(cmd *cobra.Command) {
 // default config file will be loaded instead, if it exists.
 func (f *ConfigFlags) Complete() (err error) {
 	if f.ConfigPath == "" {
+		f.ConfigPath = kickoff.DefaultConfigPath
+
 		if configPath := os.Getenv("KICKOFF_CONFIG"); configPath != "" {
 			f.ConfigPath = configPath
-		} else if file.Exists(kickoff.DefaultConfigPath) {
-			f.ConfigPath = kickoff.DefaultConfigPath
 		}
 	}
 
-	loadConfig := f.ConfigPath != "" && (!f.allowMissingConfig || file.Exists(f.ConfigPath))
+	// We allow the default config file to be absent and simply skip loading it
+	// if it does not exist. For all other config file paths this will result
+	// in a load error. This is a convenience feature to keep kickoff usable
+	// without a config file.
+	skipLoad := f.ConfigPath == kickoff.DefaultConfigPath && !file.Exists(f.ConfigPath)
 
-	if loadConfig {
-		log.WithField("path", f.ConfigPath).Debug("loading config file")
-
-		err = f.Config.MergeFromFile(f.ConfigPath)
-		if err != nil {
+	if !skipLoad {
+		if err := f.Config.MergeFromFile(f.ConfigPath); err != nil {
 			return err
 		}
 	}
