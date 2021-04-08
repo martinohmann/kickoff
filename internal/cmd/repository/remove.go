@@ -24,7 +24,7 @@ func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
 		Aliases: []string{"rm"},
 		Short:   "Remove a skeleton repository from the config",
 		Long: cmdutil.LongDesc(`
-			Removes a skeleton repository from the config.`),
+			Removes a skeleton repository from the config. Does not remove local repositories from disk, but cleans up the local cache dir for remote repositories.`),
 		Example: cmdutil.Examples(`
 			# Remove a skeleton repository
 			kickoff repository remove myrepo`),
