@@ -69,3 +69,60 @@ func TestSkeletonRef_Validate(t *testing.T) {
 
 	runValidatorTests(t, testCases)
 }
+
+func TestMergeSkeletons(t *testing.T) {
+	t.Run("merging empty list returns error", func(t *testing.T) {
+		_, err := MergeSkeletons()
+		require.Equal(t, ErrMergeEmpty, err)
+	})
+
+	t.Run("merging one returns identity", func(t *testing.T) {
+		s0 := &Skeleton{}
+
+		s1, err := MergeSkeletons(s0)
+		require.NoError(t, err)
+		assert.Same(t, s0, s1)
+	})
+
+	t.Run("merges skeleton values", func(t *testing.T) {
+		s0 := &Skeleton{Values: template.Values{"foo": "bar", "baz": false}}
+		s1 := &Skeleton{Values: template.Values{"qux": 42, "baz": true}}
+
+		s, err := MergeSkeletons(s0, s1)
+		require.NoError(t, err)
+		assert.Equal(t, template.Values{"foo": "bar", "baz": true, "qux": 42}, s.Values)
+	})
+
+	t.Run("merges skeleton files", func(t *testing.T) {
+		s0 := &Skeleton{
+			Files: []File{
+				&FileRef{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
+				&FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+				&FileRef{RelPath: "somedir", AbsPath: "/s0/somedir"},
+				&FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			},
+		}
+		s1 := &Skeleton{
+			Files: []File{
+				&FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+				&FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+				&FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
+				&FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			},
+		}
+
+		s, err := MergeSkeletons(s0, s1)
+		require.NoError(t, err)
+
+		expectedFiles := []File{
+			&FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
+			&FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			&FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			&FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
+			&FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
+			&FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+		}
+
+		assert.Equal(t, expectedFiles, s.Files)
+	})
+}

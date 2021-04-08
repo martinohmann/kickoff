@@ -80,3 +80,56 @@ func (r *SkeletonRef) LoadConfig() (*SkeletonConfig, error) {
 
 	return LoadSkeletonConfig(configPath)
 }
+
+// MergeSkeletons merges multiple skeletons together and returns a new
+// *Skeleton. The skeletons are merged left to right with template values,
+// skeleton files and skeleton info of the rightmost skeleton taking preference
+// over already existing values. Template values are recursively merged and may
+// cause errors on type mismatch. The resulting *Skeleton will have the
+// second-to-last skeleton set as its parent, the second-to-last will have the
+// third-to-last as parent and so forth. The original skeletons are not
+// altered. If only one skeleton is passed it will be returned as is without
+// modification. Passing a slice with length of zero will return in an error.
+func MergeSkeletons(skeletons ...*Skeleton) (*Skeleton, error) {
+	if len(skeletons) == 0 {
+		return nil, ErrMergeEmpty
+	}
+
+	if len(skeletons) == 1 {
+		return skeletons[0], nil
+	}
+
+	s := skeletons[0]
+
+	var err error
+
+	for _, other := range skeletons[1:] {
+		s, err = s.Merge(other)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return s, nil
+}
+
+// Merge merges two skeletons. The skeletons are merged left to right with
+// template values, skeleton files and skeleton ref of the rightmost skeleton
+// taking preference over already existing values. Template values are
+// recursively merged and may cause errors on type mismatch. The resulting
+// *Skeleton will have the lhs skeleton set as its parent. The original
+// skeletons are not altered.
+func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
+	values, err := template.MergeValues(s.Values, other.Values)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge skeleton %s and %s: %w", s.Ref, other.Ref, err)
+	}
+
+	return &Skeleton{
+		Values:      values,
+		Files:       mergeFiles(s.Files, other.Files),
+		Description: other.Description,
+		Parent:      s,
+		Ref:         other.Ref,
+	}, nil
+}

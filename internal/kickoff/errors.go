@@ -1,8 +1,12 @@
 package kickoff
 
 import (
+	"errors"
 	"fmt"
 )
+
+// ErrMergeEmpty is returned by MergeSkeletons if no skeletons were passed.
+var ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
 
 // Base validation errors.
 var (

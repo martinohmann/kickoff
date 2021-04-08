@@ -19,7 +19,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/repository"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -243,7 +242,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := skeleton.Merge(skeletons...)
+	skeleton, err := kickoff.MergeSkeletons(skeletons...)
 	if err != nil {
 		return err
 	}

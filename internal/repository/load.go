@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
 )
 
 // LoadSkeletons loads multiple skeletons from given repository. The passed in
@@ -79,7 +78,7 @@ func loadSkeleton(ctx context.Context, ref *kickoff.SkeletonRef, visits map[kick
 		return nil, err
 	}
 
-	return skeleton.Merge(parent, s)
+	return parent.Merge(s)
 }
 
 func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff.ParentRef, visits map[kickoff.ParentRef]struct{}) (*kickoff.Skeleton, error) {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 // FileRef contains paths and other information about a skeleton file. May also
@@ -65,4 +66,30 @@ func (f *BufferedFile) IsTemplate() bool { return isTemplateFile(f) }
 
 func isTemplateFile(f File) bool {
 	return !f.Mode().IsDir() && filepath.Ext(f.Path()) == SkeletonTemplateExtension
+}
+
+func mergeFiles(lhs, rhs []File) []File {
+	fileMap := make(map[string]File)
+
+	for _, f := range lhs {
+		fileMap[f.Path()] = f
+	}
+
+	for _, f := range rhs {
+		fileMap[f.Path()] = f
+	}
+
+	filePaths := make([]string, 0, len(fileMap))
+	for path := range fileMap {
+		filePaths = append(filePaths, path)
+	}
+
+	sort.Strings(filePaths)
+
+	files := make([]File, len(filePaths))
+	for i, path := range filePaths {
+		files[i] = fileMap[path]
+	}
+
+	return files
 }
