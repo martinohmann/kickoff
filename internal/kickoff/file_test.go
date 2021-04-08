@@ -42,7 +42,7 @@ func runFileTests(t *testing.T, factory fileTestFactory) {
 			isTemplate: true,
 		},
 		{
-			name:       "dir with .skel extention",
+			name:       "dir with .skel extension",
 			path:       "some/path.skel",
 			content:    []byte(`the content`),
 			mode:       0755 | os.ModeDir,

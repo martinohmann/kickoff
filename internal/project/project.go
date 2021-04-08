@@ -197,10 +197,7 @@ func (p *Project) makeTemplateValues(skeleton *kickoff.Skeleton) (template.Value
 
 func (p *Project) makeSources(skeleton *kickoff.Skeleton) []kickoff.File {
 	sources := make([]kickoff.File, 0, len(skeleton.Files))
-
-	for _, file := range skeleton.Files {
-		sources = append(sources, file)
-	}
+	sources = append(sources, skeleton.Files...)
 
 	if p.license != nil {
 		text := license.ResolvePlaceholders(p.license.Body, license.FieldMap{
