@@ -1,93 +1,92 @@
 package skeleton
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
-	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/kickoff"
+	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestCreateCmd_Execute_EmptyOutputDir(t *testing.T) {
-	cmd := newCreateCmd()
-	cmd.SetArgs([]string{""})
+func TestCreateCmd(t *testing.T) {
+	tmpdir := t.TempDir()
 
-	err := cmd.Execute()
-	if err != cmdutil.ErrEmptyOutputDir {
-		t.Fatalf("expected error %v, got %v", cmdutil.ErrEmptyOutputDir, err)
-	}
-}
+	err := repository.Create(tmpdir, "default")
+	require.NoError(t, err)
 
-func TestCreateCmd_Execute_DirExists(t *testing.T) {
-	cmd := newCreateCmd()
-	cmd.SetArgs([]string{"."})
+	myskelDir := filepath.Join(tmpdir, kickoff.SkeletonsDir, "myskel")
 
-	dir, err := filepath.Abs(".")
-	if err != nil {
-		t.Fatal(err)
-	}
+	configFile := testutil.NewConfigFileBuilder(t).
+		WithRepository("default", tmpdir).
+		WithRepository("remote", "https://github.com/martinohmann/kickoff-skeletons").
+		Create()
+	defer os.Remove(configFile.Name())
 
-	expectedErr := fmt.Errorf("output dir %s already exists, add --force to overwrite", dir)
+	t.Run("empty repo name", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"", "myskel", "--config", configFile.Name()})
 
-	err = cmd.Execute()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+		err := cmd.Execute()
+		assert.EqualError(t, err, "repository name must not be empty")
+		assert.NoDirExists(t, myskelDir)
+	})
 
-	if expectedErr.Error() != err.Error() {
-		t.Fatalf("expected error %v, got %v", expectedErr, err)
-	}
-}
+	t.Run("empty skeleton name", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"myrepo", "", "--config", configFile.Name()})
 
-func TestCreateCmd_Execute(t *testing.T) {
-	name, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(name)
+		err := cmd.Execute()
+		assert.EqualError(t, err, "skeleton name must not be empty")
+		assert.NoDirExists(t, myskelDir)
+	})
 
-	outputDir := filepath.Join(name, "myskeleton")
+	t.Run("repository does not exist", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"nonexistent", "default", "--config", configFile.Name()})
 
-	cmd := newCreateCmd()
-	cmd.SetArgs([]string{outputDir})
+		err := cmd.Execute()
+		assert.EqualError(t, err, `repository with name "nonexistent" does not exist`)
+		assert.NoDirExists(t, myskelDir)
+	})
 
-	err = cmd.Execute()
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
-}
+	t.Run("remote repo", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"remote", "default", "--config", configFile.Name()})
 
-func TestCreateCmd_Execute_Force(t *testing.T) {
-	name, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(name)
+		err := cmd.Execute()
+		assert.EqualError(t, err, `repository "remote" is remote. skeletons can only be created in local repositories`)
+		assert.NoDirExists(t, myskelDir)
+	})
 
-	outputDir := filepath.Join(name, "myskeleton")
+	t.Run("skeleton already exists", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"default", "default", "--config", configFile.Name()})
 
-	cmd := newCreateCmd()
-	cmd.SetArgs([]string{outputDir})
+		err := cmd.Execute()
+		assert.EqualError(t, err, `skeleton "default" already exists in repository "default"`)
+		assert.NoDirExists(t, myskelDir)
+	})
 
-	err = cmd.Execute()
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
+	t.Run("skeleton can be created", func(t *testing.T) {
+		cmd := newCreateCmd()
+		cmd.SetArgs([]string{"default", "myskel", "--config", configFile.Name()})
 
-	cmd = newCreateCmd()
-	cmd.SetArgs([]string{outputDir, "--force"})
-
-	err = cmd.Execute()
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
+		err := cmd.Execute()
+		require.NoError(t, err)
+		assert.DirExists(t, myskelDir)
+	})
 }
 
 func newCreateCmd() *cobra.Command {
-	streams, _, _, _ := cli.NewTestIOStreams()
-	return NewCreateCmd(streams)
+	streams, _, out, errOut := cli.NewTestIOStreams()
+	cmd := NewCreateCmd(streams)
+	cmd.SetOut(out)
+	cmd.SetErr(errOut)
+	return cmd
 }

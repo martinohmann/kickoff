@@ -26,7 +26,7 @@ more](/skeletons/structure) about skeleton directory structure.
 Project skeletons can be created with kickoff very easily:
 
 ```bash
-$ kickoff skeleton create ~/kickoff-skeletons/skeletons/myskeleton
+$ kickoff skeleton create myrepo myskeleton
 ```
 
 However, there is more to it. Check out the [Creating project
