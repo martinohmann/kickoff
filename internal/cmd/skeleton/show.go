@@ -7,9 +7,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/filetree"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/repository"
-	"github.com/martinohmann/kickoff/internal/skeleton/filetree"
 	"github.com/spf13/cobra"
 )
 
