@@ -267,7 +267,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		Output:         o.Out,
 	}
 
-	if o.Project.HasLicense() {
+	if o.Project.License != "" && o.Project.License != kickoff.NoLicense {
 		license, err := o.LicenseClient.GetLicense(ctx, o.Project.License)
 		if err != nil {
 			return err
@@ -276,7 +276,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		config.License = license
 	}
 
-	if o.Project.HasGitignore() {
+	if o.Project.Gitignore != "" && o.Project.Gitignore != kickoff.NoGitignore {
 		template, err := o.GitignoreClient.GetTemplate(ctx, o.Project.Gitignore)
 		if err != nil {
 			return err

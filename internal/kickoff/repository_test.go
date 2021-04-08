@@ -1,10 +1,11 @@
 package kickoff
 
 import (
+	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,57 +16,107 @@ func TestParseRepoRef(t *testing.T) {
 	LocalRepositoryCacheDir = "/home/someuser/.cache/kickoff/repositories"
 	defer func() { LocalRepositoryCacheDir = oldCacheDir }()
 
-	t.Run("parses absolute paths", func(t *testing.T) {
-		ref, err := ParseRepoRef("/some/absolute/path")
-		require.NoError(t, err)
-		require.False(t, ref.IsRemote())
-		assert.Equal(t, "/some/absolute/path", ref.Path)
-	})
+	testCases := []struct {
+		name     string
+		s        string
+		expected *RepoRef
+		err      error
+	}{
+		{
+			name: "local path",
+			s:    "foo.bar.baz/johndoe/repo",
+			expected: &RepoRef{
+				Path: "foo.bar.baz/johndoe/repo",
+			},
+		},
+		{
+			name: "local abspath",
+			s:    "/some/repo",
+			expected: &RepoRef{
+				Path: "/some/repo",
+			},
+		},
+		{
+			name: "local relpath",
+			s:    "../../some/repo",
+			expected: &RepoRef{
+				Path: "../../some/repo",
+			},
+		},
+		{
+			name: "file protocol",
+			s:    "file:///some/repo",
+			expected: &RepoRef{
+				Path: "/some/repo",
+			},
+		},
+		{
+			name: "url",
+			s:    "https://foo.bar.baz/johndoe/repo",
+			expected: &RepoRef{
+				URL:      "https://foo.bar.baz/johndoe/repo",
+				Path:     "/home/someuser/.cache/kickoff/repositories/foo.bar.baz/johndoe/repo@master",
+				Revision: "master",
+			},
+		},
+		{
+			name: "url with revision",
+			s:    "https://foo.bar.baz/johndoe/repo?revision=feature/foo/bar",
+			expected: &RepoRef{
+				URL:      "https://foo.bar.baz/johndoe/repo",
+				Path:     "/home/someuser/.cache/kickoff/repositories/foo.bar.baz/johndoe/repo@feature%2Ffoo%2Fbar",
+				Revision: "feature/foo/bar",
+			},
+		},
+		{
+			name: "git url",
+			s:    "git://git@github.com/martinohmann/kickoff.git",
+			expected: &RepoRef{
+				URL:      "git://git@github.com/martinohmann/kickoff.git",
+				Path:     "/home/someuser/.cache/kickoff/repositories/github.com/martinohmann/kickoff.git@master",
+				Revision: "master",
+			},
+		},
+		{
+			name: "invalid url",
+			s:    "inval\\:",
+			err:  errors.New(`invalid repo URL "inval\\:": parse "inval\\:": first path segment in URL cannot contain colon`),
+		},
+		{
+			name: "invalid query",
+			s:    "https://foo.bar.baz?revision=%%",
+			err:  errors.New(`invalid URL query "revision=%%": invalid URL escape "%%"`),
+		},
+		{
+			name: "parses homedir paths",
+			s:    "~/repo",
+			expected: &RepoRef{
+				Path: filepath.Join(os.Getenv("HOME"), "repo"),
+			},
+		},
+	}
 
-	t.Run("parses relative paths", func(t *testing.T) {
-		ref, err := ParseRepoRef("../some/relative/path")
-		require.NoError(t, err)
-		require.False(t, ref.IsRemote())
-		assert.Equal(t, "../some/relative/path", ref.Path)
-	})
+	for _, tc := range testCases {
+		tc := tc
 
-	t.Run("parses absolute paths", func(t *testing.T) {
-		ref, err := ParseRepoRef("/some/absolute/path")
-		require.NoError(t, err)
-		require.False(t, ref.IsRemote())
-		assert.Equal(t, "/some/absolute/path", ref.Path)
-	})
+		t.Run(tc.name, func(t *testing.T) {
+			ref, err := ParseRepoRef(tc.s)
+			if tc.err == nil {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, ref)
+				require.NoError(t, ref.Validate())
 
-	t.Run("parses homedir paths", func(t *testing.T) {
-		os.Setenv("HOME", "/home/user")
-		ref, err := ParseRepoRef("~/repo")
-		require.NoError(t, err)
-		require.False(t, ref.IsRemote())
-		assert.Equal(t, "/home/user/repo", ref.Path)
-	})
-
-	t.Run("parses remote urls", func(t *testing.T) {
-		ref, err := ParseRepoRef("https://example.com/some/repo")
-		require.NoError(t, err)
-		require.True(t, ref.IsRemote())
-		assert.Equal(t, "/home/someuser/.cache/kickoff/repositories/example.com/some/repo@master", ref.Path)
-		assert.Equal(t, "https://example.com/some/repo", ref.URL)
-		assert.Equal(t, "master", ref.Revision)
-	})
-
-	t.Run("parses revision from remote urls", func(t *testing.T) {
-		ref, err := ParseRepoRef("https://example.com/some/repo?revision=de4db3ef")
-		require.NoError(t, err)
-		require.True(t, ref.IsRemote())
-		assert.Equal(t, "/home/someuser/.cache/kickoff/repositories/example.com/some/repo@de4db3ef", ref.Path)
-		assert.Equal(t, "https://example.com/some/repo", ref.URL)
-		assert.Equal(t, "de4db3ef", ref.Revision)
-	})
-
-	t.Run("returns errors on invalid query", func(t *testing.T) {
-		_, err := ParseRepoRef("https://example.com/some/repo?%")
-		require.Error(t, err)
-	})
+				// Roundtrip
+				ref2, err := ParseRepoRef(ref.String())
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, ref2)
+				require.NoError(t, ref.Validate())
+			} else {
+				require.Error(t, err)
+				require.EqualError(t, err, tc.err.Error())
+			}
+		})
+	}
 }
 
 func TestRepoRef_Validate(t *testing.T) {

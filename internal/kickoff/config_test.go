@@ -1,11 +1,13 @@
 package kickoff
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	gitconfig "github.com/tcnksm/go-gitconfig"
 )
 
 func TestConfig_ApplyDefaults(t *testing.T) {
@@ -122,4 +124,98 @@ func TestConfig_Validate(t *testing.T) {
 	}
 
 	runValidatorTests(t, testCases)
+}
+
+func TestDetectDefaultProjectOwner(t *testing.T) {
+	restore := mockGitconfig(nil)
+	defer restore()
+
+	assert.Empty(t, detectDefaultProjectOwner())
+
+	restore = mockGitconfig(map[string]string{
+		"user.name": "johndoe",
+	})
+	defer restore()
+
+	assert.Equal(t, "johndoe", detectDefaultProjectOwner())
+}
+
+func mockGitconfig(config map[string]string) (restore func()) {
+	gitconfigFn = func(key string) (string, error) {
+		v, ok := config[key]
+		if !ok {
+			return "", errors.New("not found")
+		}
+
+		return v, nil
+	}
+
+	return func() { gitconfigFn = gitconfig.Global }
+}
+
+type loadConfigTestCase struct {
+	name     string
+	path     string
+	expected interface{}
+	err      error
+}
+
+func runLoadConfigTests(t *testing.T, testCases []loadConfigTestCase, fn func(string) (interface{}, error)) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			config, err := fn(tc.path)
+			if tc.err == nil {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, config)
+			} else {
+				require.Error(t, err)
+				require.EqualError(t, err, tc.err.Error())
+			}
+		})
+	}
+}
+
+func TestLoadConfig(t *testing.T) {
+	restore := mockGitconfig(map[string]string{
+		"user.name": "johndoe",
+	})
+	defer restore()
+
+	testCases := []loadConfigTestCase{
+		{
+			name: "empty",
+			path: "../testdata/config/empty-config.yaml",
+			expected: &Config{
+				Project: ProjectConfig{
+					Host:  "github.com",
+					Owner: "johndoe",
+				},
+				Repositories: map[string]string{
+					"default": "https://github.com/martinohmann/kickoff-skeletons",
+				},
+				Values: template.Values{},
+			},
+		},
+		{
+			name: "simple",
+			path: "../testdata/config/config.yaml",
+			expected: &Config{
+				Project: ProjectConfig{
+					Host:  "github.com",
+					Owner: "johndoe",
+				},
+				Repositories: map[string]string{
+					"local":  "/some/local/path",
+					"remote": "https://git.john.doe/johndoe/remote-repo",
+				},
+				Values: template.Values{
+					"foo": "bar",
+				},
+			},
+		},
+	}
+
+	runLoadConfigTests(t, testCases, func(path string) (interface{}, error) {
+		return LoadConfig(path)
+	})
 }

@@ -119,20 +119,6 @@ func (c *ProjectConfig) Validate() error {
 	return nil
 }
 
-// HasLicense returns true if an open source license is specified in the
-// project config. If true, the project creator will write the text of the
-// provided license into the LICENSE file in the project's output directory.
-func (p *ProjectConfig) HasLicense() bool {
-	return p.License != "" && p.License != NoLicense
-}
-
-// HasGitignore returns true if a gitignore template is specified in the
-// project config. If true, the project creator will write the gitignore
-// template into the .gitignore file in the project's output directory.
-func (p *ProjectConfig) HasGitignore() bool {
-	return p.Gitignore != "" && p.Gitignore != NoGitignore
-}
-
 // Load loads the config from path and returns it.
 func LoadConfig(path string) (*Config, error) {
 	var config Config
