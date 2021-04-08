@@ -29,14 +29,14 @@ repos. If you did not create a local repository via `kickoff init`, you can
 create one like this:
 
 ```bash
-$ kickoff repository create ~/path/to/new/repo
-$ kickoff repository add myrepo ~/path/to/new/repo
+$ kickoff repository create myrepo ~/path/to/new/repo
 ```
 
 The `kickoff repository create` command will create a new repository which
-already contains a minimal `default` skeleton with a commented `.kickoff.yaml`
-file and a `README.md.skel` skeleton to get you started. You can delete it or
-customize it to your needs.
+already contains a minimal skeleton named `default` (can be customized via the
+`--skeleton-name` flag) with a commented `.kickoff.yaml` file and a
+`README.md.skel` skeleton to get you started. You can delete it or customize it
+to your needs.
 
 You can verify that your local repository was correctly created and added by
 listing the available kickoff repositories:
