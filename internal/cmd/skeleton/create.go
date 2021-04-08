@@ -73,7 +73,7 @@ func (o *CreateOptions) Validate() error {
 	}
 
 	if _, ok := o.Repositories[o.RepoName]; !ok {
-		return fmt.Errorf("repository with name %q does not exist", o.RepoName)
+		return cmdutil.RepositoryNotConfiguredError{Name: o.RepoName}
 	}
 
 	return o.ConfigFlags.Validate()

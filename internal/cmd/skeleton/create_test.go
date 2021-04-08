@@ -51,7 +51,7 @@ func TestCreateCmd(t *testing.T) {
 		cmd.SetArgs([]string{"nonexistent", "default", "--config", configFile.Name()})
 
 		err := cmd.Execute()
-		assert.EqualError(t, err, `repository with name "nonexistent" does not exist`)
+		assert.EqualError(t, err, `repository "nonexistent" not configured`)
 		assert.NoDirExists(t, myskelDir)
 	})
 
