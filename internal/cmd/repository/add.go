@@ -7,7 +7,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -84,6 +83,10 @@ func (o *AddOptions) Validate() error {
 		return ErrEmptyRepositoryURL
 	}
 
+	if _, ok := o.Repositories[o.RepoName]; ok {
+		return fmt.Errorf("repository with name %q already exists", o.RepoName)
+	}
+
 	return nil
 }
 
@@ -100,11 +103,6 @@ func (o *AddOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
-	log.WithFields(log.Fields{
-		"name": o.RepoName,
-		"url":  o.RepoURL,
-	}).Info("repository added")
 
 	fmt.Fprintln(o.Out, "Repository added")
 
