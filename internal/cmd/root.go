@@ -23,6 +23,9 @@ import (
 // NewRootCmd creates the root command for kickoff.
 func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	logLevel := log.WarnLevel.String()
+	if lvl := os.Getenv("KICKOFF_LOG_LEVEL"); lvl != "" {
+		logLevel = lvl
+	}
 
 	cmd := &cobra.Command{
 		Use:           "kickoff",
