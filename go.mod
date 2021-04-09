@@ -16,7 +16,7 @@ require (
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/martinohmann/httpcache v0.0.0-20200615162652-221549dc7015
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/olekukonko/tablewriter v0.0.4
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v0.0.5
