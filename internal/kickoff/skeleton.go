@@ -2,6 +2,7 @@ package kickoff
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/template"
@@ -132,4 +133,17 @@ func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
 		Parent:      s,
 		Ref:         other.Ref,
 	}, nil
+}
+
+// IsSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
+// detected by the fact that they contain a .kickoff.yaml file.
+func IsSkeletonDir(dir string) bool {
+	configPath := filepath.Join(dir, SkeletonConfigFileName)
+
+	fi, err := os.Stat(configPath)
+	if err != nil {
+		return false
+	}
+
+	return fi.Mode().IsRegular()
 }

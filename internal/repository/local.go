@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
-	log "github.com/sirupsen/logrus"
 )
 
 var _ kickoff.Repository = (*localRepository)(nil)
@@ -30,12 +27,7 @@ func newLocal(ref kickoff.RepoRef) *localRepository {
 func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
 	path := r.ref.SkeletonPath(name)
 
-	ok, err := skeleton.IsSkeletonDir(path)
-	if err != nil {
-		return nil, err
-	}
-
-	if !ok {
+	if !kickoff.IsSkeletonDir(path) {
 		return nil, SkeletonNotFoundError{name, r.ref.Name}
 	}
 
@@ -73,17 +65,7 @@ func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef
 
 		path := filepath.Join(dir, info.Name())
 
-		ok, err := skeleton.IsSkeletonDir(path)
-		if os.IsPermission(err) {
-			log.Warnf("permission error, skipping dir: %v", err)
-			continue
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		if ok {
+		if kickoff.IsSkeletonDir(path) {
 			abspath, err := filepath.Abs(path)
 			if err != nil {
 				return nil, err

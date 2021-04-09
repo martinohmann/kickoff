@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,21 +70,6 @@ func TestMultiRepository_GetSkeleton(t *testing.T) {
 	t.Run("returns error if repo name is unknown", func(t *testing.T) {
 		_, err := repo.GetSkeleton(context.Background(), "nonexistent-repo:minimal")
 		require.Error(t, err)
-	})
-
-	t.Run("invalid repository causes error on GetSkeleton", func(t *testing.T) {
-		repo, err := NewFromMap(map[string]string{
-			"invalid": "multi_test.go", // file instead of dir
-		})
-		require.NoError(t, err)
-
-		_, err = repo.GetSkeleton(context.Background(), "nonexistent")
-		require.Error(t, err)
-
-		var notFoundErr SkeletonNotFoundError
-		if errors.As(err, &notFoundErr) {
-			t.Fatal("expected an error different from SkeletonNotFoundError")
-		}
 	})
 }
 
