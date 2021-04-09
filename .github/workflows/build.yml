@@ -41,7 +41,7 @@ jobs:
           skip-pkg-cache: true
           skip-build-cache: true
       - name: Upload coverage
-        uses: codecov/codecov-action@v1.0.14
+        uses: codecov/codecov-action@v1.3.2
         if: matrix.go-version == '1.16.x'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
