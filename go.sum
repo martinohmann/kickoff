@@ -1,5 +1,5 @@
-github.com/AlecAivazis/survey/v2 v2.0.5 h1:xpZp+Q55wi5C7Iaze+40onHnEkex1jSc34CltJjOoPM=
-github.com/AlecAivazis/survey/v2 v2.0.5/go.mod h1:WYBhg6f0y/fNYUuesWQc0PKbJcEliGcYHB9sNT3Bg74=
+github.com/AlecAivazis/survey/v2 v2.2.9 h1:LWvJtUswz/W9/zVVXELrmlvdwWcKE60ZAw0FWV9vssk=
+github.com/AlecAivazis/survey/v2 v2.2.9/go.mod h1:9DYvHgXtiXm6nCn+jXnOXLKbH+Yo9u8fAS/SduGdoPk=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/MakeNowJust/heredoc v1.0.0 h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ4pzQ=
 github.com/MakeNowJust/heredoc v1.0.0/go.mod h1:mG5amYoWBHf8vpLOuehzbGGw0EHxpZZ6lCpQ4fNJ8LE=
