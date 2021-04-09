@@ -7,7 +7,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/Masterminds/sprig/v3 v3.0.2
 	github.com/disiqueira/gotree/v3 v3.0.2
-	github.com/fatih/color v1.7.0
+	github.com/fatih/color v1.10.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git/v5 v5.0.0
 	github.com/google/go-github/v28 v28.1.1
