@@ -22,20 +22,13 @@ type localRepository struct {
 
 // newLocal creates a *localRepository from ref. Returns an error if
 // resolving the absolute path to the skeleton repository fails.
-func newLocal(ref kickoff.RepoRef) (*localRepository, error) {
-	var err error
-
-	ref.Path, err = filepath.Abs(ref.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	return &localRepository{ref: ref}, nil
+func newLocal(ref kickoff.RepoRef) *localRepository {
+	return &localRepository{ref: ref}
 }
 
 // GetSkeleton implements kickoff.Repository.
 func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
-	path := filepath.Join(r.ref.Path, kickoff.SkeletonsDir, name)
+	path := r.ref.SkeletonPath(name)
 
 	ok, err := skeleton.IsSkeletonDir(path)
 	if err != nil {
@@ -57,7 +50,7 @@ func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickof
 
 // ListSkeletons implements kickoff.Repository.
 func (r *localRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
-	infos, err := findSkeletons(&r.ref, filepath.Join(r.ref.Path, kickoff.SkeletonsDir))
+	infos, err := findSkeletons(&r.ref, r.ref.SkeletonsPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list skeletons: %w", err)
 	}

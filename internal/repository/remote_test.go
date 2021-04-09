@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"net"
 	"os"
 	"testing"
@@ -14,15 +13,17 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/kickoff"
+	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewRemoteRepository(t *testing.T) {
+	defer testutil.MockRepositoryCacheDir(t.TempDir())()
+
 	t.Run("creates remote repository", func(t *testing.T) {
 		repo, err := newRemote(kickoff.RepoRef{
-			Path:     "some/local/path",
 			URL:      "https://github.com/martinohmann/kickoff-skeletons",
 			Revision: "de4db3ef",
 		})
@@ -30,44 +31,42 @@ func TestNewRemoteRepository(t *testing.T) {
 		require.NotNil(t, repo)
 	})
 
-	t.Run("returns error if info does not describe a remote repo", func(t *testing.T) {
+	t.Run("returns error if ref does not describe a remote repo", func(t *testing.T) {
 		_, err := newRemote(kickoff.RepoRef{Path: "some/local/path"})
 		assert.Equal(t, ErrNotARemoteRepository, err)
 	})
 }
 
 func TestRemoteRepository_syncRemote(t *testing.T) {
-	require := require.New(t)
-
 	t.Run("it opens a local repository and checks out the correct revision", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		hash := plumbing.NewHash("de4db3ef")
 
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		require.NoError(repo.syncRemote(context.Background()))
+		require.NoError(t, repo.syncRemote(context.Background()))
 	})
 
 	t.Run("it opens a local repository, fetches refs and checks out the correct revision", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		// simulate a cached repository that hasn't been modified since 10
 		// minutes.
-		createLocalTestRepoDir(t, tmpdir, time.Now().Add(-10*time.Minute))
+		createLocalTestRepoDir(t, localPath, time.Now().Add(-10*time.Minute))
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		hash := plumbing.NewHash("de4db3ef")
 
@@ -77,22 +76,22 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		require.NoError(repo.syncRemote(ctx))
+		require.NoError(t, repo.syncRemote(ctx))
 	})
 
 	t.Run("it clones a remote repository if not present in local dir", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		fakeRepo := &git.FakeRepository{}
 
 		ctx := context.Background()
 
-		fakeClient.On("Open", tmpdir).Return(nil, git.ErrRepositoryNotExists)
-		fakeClient.On("Clone", ctx, "https://github.com/martinohmann/kickoff-skeletons", tmpdir).
+		fakeClient.On("Open", localPath).Return(nil, git.ErrRepositoryNotExists)
+		fakeClient.On("Clone", ctx, "https://github.com/martinohmann/kickoff-skeletons", localPath).
 			Run(func(args mock.Arguments) {
 				// we are simulating cloning by just creating a new skeleton repository.
-				createLocalTestRepoDir(t, tmpdir, time.Now())
+				createLocalTestRepoDir(t, localPath, time.Now())
 			}).
 			Return(fakeRepo, nil)
 
@@ -102,49 +101,49 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		require.NoError(repo.syncRemote(ctx))
+		require.NoError(t, repo.syncRemote(ctx))
 	})
 
 	t.Run("returns error if open returns error different from git.ErrRepositoryNotExists", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		ctx := context.Background()
 
 		openErr := errors.New("open failed")
 
-		fakeClient.On("Open", tmpdir).Return(nil, openErr)
+		fakeClient.On("Open", localPath).Return(nil, openErr)
 
 		err := repo.syncRemote(ctx)
-		require.Equal(openErr, err)
+		require.Equal(t, openErr, err)
 	})
 
 	t.Run("returns error if clone fails", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		ctx := context.Background()
 
 		cloneErr := errors.New("clone failed")
 
-		fakeClient.On("Open", tmpdir).Return(nil, git.ErrRepositoryNotExists)
-		fakeClient.On("Clone", ctx, "https://github.com/martinohmann/kickoff-skeletons", tmpdir).Return(nil, cloneErr)
+		fakeClient.On("Open", localPath).Return(nil, git.ErrRepositoryNotExists)
+		fakeClient.On("Clone", ctx, "https://github.com/martinohmann/kickoff-skeletons", localPath).Return(nil, cloneErr)
 
 		err := repo.syncRemote(ctx)
-		require.Equal(cloneErr, err)
+		require.Equal(t, cloneErr, err)
 	})
 
 	t.Run("returns error if fetch fails", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		// simulate a cached repository that hasn't been modified since 10
 		// minutes.
-		createLocalTestRepoDir(t, tmpdir, time.Now().Add(-10*time.Minute))
+		createLocalTestRepoDir(t, localPath, time.Now().Add(-10*time.Minute))
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		ctx := context.Background()
 
@@ -153,38 +152,38 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		fakeRepo.On("Fetch", ctx, []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"}).Return(fetchErr)
 
 		err := repo.syncRemote(ctx)
-		require.Equal(fetchErr, err)
+		require.Equal(t, fetchErr, err)
 	})
 
 	t.Run("handles temporary network errors", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		// simulate a cached repository that hasn't been modified since 10
 		// minutes.
-		createLocalTestRepoDir(t, tmpdir, time.Now().Add(-10*time.Minute))
+		createLocalTestRepoDir(t, localPath, time.Now().Add(-10*time.Minute))
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		ctx := context.Background()
 
 		fakeRepo.On("Fetch", ctx, []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"}).
 			Return(&net.DNSError{IsTemporary: true})
 
-		require.NoError(repo.syncRemote(ctx))
+		require.NoError(t, repo.syncRemote(ctx))
 	})
 
 	t.Run("cleans up after git reference error", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).
 			Return(nil, plumbing.ErrReferenceNotFound)
@@ -194,20 +193,20 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 			Return(nil, plumbing.ErrReferenceNotFound)
 
 		err := repo.syncRemote(context.Background())
-		require.Equal(plumbing.ErrReferenceNotFound, err)
+		require.Equal(t, plumbing.ErrReferenceNotFound, err)
 
-		require.False(file.Exists(tmpdir))
+		require.False(t, file.Exists(localPath))
 	})
 
 	t.Run("attempts to resolve multiple revisions", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		hash := plumbing.NewHash("de4db3ef")
 
@@ -219,18 +218,18 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 			Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		require.NoError(repo.syncRemote(context.Background()))
+		require.NoError(t, repo.syncRemote(context.Background()))
 	})
 
 	t.Run("it propagates context to (git.Client).Clone", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
-		fakeClient.On("Open", tmpdir).Return(nil, git.ErrRepositoryNotExists)
+		fakeClient.On("Open", localPath).Return(nil, git.ErrRepositoryNotExists)
 
-		mockCall := fakeClient.On("Clone", mock.Anything, "https://github.com/martinohmann/kickoff-skeletons", tmpdir)
+		mockCall := fakeClient.On("Clone", mock.Anything, "https://github.com/martinohmann/kickoff-skeletons", localPath)
 		mockCall.RunFn = func(args mock.Arguments) {
 			ctx := args.Get(0).(context.Context)
 			select {
@@ -246,21 +245,21 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		cancel()
 
 		err := repo.syncRemote(ctx)
-		require.Error(err)
-		require.Same(context.Canceled, err)
+		require.Error(t, err)
+		require.Same(t, context.Canceled, err)
 	})
 
 	t.Run("it propagates context to (git.Repository).Fetch", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		// simulate a cached repository that hasn't been modified since 10
 		// minutes.
-		createLocalTestRepoDir(t, tmpdir, time.Now().Add(-10*time.Minute))
+		createLocalTestRepoDir(t, localPath, time.Now().Add(-10*time.Minute))
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		mockCall := fakeRepo.On("Fetch", mock.Anything, []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"})
 		mockCall.RunFn = func(args mock.Arguments) {
@@ -278,101 +277,97 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		cancel()
 
 		err := repo.syncRemote(ctx)
-		require.Error(err)
-		require.Same(context.Canceled, err)
+		require.Error(t, err)
+		require.Same(t, context.Canceled, err)
 	})
 }
 
 func TestRemoteRepository_GetSkeleton(t *testing.T) {
-	require := require.New(t)
+	t.Run("retrieves skeleton ref from local repo copy", func(t *testing.T) {
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-	t.Run("retrieves skeleton info from local repo copy", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
-
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		hash := plumbing.NewHash("de4db3ef")
 
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		info, err := repo.GetSkeleton(context.Background(), "default")
-		require.NoError(err)
-		require.Equal("default", info.Name)
+		ref, err := repo.GetSkeleton(context.Background(), "default")
+		require.NoError(t, err)
+		require.Equal(t, "default", ref.Name)
 
 		_, err = repo.GetSkeleton(context.Background(), "nonexistent")
-		require.Error(err)
-		require.IsType(SkeletonNotFoundError{}, err)
+		require.Error(t, err)
+		require.IsType(t, SkeletonNotFoundError{}, err)
 	})
 
 	t.Run("fails if repo sync fails", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		openErr := errors.New("open failed")
 
-		fakeClient.On("Open", tmpdir).Return(nil, openErr)
+		fakeClient.On("Open", localPath).Return(nil, openErr)
 
 		_, err := repo.GetSkeleton(context.Background(), "nonexistent")
-		require.Equal(openErr, err)
+		require.Equal(t, openErr, err)
 	})
 
 	t.Run("syncs only once", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		openErr := errors.New("open failed")
 
 		// We expect only one call to Open.
-		fakeClient.On("Open", tmpdir).Once().Return(nil, openErr)
+		fakeClient.On("Open", localPath).Once().Return(nil, openErr)
 
 		// Consecutive calls to GetSkeleton must return the same error.
 		_, err := repo.GetSkeleton(context.Background(), "default")
-		require.Equal(openErr, err)
+		require.Equal(t, openErr, err)
 		_, err = repo.GetSkeleton(context.Background(), "nonexistent")
-		require.Equal(openErr, err)
+		require.Equal(t, openErr, err)
 	})
 }
 
 func TestRemoteRepository_ListSkeletons(t *testing.T) {
-	require := require.New(t)
+	t.Run("lists skeleton refs from local repo copy", func(t *testing.T) {
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
-	t.Run("lists skeleton infos from local repo copy", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
-
-		createLocalTestRepoDir(t, tmpdir, time.Now())
+		createLocalTestRepoDir(t, localPath, time.Now())
 
 		fakeRepo := &git.FakeRepository{}
 
-		fakeClient.On("Open", tmpdir).Return(fakeRepo, nil)
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
 
 		hash := plumbing.NewHash("de4db3ef")
 
 		fakeRepo.On("ResolveRevision", plumbing.Revision("master")).Return(&hash, nil)
 		fakeRepo.On("Checkout", hash).Return(nil)
 
-		infos, err := repo.ListSkeletons(context.Background())
-		require.NoError(err)
-		require.Len(infos, 1)
-		require.Equal("default", infos[0].Name)
+		refs, err := repo.ListSkeletons(context.Background())
+		require.NoError(t, err)
+		require.Len(t, refs, 1)
+		require.Equal(t, "default", refs[0].Name)
 	})
 
 	t.Run("fails if repo sync fails", func(t *testing.T) {
-		repo, fakeClient, tmpdir, cleanup := createRemoteTestRepo(t)
-		defer cleanup()
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
+		defer restore()
 
 		openErr := errors.New("open failed")
 
-		fakeClient.On("Open", tmpdir).Return(nil, openErr)
+		fakeClient.On("Open", localPath).Return(nil, openErr)
 
 		_, err := repo.ListSkeletons(context.Background())
-		require.Equal(openErr, err)
+		require.Equal(t, openErr, err)
 	})
 }
 
@@ -382,18 +377,17 @@ func createLocalTestRepoDir(t *testing.T, dir string, modTime time.Time) {
 }
 
 func createRemoteTestRepo(t *testing.T) (*remoteRepository, *git.FakeClient, string, func()) {
-	tmpdir, err := ioutil.TempDir("", "kickoff-repos-*")
-	require.NoError(t, err)
-
-	repo, err := newRemote(kickoff.RepoRef{
-		Path:     tmpdir,
+	restoreCacheDir := testutil.MockRepositoryCacheDir(t.TempDir())
+	ref := kickoff.RepoRef{
 		URL:      "https://github.com/martinohmann/kickoff-skeletons",
 		Revision: "master",
-	})
+	}
+
+	repo, err := newRemote(ref)
 	require.NoError(t, err)
 
 	fakeClient := &git.FakeClient{}
 	repo.client = fakeClient
 
-	return repo, fakeClient, tmpdir, func() { os.RemoveAll(tmpdir) }
+	return repo, fakeClient, ref.LocalPath(), restoreCacheDir
 }

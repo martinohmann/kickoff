@@ -78,12 +78,12 @@ func (o *ListOptions) Run() error {
 			}
 		}
 
-		path, err := homedir.Collapse(ref.Path)
+		localPath, err := homedir.Collapse(ref.LocalPath())
 		if err != nil {
 			return err
 		}
 
-		tw.Append(name, typ, path, url, revision)
+		tw.Append(name, typ, localPath, url, revision)
 	}
 
 	tw.Render()

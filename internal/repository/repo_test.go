@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,4 +74,11 @@ func TestNewNamed(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "the-name", info.Repo.Name)
 	})
+}
+
+func TestNewFromRef_Invalid(t *testing.T) {
+	invalidRef := kickoff.RepoRef{Path: "/foo/bar", URL: "https://foo.bar.baz"}
+
+	_, err := NewFromRef(invalidRef)
+	require.EqualError(t, err, "invalid repository ref: URL and Path must not be set at the same time")
 }

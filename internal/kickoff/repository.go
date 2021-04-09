@@ -1,11 +1,13 @@
 package kickoff
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"net/url"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/homedir"
+	log "github.com/sirupsen/logrus"
 )
 
 // RepoRef holds information about a skeleton repository's location.
@@ -41,6 +43,10 @@ func (r *RepoRef) Validate() error {
 		return newRepositoryRefError("URL or Path must be set")
 	}
 
+	if r.Path != "" && r.URL != "" {
+		return newRepositoryRefError("URL and Path must not be set at the same time")
+	}
+
 	if r.IsRemote() {
 		if _, err := url.Parse(r.URL); err != nil {
 			return newRepositoryRefError("invalid URL: %w", err)
@@ -59,6 +65,50 @@ func (r *RepoRef) IsEmpty() bool {
 // IsRemote returns true if the repo ref describes a remote repository.
 func (r *RepoRef) IsRemote() bool {
 	return r.URL != ""
+}
+
+// IsLocal returns true if the repo ref describes a local repository.
+func (r *RepoRef) IsLocal() bool {
+	return r.Path != ""
+}
+
+// LocalPath returns the local path for the repository. If r points to a remote
+// repo this returns the local cache dir for the remote. Causes a fatal error
+// if the absolute path cannot be constructed.
+func (r *RepoRef) LocalPath() string {
+	localPath, err := r.localPath()
+	if err != nil {
+		log.WithError(err).
+			WithField("name", r.Name).
+			Fatal("failed to determine local path for repository")
+	}
+
+	return localPath
+}
+
+func (r *RepoRef) localPath() (string, error) {
+	if r.IsLocal() {
+		return filepath.Abs(r.Path)
+	}
+
+	dirname := fmt.Sprintf("%x", sha256.Sum256([]byte(r.URL)))
+	if r.Name != "" {
+		dirname = fmt.Sprintf("%s-%s", r.Name, dirname)
+	}
+
+	return filepath.Abs(filepath.Join(LocalRepositoryCacheDir, dirname))
+}
+
+// SkeletonsPath returns the path to the skeletons dir within the repository.
+// This is always a local path even if the repository is remote.
+func (r *RepoRef) SkeletonsPath() string {
+	return filepath.Join(r.LocalPath(), SkeletonsDir)
+}
+
+// SkeletonPath returns the path to a skeletons within the repository. This is
+// always a local path even if the repository is remote.
+func (r *RepoRef) SkeletonPath(name string) string {
+	return filepath.Join(r.SkeletonsPath(), name)
 }
 
 // ParseRepoRef parses a raw repository url and returns a repository ref
@@ -100,15 +150,5 @@ func ParseRepoRef(rawurl string) (*RepoRef, error) {
 	// the final repository URL.
 	u.RawQuery = ""
 
-	return &RepoRef{
-		Path:     buildLocalCacheDir(u.Host, u.Path, revision),
-		URL:      u.String(),
-		Revision: revision,
-	}, nil
-}
-
-func buildLocalCacheDir(host, path, revision string) string {
-	revision = url.PathEscape(revision)
-
-	return filepath.Join(LocalRepositoryCacheDir, host, fmt.Sprintf("%s@%s", path, revision))
+	return &RepoRef{URL: u.String(), Revision: revision}, nil
 }
