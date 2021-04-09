@@ -126,3 +126,9 @@ func TestMergeSkeletons(t *testing.T) {
 		assert.Equal(t, expectedFiles, s.Files)
 	})
 }
+
+func TestIsSkeletonDir(t *testing.T) {
+	assert.True(t, IsSkeletonDir("../testdata/repos/repo1/skeletons/minimal"))
+	assert.False(t, IsSkeletonDir("../testdata/repos/repo1/skeletons/"))
+	assert.False(t, IsSkeletonDir(".../testdata/repos/repo1/skeletons/minimal/.kickoff.yaml"))
+}
