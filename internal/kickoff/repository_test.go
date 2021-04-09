@@ -6,16 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseRepoRef(t *testing.T) {
-	// override local user cache dir to be able to make test assertions on
-	// paths.
-	oldCacheDir := LocalRepositoryCacheDir
-	LocalRepositoryCacheDir = "/home/someuser/.cache/kickoff/repositories"
-	defer func() { LocalRepositoryCacheDir = oldCacheDir }()
-
 	testCases := []struct {
 		name     string
 		s        string
@@ -55,7 +50,6 @@ func TestParseRepoRef(t *testing.T) {
 			s:    "https://foo.bar.baz/johndoe/repo",
 			expected: &RepoRef{
 				URL:      "https://foo.bar.baz/johndoe/repo",
-				Path:     "/home/someuser/.cache/kickoff/repositories/foo.bar.baz/johndoe/repo@master",
 				Revision: "master",
 			},
 		},
@@ -64,7 +58,6 @@ func TestParseRepoRef(t *testing.T) {
 			s:    "https://foo.bar.baz/johndoe/repo?revision=feature/foo/bar",
 			expected: &RepoRef{
 				URL:      "https://foo.bar.baz/johndoe/repo",
-				Path:     "/home/someuser/.cache/kickoff/repositories/foo.bar.baz/johndoe/repo@feature%2Ffoo%2Fbar",
 				Revision: "feature/foo/bar",
 			},
 		},
@@ -73,7 +66,6 @@ func TestParseRepoRef(t *testing.T) {
 			s:    "git://git@github.com/martinohmann/kickoff.git",
 			expected: &RepoRef{
 				URL:      "git://git@github.com/martinohmann/kickoff.git",
-				Path:     "/home/someuser/.cache/kickoff/repositories/github.com/martinohmann/kickoff.git@master",
 				Revision: "master",
 			},
 		},
@@ -135,11 +127,12 @@ func TestRepoRef_Validate(t *testing.T) {
 			v:    &RepoRef{Path: "/tmp"},
 		},
 		{
-			name: "ref with URL and local path is valid",
+			name: "ref with URL and local path is invalid",
 			v: &RepoRef{
 				URL:  DefaultRepositoryURL,
 				Path: "/tmp",
 			},
+			err: newRepositoryRefError(`URL and Path must not be set at the same time`),
 		},
 		{
 			name: "ref with URL and revision is valid",
@@ -156,4 +149,49 @@ func TestRepoRef_Validate(t *testing.T) {
 	}
 
 	runValidatorTests(t, testCases)
+}
+
+func TestRepoRef_LocalPath(t *testing.T) {
+	testCases := []struct {
+		name     string
+		expected string
+		ref      *RepoRef
+	}{
+		{
+			name:     "local repository",
+			ref:      &RepoRef{Path: "/tmp/foo"},
+			expected: "/tmp/foo",
+		},
+		{
+			name:     "remote repository",
+			ref:      &RepoRef{URL: "https://github.com/martinohmann/kickoff-skeletons"},
+			expected: filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
+		},
+		{
+			name:     "remote repository with name",
+			ref:      &RepoRef{Name: "default", URL: "https://github.com/martinohmann/kickoff-skeletons"},
+			expected: filepath.Join(LocalRepositoryCacheDir, "default-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
+		},
+		{
+			name:     "remote repository with revision",
+			ref:      &RepoRef{URL: "https://github.com/martinohmann/kickoff-skeletons", Revision: "foo/bar"},
+			expected: filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			localPath := tc.ref.LocalPath()
+			require.Equal(t, tc.expected, localPath)
+		})
+	}
+}
+
+func TestRepoRef_SkeletonPath(t *testing.T) {
+	ref := &RepoRef{Name: "foo", URL: "https://github.com/martinohmann/kickoff-skeletons"}
+
+	assert.Equal(t, ref.SkeletonsPath(), filepath.Join(LocalRepositoryCacheDir, "foo-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons"))
+	assert.Equal(t, ref.SkeletonPath("bar"), filepath.Join(LocalRepositoryCacheDir, "foo-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons", "bar"))
 }

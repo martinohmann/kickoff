@@ -3,7 +3,6 @@ package skeleton
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -90,13 +89,13 @@ func (o *CreateOptions) Run() error {
 		return fmt.Errorf("repository %q is remote. skeletons can only be created in local repositories", o.RepoName)
 	}
 
-	skeletonDir := filepath.Join(repoRef.Path, kickoff.SkeletonsDir, o.SkeletonName)
+	skeletonPath := repoRef.SkeletonPath(o.SkeletonName)
 
-	if file.Exists(skeletonDir) {
+	if file.Exists(skeletonPath) {
 		return fmt.Errorf("skeleton %q already exists in repository %q", o.SkeletonName, o.RepoName)
 	}
 
-	err = skeleton.Create(skeletonDir)
+	err = skeleton.Create(skeletonPath)
 	if err != nil {
 		return err
 	}

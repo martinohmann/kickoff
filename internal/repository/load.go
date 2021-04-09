@@ -86,30 +86,12 @@ func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff
 		return nil, DependencyCycleError{ParentRef: parentRef}
 	}
 
-	repoURL := parentRef.RepositoryURL
-	repoName := ""
-
-	if len(repoURL) == 0 {
-		// If no repository url is provided we assume that the parent resides
-		// in the same repo as the child.
-		repoURL = ref.Repo.Path
-		repoName = ref.Repo.Name
-	}
-
-	repoRef, err := kickoff.ParseRepoRef(repoURL)
+	parentRepoRef, err := getParentRepoRef(ref.Repo, parentRef)
 	if err != nil {
 		return nil, err
 	}
 
-	// It is allowed to reference skeletons in the same repository
-	// using relative URLs, so we have to account for that and prefix
-	// the URL with the path of the child skeleton.
-	if !repoRef.IsRemote() && !filepath.IsAbs(repoURL) {
-		repoURL = filepath.Join(ref.Path, repoURL)
-		repoName = ref.Repo.Name
-	}
-
-	repo, err := NewNamed(repoName, repoURL)
+	repo, err := NewFromRef(*parentRepoRef)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +104,32 @@ func loadParent(ctx context.Context, ref *kickoff.SkeletonRef, parentRef kickoff
 	visits[parentRef] = struct{}{}
 
 	return loadSkeleton(ctx, parent, visits)
+}
+
+func getParentRepoRef(repoRef *kickoff.RepoRef, parentRef kickoff.ParentRef) (*kickoff.RepoRef, error) {
+	if parentRef.RepositoryURL == "" {
+		return repoRef, nil
+	}
+
+	parentRepoRef, err := kickoff.ParseRepoRef(parentRef.RepositoryURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if repoRef.IsRemote() && parentRepoRef.IsLocal() {
+		return nil, fmt.Errorf("cannot reference skeleton from local path %q as parent in remote repository %q", parentRepoRef.Path, repoRef)
+	}
+
+	if parentRepoRef.IsLocal() && !filepath.IsAbs(parentRepoRef.Path) {
+		// It is allowed to reference local parent skeletons using relative
+		// paths, so we have to account for that and prefix the path with the
+		// path of the child skeleton.
+		localPath := repoRef.LocalPath()
+
+		parentRepoRef.Path = filepath.Join(localPath, parentRepoRef.Path)
+	}
+
+	return parentRepoRef, nil
 }
 
 func collectFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {

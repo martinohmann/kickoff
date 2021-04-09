@@ -23,8 +23,9 @@ var _ kickoff.Repository = (*remoteRepository)(nil)
 // repository.
 type remoteRepository struct {
 	*localRepository
-	revision string
-	url      string
+	localPath string
+	revision  string
+	url       string
 
 	err    error
 	once   sync.Once
@@ -40,13 +41,11 @@ func newRemote(ref kickoff.RepoRef) (*remoteRepository, error) {
 		return nil, ErrNotARemoteRepository
 	}
 
-	local, err := newLocal(ref)
-	if err != nil {
-		return nil, err
-	}
+	local := newLocal(ref)
 
 	r := &remoteRepository{
 		localRepository: local,
+		localPath:       ref.LocalPath(),
 		url:             ref.URL,
 		revision:        ref.Revision,
 		client:          git.NewClient(),
@@ -90,14 +89,12 @@ func (r *remoteRepository) syncRemoteOnce(ctx context.Context) error {
 }
 
 func (r *remoteRepository) syncRemote(ctx context.Context) error {
-	localPath := r.ref.Path
-
 	err := r.updateLocalCache(ctx, r.url, r.revision)
 	if err == nil {
 		return nil
 	}
 
-	if !file.Exists(localPath) {
+	if !file.Exists(r.localPath) {
 		return err
 	}
 
@@ -118,9 +115,9 @@ func (r *remoteRepository) syncRemote(ctx context.Context) error {
 		// A git reference error indicates that we cloned a repository but
 		// the desired revision was not found. The local cache is in a
 		// potentially invalid state now and needs to be cleaned.
-		log.WithField("path", localPath).Debug("cleaning up repository cache")
+		log.WithField("path", r.localPath).Debug("cleaning up repository cache")
 
-		osErr := os.RemoveAll(localPath)
+		osErr := os.RemoveAll(r.localPath)
 		if osErr != nil {
 			err = fmt.Errorf("failed to cleanup after error: %v: %w", err, osErr)
 		}
@@ -139,21 +136,19 @@ func (r *remoteRepository) updateLocalCache(ctx context.Context, url, revision s
 }
 
 func (r *remoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (git.Repository, error) {
-	localPath := r.ref.Path
-
-	repo, err := r.client.Open(localPath)
+	repo, err := r.client.Open(r.localPath)
 	if err == git.ErrRepositoryNotExists {
 		log.WithFields(log.Fields{
 			"url":  url,
-			"path": localPath,
+			"path": r.localPath,
 		}).Debug("cloning remote repository")
 
-		return r.client.Clone(ctx, url, localPath)
+		return r.client.Clone(ctx, url, r.localPath)
 	} else if err != nil {
 		return nil, err
 	}
 
-	log.WithFields(log.Fields{"path": localPath}).Debug("opened repository")
+	log.WithFields(log.Fields{"path": r.localPath}).Debug("opened repository")
 
 	err = r.fetchRefs(ctx, repo)
 	if err != nil {
@@ -164,8 +159,6 @@ func (r *remoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (
 }
 
 func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) error {
-	localPath := r.ref.Path
-
 	// As git operations that fetch refs from remotes can be slow, we are
 	// trying to avoid doing too many of them. We are going to only attempt
 	// to fetch refs if the modification timestamp of the checked out local
@@ -175,7 +168,7 @@ func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) e
 	// skeleton list`, `kickoff skeleton show foobar`) shortly after
 	// another, but it is short enough to avoid having a stale version of a
 	// remote repository checked out locally for too long.
-	fileInfo, err := os.Stat(localPath)
+	fileInfo, err := os.Stat(r.localPath)
 	if err != nil {
 		return err
 	}
@@ -203,7 +196,7 @@ func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) e
 
 	// Important: update the modification date after fetching the refs so
 	// we can actually make use of the improvement above.
-	return os.Chtimes(localPath, now, now)
+	return os.Chtimes(r.localPath, now, now)
 }
 
 func resolveRevision(repo git.Repository, revision string) (*plumbing.Hash, error) {

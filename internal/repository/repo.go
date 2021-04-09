@@ -42,11 +42,15 @@ func NewFromRef(ref kickoff.RepoRef) (kickoff.Repository, error) {
 }
 
 func newFromRef(ref kickoff.RepoRef) (kickoff.Repository, error) {
+	if err := ref.Validate(); err != nil {
+		return nil, err
+	}
+
 	if ref.IsRemote() {
 		return newRemote(ref)
 	}
 
-	return newLocal(ref)
+	return newLocal(ref), nil
 }
 
 // NewFromMap creates a kickoff.Repository which aggregates the

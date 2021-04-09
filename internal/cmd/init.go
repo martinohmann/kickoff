@@ -303,7 +303,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return nil
 	}
 
-	localPath := ref.Path
+	localPath := ref.LocalPath()
 
 	if file.Exists(localPath) {
 		return nil
