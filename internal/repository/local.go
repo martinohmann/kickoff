@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
@@ -25,6 +26,11 @@ func newLocal(ref kickoff.RepoRef) *localRepository {
 
 // GetSkeleton implements kickoff.Repository.
 func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
+	err := validateRepository(r.ref)
+	if err != nil {
+		return nil, err
+	}
+
 	path := r.ref.SkeletonPath(name)
 
 	if !kickoff.IsSkeletonDir(path) {
@@ -42,12 +48,27 @@ func (r *localRepository) GetSkeleton(ctx context.Context, name string) (*kickof
 
 // ListSkeletons implements kickoff.Repository.
 func (r *localRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
+	err := validateRepository(r.ref)
+	if err != nil {
+		return nil, err
+	}
+
 	infos, err := findSkeletons(&r.ref, r.ref.SkeletonsPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to list skeletons: %w", err)
 	}
 
 	return infos, nil
+}
+
+func validateRepository(ref kickoff.RepoRef) error {
+	dir := ref.SkeletonsPath()
+
+	if !file.Exists(dir) {
+		return InvalidSkeletonRepositoryError{RepoRef: ref}
+	}
+
+	return nil
 }
 
 func findSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef, error) {

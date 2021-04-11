@@ -57,3 +57,17 @@ func (e RevisionNotFoundError) Error() string {
 
 	return fmt.Sprintf("revision %q not found in repository %q", e.RepoRef.Revision, repo)
 }
+
+type InvalidSkeletonRepositoryError struct {
+	RepoRef kickoff.RepoRef
+}
+
+// Error implements the error interface.
+func (e InvalidSkeletonRepositoryError) Error() string {
+	repo := e.RepoRef.Name
+	if repo == "" {
+		repo = e.RepoRef.String()
+	}
+
+	return fmt.Sprintf("%q is not a valid skeleton repository", repo)
+}

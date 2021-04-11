@@ -27,6 +27,13 @@ func TestLocalRepository_GetSkeleton(t *testing.T) {
 		assert.Equal(t, "minimal", info.Name)
 	})
 
+	t.Run("nonexistent repository causes error", func(t *testing.T) {
+		repo := newLocal(kickoff.RepoRef{Path: "/non/existent/repo"})
+
+		_, err := repo.GetSkeleton(context.Background(), "default")
+		require.EqualError(t, err, `"/non/existent/repo" is not a valid skeleton repository`)
+	})
+
 	t.Run("returns SkeletonNotFoundError if skeleton does not exist", func(t *testing.T) {
 		_, err := repo.GetSkeleton(context.Background(), "nonexistent")
 		require.Error(t, err)
