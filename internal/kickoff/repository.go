@@ -115,6 +115,10 @@ func (r *RepoRef) SkeletonPath(name string) string {
 // assumed. Returns an error if url does not match any of the criteria
 // mentioned above.
 func ParseRepoRef(rawurl string) (*RepoRef, error) {
+	if rawurl == "" {
+		return nil, ErrEmptyRepositoryURL
+	}
+
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, fmt.Errorf("invalid repo URL %q: %w", rawurl, err)

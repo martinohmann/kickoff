@@ -53,6 +53,10 @@ func (c *Config) Validate() error {
 			return newRepositoryRefError("repository name must not be empty")
 		}
 
+		if repoURL == "" {
+			return newRepositoryRefError("repository URL must not be empty")
+		}
+
 		if _, err := url.Parse(repoURL); err != nil {
 			return newRepositoryRefError("invalid URL: %w", err)
 		}
@@ -140,6 +144,11 @@ func LoadConfig(path string) (*Config, error) {
 
 // SaveConfig saves config to path.
 func SaveConfig(path string, config *Config) error {
+	err := config.Validate()
+	if err != nil {
+		return err
+	}
+
 	return Save(path, config)
 }
 

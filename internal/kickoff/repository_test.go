@@ -18,6 +18,11 @@ func TestParseRepoRef(t *testing.T) {
 		err      error
 	}{
 		{
+			name: "empty rawurl is invalid",
+			s:    "",
+			err:  ErrEmptyRepositoryURL,
+		},
+		{
 			name: "local path",
 			s:    "foo.bar.baz/johndoe/repo",
 			expected: &RepoRef{

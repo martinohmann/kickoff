@@ -5,8 +5,15 @@ import (
 	"fmt"
 )
 
-// ErrMergeEmpty is returned by MergeSkeletons if no skeletons were passed.
-var ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
+var (
+	// ErrMergeEmpty is returned by MergeSkeletons if no skeletons were
+	// passed.
+	ErrMergeEmpty = errors.New("cannot merge empty list of skeletons")
+
+	// ErrEmptyRepositoryURL is returned if ParseRepoRef is invoked with an
+	// empty URL.
+	ErrEmptyRepositoryURL = errors.New("empty repository url")
+)
 
 // Base validation errors.
 var (

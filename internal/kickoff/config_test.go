@@ -109,6 +109,13 @@ func TestConfig_Validate(t *testing.T) {
 			err: newRepositoryRefError(`repository name must not be empty`),
 		},
 		{
+			name: "config with empty repository URL",
+			v: &Config{
+				Repositories: map[string]string{"foo": ""},
+			},
+			err: newRepositoryRefError(`repository URL must not be empty`),
+		},
+		{
 			name: "config with invalid repository url",
 			v: &Config{
 				Repositories: map[string]string{"default": "inval\\:"},
