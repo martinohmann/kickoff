@@ -6,9 +6,8 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/skeleton"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
@@ -85,17 +84,9 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	if repoRef.IsRemote() {
-		return fmt.Errorf("repository %q is remote. skeletons can only be created in local repositories", o.RepoName)
-	}
+	repoRef.Name = o.RepoName
 
-	skeletonPath := repoRef.SkeletonPath(o.SkeletonName)
-
-	if file.Exists(skeletonPath) {
-		return fmt.Errorf("skeleton %q already exists in repository %q", o.SkeletonName, o.RepoName)
-	}
-
-	err = skeleton.Create(skeletonPath)
+	err = repository.CreateSkeleton(repoRef, o.SkeletonName)
 	if err != nil {
 		return err
 	}

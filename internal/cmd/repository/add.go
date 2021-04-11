@@ -104,7 +104,8 @@ func (o *AddOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintln(o.Out, "Repository added")
+	fmt.Fprintf(o.Out, "Repository added.\n\n")
+	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton list -r %s`.\n", o.RepoName)
 
 	return nil
 }

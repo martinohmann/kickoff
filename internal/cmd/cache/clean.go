@@ -29,7 +29,7 @@ func NewCleanCmd(streams cli.IOStreams) *cobra.Command {
 				return fmt.Errorf("failed to clean cache: %w", err)
 			}
 
-			fmt.Fprintln(streams.Out, "Cache cleaned")
+			fmt.Fprintln(streams.Out, "Cache cleaned.")
 
 			return nil
 		},

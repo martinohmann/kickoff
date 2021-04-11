@@ -107,7 +107,7 @@ func (o *RemoveOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintln(o.Out, "Repository removed")
+	fmt.Fprintln(o.Out, "Repository removed.")
 
 	return nil
 }

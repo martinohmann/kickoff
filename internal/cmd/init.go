@@ -329,7 +329,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return nil
 	}
 
-	return repository.Create(localPath, kickoff.DefaultSkeletonName)
+	return repository.CreateWithSkeleton(localPath, kickoff.DefaultSkeletonName)
 }
 
 func (o *InitOptions) persistConfiguration() error {

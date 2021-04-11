@@ -7,7 +7,6 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
@@ -88,17 +87,13 @@ func (o *CreateOptions) Validate() error {
 		return fmt.Errorf("repository with name %q already exists", o.RepoName)
 	}
 
-	if file.Exists(o.OutputDir) {
-		return fmt.Errorf("directory %s already exists", o.OutputDir)
-	}
-
 	return o.ConfigFlags.Validate()
 }
 
 // Run creates a new skeleton repository in the provided output directory and
 // seeds it with a default skeleton.
 func (o *CreateOptions) Run() error {
-	err := repository.Create(o.OutputDir, o.SkeletonName)
+	err := repository.CreateWithSkeleton(o.OutputDir, o.SkeletonName)
 	if err != nil {
 		return err
 	}
