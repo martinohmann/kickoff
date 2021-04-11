@@ -96,10 +96,7 @@ func (o *ShowOptions) Run() error {
 	default:
 		tw := cli.NewTableWriter(o.Out)
 
-		path, err := homedir.Collapse(skeleton.Ref.Path)
-		if err != nil {
-			return err
-		}
+		path := homedir.MustCollapse(skeleton.Ref.Path)
 
 		repoInfo := skeleton.Ref.Repo
 
@@ -123,12 +120,9 @@ func (o *ShowOptions) Run() error {
 		}
 
 		if skeleton.Parent != nil {
-			parent, err := homedir.Collapse(skeleton.Parent.Ref.Path)
-			if err != nil {
-				return err
-			}
+			parentPath := homedir.MustCollapse(skeleton.Parent.Ref.Path)
 
-			tw.Append("Parent", parent)
+			tw.Append("Parent", parentPath)
 		}
 
 		if len(skeleton.Values) > 0 {

@@ -80,7 +80,7 @@ func (r *RepoRef) LocalPath() string {
 	if err != nil {
 		log.WithError(err).
 			WithField("name", r.Name).
-			Fatal("failed to determine local path for repository")
+			Panic("failed to determine local path for repository")
 	}
 
 	return localPath
@@ -124,12 +124,7 @@ func ParseRepoRef(rawurl string) (*RepoRef, error) {
 	}
 
 	if u.Host == "" {
-		path, err := homedir.Expand(u.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		return &RepoRef{Path: path}, nil
+		return &RepoRef{Path: homedir.MustExpand(u.Path)}, nil
 	}
 
 	query, err := url.ParseQuery(u.RawQuery)
