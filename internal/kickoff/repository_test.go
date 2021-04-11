@@ -49,8 +49,7 @@ func TestParseRepoRef(t *testing.T) {
 			name: "url",
 			s:    "https://foo.bar.baz/johndoe/repo",
 			expected: &RepoRef{
-				URL:      "https://foo.bar.baz/johndoe/repo",
-				Revision: "master",
+				URL: "https://foo.bar.baz/johndoe/repo",
 			},
 		},
 		{
@@ -65,8 +64,7 @@ func TestParseRepoRef(t *testing.T) {
 			name: "git url",
 			s:    "git://git@github.com/martinohmann/kickoff.git",
 			expected: &RepoRef{
-				URL:      "git://git@github.com/martinohmann/kickoff.git",
-				Revision: "master",
+				URL: "git://git@github.com/martinohmann/kickoff.git",
 			},
 		},
 		{

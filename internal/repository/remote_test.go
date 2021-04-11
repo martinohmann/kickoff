@@ -221,6 +221,19 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 		require.NoError(t, repo.syncRemote(context.Background()))
 	})
 
+	t.Run("does not checkout revision if empty", func(t *testing.T) {
+		repo, fakeClient, localPath, restore := createRemoteTestRepo(t, "")
+		defer restore()
+
+		createLocalTestRepoDir(t, localPath, time.Now())
+
+		fakeRepo := &git.FakeRepository{}
+
+		fakeClient.On("Open", localPath).Return(fakeRepo, nil)
+
+		require.NoError(t, repo.syncRemote(context.Background()))
+	})
+
 	t.Run("it propagates context to (git.Client).Clone", func(t *testing.T) {
 		repo, fakeClient, localPath, restore := createRemoteTestRepo(t)
 		defer restore()
@@ -376,11 +389,16 @@ func createLocalTestRepoDir(t *testing.T, dir string, modTime time.Time) {
 	require.NoError(t, os.Chtimes(dir, modTime, modTime))
 }
 
-func createRemoteTestRepo(t *testing.T) (*remoteRepository, *git.FakeClient, string, func()) {
+func createRemoteTestRepo(t *testing.T, revision ...string) (*remoteRepository, *git.FakeClient, string, func()) {
+	rev := "master"
+	if len(revision) > 0 {
+		rev = revision[0]
+	}
+
 	restoreCacheDir := testutil.MockRepositoryCacheDir(t.TempDir())
 	ref := kickoff.RepoRef{
 		URL:      "https://github.com/martinohmann/kickoff-skeletons",
-		Revision: "master",
+		Revision: rev,
 	}
 
 	repo, err := newRemote(ref)

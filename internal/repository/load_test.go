@@ -90,7 +90,7 @@ func TestGetParentRepoRef(t *testing.T) {
 		{
 			name:      "remote parent repository",
 			repoRef:   &kickoff.RepoRef{Name: "foo", Path: "/tmp/foo"},
-			parentRef: kickoff.ParentRef{RepositoryURL: "https://foo.bar.baz"},
+			parentRef: kickoff.ParentRef{RepositoryURL: "https://foo.bar.baz?revision=master"},
 			expected:  &kickoff.RepoRef{URL: "https://foo.bar.baz", Revision: "master"},
 		},
 		{

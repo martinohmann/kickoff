@@ -134,10 +134,6 @@ func ParseRepoRef(rawurl string) (*RepoRef, error) {
 		revision = rev[0]
 	}
 
-	if revision == "" {
-		revision = "master"
-	}
-
 	// Query is only used to pass an optional revision and needs to be empty in
 	// the final repository URL.
 	u.RawQuery = ""

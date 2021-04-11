@@ -72,6 +72,7 @@ func (o *ListOptions) Run() error {
 		if ref.IsRemote() {
 			url = ref.URL
 			typ = "remote"
+			revision = "<default-branch>"
 
 			if ref.Revision != "" {
 				revision = ref.Revision
