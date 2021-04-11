@@ -15,10 +15,11 @@ import (
 )
 
 func TestCreateCmd(t *testing.T) {
-	tmpdir := t.TempDir()
+	tmpdir := t.TempDir() + "/repo"
 
-	err := repository.Create(tmpdir, "default")
+	ref, err := repository.Create(tmpdir)
 	require.NoError(t, err)
+	require.NoError(t, repository.CreateSkeleton(ref, "default"))
 
 	myskelDir := filepath.Join(tmpdir, kickoff.SkeletonsDir, "myskel")
 
@@ -60,7 +61,7 @@ func TestCreateCmd(t *testing.T) {
 		cmd.SetArgs([]string{"remote", "default", "--config", configFile.Name()})
 
 		err := cmd.Execute()
-		assert.EqualError(t, err, `repository "remote" is remote. skeletons can only be created in local repositories`)
+		assert.EqualError(t, err, `creating skeletons in remote repositories is not supported`)
 		assert.NoDirExists(t, myskelDir)
 	})
 

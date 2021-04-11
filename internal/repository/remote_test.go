@@ -372,7 +372,7 @@ func TestRemoteRepository_ListSkeletons(t *testing.T) {
 }
 
 func createLocalTestRepoDir(t *testing.T, dir string, modTime time.Time) {
-	require.NoError(t, Create(dir, "default"))
+	require.NoError(t, CreateWithSkeleton(dir, "default"))
 	require.NoError(t, os.Chtimes(dir, modTime, modTime))
 }
 
