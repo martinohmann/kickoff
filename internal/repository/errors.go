@@ -24,7 +24,7 @@ type SkeletonNotFoundError struct {
 	RepoName string
 }
 
-// Error implements error.
+// Error implements the error interface.
 func (e SkeletonNotFoundError) Error() string {
 	if e.RepoName == "" {
 		return fmt.Sprintf("skeleton %q not found", e.Name)
@@ -39,7 +39,21 @@ type DependencyCycleError struct {
 	ParentRef kickoff.ParentRef
 }
 
-// Error implements error.
+// Error implements the error interface.
 func (e DependencyCycleError) Error() string {
 	return fmt.Sprintf("dependency cycle detected for parent: %#v", e.ParentRef)
+}
+
+type RevisionNotFoundError struct {
+	RepoRef kickoff.RepoRef
+}
+
+// Error implements the error interface.
+func (e RevisionNotFoundError) Error() string {
+	repo := e.RepoRef.Name
+	if repo == "" {
+		repo = e.RepoRef.URL
+	}
+
+	return fmt.Sprintf("revision %q not found in repository %q", e.RepoRef.Revision, repo)
 }

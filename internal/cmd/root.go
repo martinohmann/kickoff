@@ -88,6 +88,7 @@ func handleError(w io.Writer, err error) {
 		netErr               net.Error
 		skeletonNotFoundErr  repository.SkeletonNotFoundError
 		repoNotConfiguredErr cmdutil.RepositoryNotConfiguredError
+		revisionNotFoundErr  repository.RevisionNotFoundError
 	)
 
 	switch {
@@ -99,6 +100,13 @@ func handleError(w io.Writer, err error) {
 		errorContext = "Run `kickoff skeleton list` to get a list of available skeletons."
 	case errors.As(err, &repoNotConfiguredErr):
 		errorContext = "Run `kickoff repository list` to get a list of available repositories."
+	case errors.As(err, &revisionNotFoundErr):
+		ref := revisionNotFoundErr.RepoRef
+		ref.Revision = ""
+
+		errorContext = fmt.Sprintf("You may want to re-add the repository with an existing revision:\n"+
+			"  kickoff repository remove %s\n"+
+			"  kickoff repository add %s %s --revision <existing-revision>", ref.Name, ref.Name, ref.String())
 	case errors.As(err, &netErr):
 		if netErr.Temporary() {
 			errorContext = "Temporary network error. Check your internet connection."

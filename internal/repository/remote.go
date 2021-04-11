@@ -112,6 +112,7 @@ func (r *remoteRepository) syncRemote(ctx context.Context) error {
 	}
 
 	if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		err = RevisionNotFoundError{RepoRef: r.ref}
 		// A git reference error indicates that we cloned a repository but
 		// the desired revision was not found. The local cache is in a
 		// potentially invalid state now and needs to be cleaned.

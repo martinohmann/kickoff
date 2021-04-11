@@ -193,7 +193,7 @@ func TestRemoteRepository_syncRemote(t *testing.T) {
 			Return(nil, plumbing.ErrReferenceNotFound)
 
 		err := repo.syncRemote(context.Background())
-		require.Equal(t, plumbing.ErrReferenceNotFound, err)
+		require.EqualError(t, err, `revision "master" not found in repository "https://github.com/martinohmann/kickoff-skeletons"`)
 
 		require.False(t, file.Exists(localPath))
 	})

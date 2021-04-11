@@ -34,7 +34,10 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 			Adds a skeleton repository to the config. If a config for the same repository name already exists it will be overridden.`),
 		Example: cmdutil.Examples(`
 			# Add a new skeleton repository
-			kickoff repository add myskeletons /path/to/skeleton/repo`),
+			kickoff repository add myskeletons /path/to/skeleton/repo
+
+			# Add a remote skeleton repository in a specific revision
+			kickoff repository add myskeletons https://github.com/martinohmann/kickoff-skeletons --revision v1.0.0`),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
@@ -51,6 +54,7 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.MarkZshCompPositionalArgumentFile(2)
 
+	cmd.Flags().StringVar(&o.Revision, "revision", o.Revision, "Revision to checkout. Can be a branch name, tag or commit SHA.")
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
@@ -63,6 +67,7 @@ type AddOptions struct {
 
 	RepoName string
 	RepoURL  string
+	Revision string
 }
 
 // Complete completes the add options.
@@ -92,9 +97,15 @@ func (o *AddOptions) Validate() error {
 
 // Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
-	_, err := kickoff.ParseRepoRef(o.RepoURL)
+	ref, err := kickoff.ParseRepoRef(o.RepoURL)
 	if err != nil {
 		return fmt.Errorf("failed to parse repository URL: %w", err)
+	}
+
+	if ref.IsRemote() && o.Revision != "" {
+		ref.Revision = o.Revision
+
+		o.RepoURL = ref.String()
 	}
 
 	o.Repositories[o.RepoName] = o.RepoURL
