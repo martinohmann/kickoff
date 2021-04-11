@@ -170,7 +170,7 @@ func TestRepoRef_LocalPath(t *testing.T) {
 		{
 			name:     "remote repository with name",
 			ref:      &RepoRef{Name: "default", URL: "https://github.com/martinohmann/kickoff-skeletons"},
-			expected: filepath.Join(LocalRepositoryCacheDir, "default-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
+			expected: filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
 		},
 		{
 			name:     "remote repository with revision",
@@ -192,6 +192,6 @@ func TestRepoRef_LocalPath(t *testing.T) {
 func TestRepoRef_SkeletonPath(t *testing.T) {
 	ref := &RepoRef{Name: "foo", URL: "https://github.com/martinohmann/kickoff-skeletons"}
 
-	assert.Equal(t, ref.SkeletonsPath(), filepath.Join(LocalRepositoryCacheDir, "foo-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons"))
-	assert.Equal(t, ref.SkeletonPath("bar"), filepath.Join(LocalRepositoryCacheDir, "foo-4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons", "bar"))
+	assert.Equal(t, ref.SkeletonsPath(), filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons"))
+	assert.Equal(t, ref.SkeletonPath("bar"), filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb", "skeletons", "bar"))
 }
