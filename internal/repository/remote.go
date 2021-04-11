@@ -133,6 +133,10 @@ func (r *remoteRepository) updateLocalCache(ctx context.Context, url, revision s
 		return err
 	}
 
+	if revision == "" {
+		return nil
+	}
+
 	return checkoutRevision(repo, revision)
 }
 
