@@ -90,7 +90,8 @@ func (o *RemoveOptions) Run() error {
 		// Remote repos should never ever reside outside of the user cache dir.
 		// If they do this is a programmer error.
 		if !strings.HasPrefix(localPath, kickoff.LocalRepositoryCacheDir) {
-			log.WithField("path", localPath).Fatal("found remote repository cache outside of user cache dir, refusing to delete")
+			log.WithField("path", localPath).
+				Panic("unexpected repository location: found remote repository cache outside of user cache dir, refusing to delete")
 		}
 
 		log.WithField("path", localPath).Debug("deleting repository cache dir")

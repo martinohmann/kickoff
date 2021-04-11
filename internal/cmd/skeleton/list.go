@@ -67,10 +67,7 @@ func (o *ListOptions) Run() error {
 	tw.SetHeader("RepoName", "Name", "Path")
 
 	for _, skeleton := range skeletons {
-		path, err := homedir.Collapse(skeleton.Path)
-		if err != nil {
-			return err
-		}
+		path := homedir.MustCollapse(skeleton.Path)
 
 		tw.Append(skeleton.Repo.Name, skeleton.Name, path)
 	}

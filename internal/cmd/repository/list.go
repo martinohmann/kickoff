@@ -78,10 +78,7 @@ func (o *ListOptions) Run() error {
 			}
 		}
 
-		localPath, err := homedir.Collapse(ref.LocalPath())
-		if err != nil {
-			return err
-		}
+		localPath := homedir.MustCollapse(ref.LocalPath())
 
 		tw.Append(name, typ, localPath, url, revision)
 	}

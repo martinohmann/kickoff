@@ -291,10 +291,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		config.Filesystem = afero.NewMemMapFs()
 	}
 
-	outputDir, err := homedir.Collapse(o.OutputDir)
-	if err != nil {
-		return err
-	}
+	outputDir := homedir.MustCollapse(o.OutputDir)
 
 	fmt.Fprintf(o.Out, "Creating project in %s.\n\n", colorBold.Sprint(outputDir))
 

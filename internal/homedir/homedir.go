@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 )
 
 // Collapse replaces the homedir in absolute paths with `~`. E.g.
@@ -36,9 +37,31 @@ func Collapse(path string) (string, error) {
 	return fmt.Sprintf("~/%s", strings.TrimLeft(unprefixed, "/")), nil
 }
 
+// MustCollapse is the same as Collapse but will panic on errors while
+// attempting to collapse the home directory.
+func MustCollapse(path string) string {
+	path, err := Collapse(path)
+	if err != nil {
+		log.WithError(err).Panic("failed to collapse homedir")
+	}
+
+	return path
+}
+
 // Expand expands the path to include the home directory if the path
 // is prefixed with `~`. If it isn't prefixed with `~`, the path is
 // returned as-is.
 func Expand(path string) (string, error) {
 	return homedir.Expand(path)
+}
+
+// MustExpand is the same as Expand but will panic on errors while attempting
+// to expand the home directory.
+func MustExpand(path string) string {
+	path, err := Expand(path)
+	if err != nil {
+		log.WithError(err).Panic("failed to expand homedir")
+	}
+
+	return path
 }
