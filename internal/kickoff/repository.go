@@ -91,7 +91,7 @@ func (r *RepoRef) localPath() (string, error) {
 		return filepath.Abs(r.Path)
 	}
 
-	dirname := fmt.Sprintf("%x", sha256.Sum256([]byte(r.URL)))
+	dirname := fmt.Sprintf("%x", sha256.Sum256([]byte(r.String())))
 
 	return filepath.Abs(filepath.Join(LocalRepositoryCacheDir, dirname))
 }

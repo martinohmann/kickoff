@@ -175,7 +175,7 @@ func TestRepoRef_LocalPath(t *testing.T) {
 		{
 			name:     "remote repository with revision",
 			ref:      &RepoRef{URL: "https://github.com/martinohmann/kickoff-skeletons", Revision: "foo/bar"},
-			expected: filepath.Join(LocalRepositoryCacheDir, "4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb"),
+			expected: filepath.Join(LocalRepositoryCacheDir, "4207580b9fc0ca2090f71dec045bde0cb7e46c0d795b9731fef9e60809f4d16a"),
 		},
 	}
 
