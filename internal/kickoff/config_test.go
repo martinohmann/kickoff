@@ -2,6 +2,8 @@ package kickoff
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/template"
@@ -224,5 +226,38 @@ func TestLoadConfig(t *testing.T) {
 
 	runLoadConfigTests(t, testCases, func(path string) (interface{}, error) {
 		return LoadConfig(path)
+	})
+}
+
+func TestSaveConfig(t *testing.T) {
+	t.Run("saves config", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "config.yaml")
+		require.NoError(t, SaveConfig(path, &Config{}))
+		require.FileExists(t, path)
+	})
+
+	t.Run("creates nonexistent dirs", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "nonexistent-dir", "config.yaml")
+		require.NoError(t, SaveConfig(path, &Config{}))
+		require.FileExists(t, path)
+	})
+
+	t.Run("returns error if creating parent dir fails", func(t *testing.T) {
+		tmpdir := t.TempDir()
+		f, err := os.Create(filepath.Join(tmpdir, "actually-a-file"))
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
+
+		path := filepath.Join(tmpdir, "actually-a-file", "config.yaml")
+		require.Error(t, SaveConfig(path, &Config{}))
+		require.NoFileExists(t, path)
+	})
+
+	t.Run("does not save invalid config", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "config.yaml")
+		require.Error(t, SaveConfig(path, &Config{
+			Project: ProjectConfig{Host: "invalid\\:"},
+		}))
+		require.NoFileExists(t, path)
 	})
 }

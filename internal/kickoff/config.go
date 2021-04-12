@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -170,6 +172,11 @@ func Save(path string, v interface{}) error {
 	log.WithField("path", path).Debug("saving file")
 
 	buf, err := yaml.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(filepath.Dir(path), 0755)
 	if err != nil {
 		return err
 	}
