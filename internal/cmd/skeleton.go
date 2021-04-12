@@ -18,6 +18,7 @@ func NewSkeletonCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.AddCommand(skeleton.NewCreateCmd(streams))
 	cmd.AddCommand(skeleton.NewListCmd(streams))
 	cmd.AddCommand(skeleton.NewShowCmd(streams))
+	cmd.AddCommand(skeleton.NewShowFileCmd(streams))
 
 	return cmd
 }
