@@ -4,7 +4,7 @@ run:
 
 linters-settings:
   errcheck:
-    ignore: fmt:[FS]?[Pp]rint*,github.com/spf13/cobra:Mark*
+    ignore: fmt:[FS]?[Pp]rint*,github.com/spf13/cobra:(Mark|RegisterFlagCompletionFunc)
 
 issues:
   exclude-rules:

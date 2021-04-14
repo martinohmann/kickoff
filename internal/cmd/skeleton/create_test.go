@@ -29,24 +29,6 @@ func TestCreateCmd(t *testing.T) {
 		Create()
 	defer os.Remove(configFile.Name())
 
-	t.Run("empty repo name", func(t *testing.T) {
-		cmd := newCreateCmd()
-		cmd.SetArgs([]string{"", "myskel", "--config", configFile.Name()})
-
-		err := cmd.Execute()
-		assert.EqualError(t, err, "repository name must not be empty")
-		assert.NoDirExists(t, myskelDir)
-	})
-
-	t.Run("empty skeleton name", func(t *testing.T) {
-		cmd := newCreateCmd()
-		cmd.SetArgs([]string{"myrepo", "", "--config", configFile.Name()})
-
-		err := cmd.Execute()
-		assert.EqualError(t, err, "skeleton name must not be empty")
-		assert.NoDirExists(t, myskelDir)
-	})
-
 	t.Run("repository does not exist", func(t *testing.T) {
 		cmd := newCreateCmd()
 		cmd.SetArgs([]string{"nonexistent", "default", "--config", configFile.Name()})

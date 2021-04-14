@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -10,31 +9,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// ErrIllegalVersionFlagCombination is returned if mutual exclusive version
-	// format flags are set.
-	ErrIllegalVersionFlagCombination = errors.New("--short and --output can't be used together")
-)
-
 // NewVersionCmd creates a command which can print the kickoff version.
 func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
-	o := &VersionOptions{IOStreams: streams}
+	o := &VersionOptions{
+		IOStreams:  streams,
+		OutputFlag: cmdutil.NewOutputFlag("json", "yaml", "short"),
+	}
 
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Displays the version",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := o.Validate()
-			if err != nil {
+			if err := o.Validate(); err != nil {
 				return err
 			}
 
 			return o.Run()
 		},
 	}
-
-	cmd.Flags().BoolVar(&o.Short, "short", false, "Display short version")
 
 	o.OutputFlag.AddFlag(cmd)
 
@@ -45,35 +38,22 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 type VersionOptions struct {
 	cli.IOStreams
 	cmdutil.OutputFlag
-
-	Short bool
-}
-
-// Validate validates the options before executing the command.
-func (o *VersionOptions) Validate() error {
-	if o.Short && o.Output != "" {
-		return ErrIllegalVersionFlagCombination
-	}
-
-	return o.OutputFlag.Validate()
 }
 
 // Run prints the version in the provided output format.
 func (o *VersionOptions) Run() error {
 	v := version.Get()
 
-	if o.Short {
-		fmt.Fprintln(o.Out, v.GitVersion)
-		return nil
-	}
-
 	switch o.Output {
 	case "json":
 		return cmdutil.RenderJSON(o.Out, v)
 	case "yaml":
 		return cmdutil.RenderYAML(o.Out, v)
+	case "short":
+		fmt.Fprintln(o.Out, v.GitVersion)
 	default:
 		fmt.Fprintf(o.Out, "%#v\n", v)
-		return nil
 	}
+
+	return nil
 }

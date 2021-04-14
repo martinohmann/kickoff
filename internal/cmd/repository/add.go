@@ -1,23 +1,12 @@
 package repository
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/spf13/cobra"
-)
-
-var (
-	// ErrEmptyRepositoryName is returned during validation if the repository
-	// name is empty.
-	ErrEmptyRepositoryName = errors.New("repository name must not be empty")
-
-	// ErrEmptyRepositoryURL is returned during validation if the repository
-	// URL is empty.
-	ErrEmptyRepositoryURL = errors.New("repository url must not be empty")
 )
 
 // NewAddCmd creates a new command for added a skeleton repository to the
@@ -38,7 +27,7 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 
 			# Add a remote skeleton repository in a specific revision
 			kickoff repository add myskeletons https://github.com/martinohmann/kickoff-skeletons --revision v1.0.0`),
-		Args: cobra.ExactArgs(2),
+		Args: cmdutil.ExactNonEmptyArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -80,16 +69,8 @@ func (o *AddOptions) Complete(args []string) error {
 
 // Validate validates the options before adding a new repository.
 func (o *AddOptions) Validate() error {
-	if o.RepoName == "" {
-		return ErrEmptyRepositoryName
-	}
-
-	if o.RepoURL == "" {
-		return ErrEmptyRepositoryURL
-	}
-
 	if _, ok := o.Repositories[o.RepoName]; ok {
-		return fmt.Errorf("repository with name %q already exists", o.RepoName)
+		return cmdutil.RepositoryAlreadyExistsError(o.RepoName)
 	}
 
 	return nil
@@ -99,7 +80,7 @@ func (o *AddOptions) Validate() error {
 func (o *AddOptions) Run() error {
 	ref, err := kickoff.ParseRepoRef(o.RepoURL)
 	if err != nil {
-		return fmt.Errorf("failed to parse repository URL: %w", err)
+		return err
 	}
 
 	if ref.IsRemote() && o.Revision != "" {

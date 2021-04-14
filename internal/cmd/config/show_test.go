@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
-	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,6 @@ func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
 
 	err := cmd.Execute()
 	require.Error(t, err)
-	assert.Equal(t, cmdutil.ErrInvalidOutputFormat, err)
 }
 
 func TestShowCmd_Execute(t *testing.T) {

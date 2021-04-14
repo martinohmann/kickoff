@@ -77,7 +77,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 
 			# Selectively skip the creating of certain files or dirs
 			kickoff project create myskeleton ~/repos/myproject --skip-file README.md`),
-		Args: cobra.ExactArgs(2),
+		Args: cmdutil.ExactNonEmptyArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -97,9 +97,6 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	o.ConfigFlags.AddFlags(cmd)
 	o.TimeoutFlag.AddFlag(cmd)
 
-	cmdutil.AddForceFlag(cmd, &o.Force)
-	cmdutil.AddOverwriteFlag(cmd, &o.Overwrite)
-
 	return cmd
 }
 
@@ -114,8 +111,8 @@ type CreateOptions struct {
 	LicenseClient   *license.Client
 
 	ProjectName    string
-	OutputDir      string
-	Skeletons      []string
+	ProjectDir     string
+	SkeletonNames  []string
 	DryRun         bool
 	Force          bool
 	Overwrite      bool
@@ -130,6 +127,7 @@ type CreateOptions struct {
 // AddFlags adds flags for all project creation options to cmd.
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
+	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces writing into existing output directory")
 
 	cmd.Flags().StringVar(&o.Project.Gitignore, "gitignore", o.Project.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
 	cmd.Flags().StringVar(&o.Project.Host, "host", o.Project.Host, "Project repository host")
@@ -142,26 +140,22 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 
 	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
 
+	cmd.Flags().BoolVar(&o.Overwrite, "overwrite", o.Overwrite, "Overwrite files that are already present in output directory")
 	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory. If file is a dir, present files contained in it will be overwritten")
 	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles, "Skip writing a specific file to the output directory. File path must be relative to the output directory. If file is a dir, files contained in it will be skipped as well")
 }
 
 // Complete completes the project creation options.
 func (o *CreateOptions) Complete(args []string) (err error) {
-	skeletons := args[0]
-	outputDir := args[1]
+	o.SkeletonNames = strings.Split(args[0], ",")
 
-	o.Skeletons = strings.Split(skeletons, ",")
-
-	if outputDir != "" {
-		o.OutputDir, err = filepath.Abs(outputDir)
-		if err != nil {
-			return err
-		}
+	o.ProjectDir, err = filepath.Abs(args[1])
+	if err != nil {
+		return err
 	}
 
 	if o.ProjectName == "" {
-		o.ProjectName = filepath.Base(o.OutputDir)
+		o.ProjectName = filepath.Base(o.ProjectDir)
 	}
 
 	err = o.ConfigFlags.Complete()
@@ -203,18 +197,8 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 
 // Validate validates the project creation options.
 func (o *CreateOptions) Validate() error {
-	if file.Exists(o.OutputDir) && !o.Force {
-		return fmt.Errorf("output dir %s already exists, add --force to overwrite", o.OutputDir)
-	}
-
-	if o.OutputDir == "" {
-		return cmdutil.ErrEmptyOutputDir
-	}
-
-	for i, name := range o.Skeletons {
-		if name == "" {
-			return fmt.Errorf("empty skeleton name index %d", i)
-		}
+	if file.Exists(o.ProjectDir) && !o.Force {
+		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
 	}
 
 	if o.Project.Owner == "" {
@@ -237,7 +221,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	skeletons, err := repository.LoadSkeletons(ctx, repo, o.Skeletons)
+	skeletons, err := repository.LoadSkeletons(ctx, repo, o.SkeletonNames)
 	if err != nil {
 		return err
 	}
@@ -252,7 +236,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	return o.initGitRepository(o.OutputDir)
+	return o.initGitRepository(o.ProjectDir)
 }
 
 func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) error {
@@ -291,11 +275,9 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		config.Filesystem = afero.NewMemMapFs()
 	}
 
-	outputDir := homedir.MustCollapse(o.OutputDir)
+	fmt.Fprintf(o.Out, "Creating project in %s.\n\n", colorBold.Sprint(homedir.MustCollapse(o.ProjectDir)))
 
-	fmt.Fprintf(o.Out, "Creating project in %s.\n\n", colorBold.Sprint(outputDir))
-
-	result, err := project.Create(s, o.OutputDir, config)
+	result, err := project.Create(s, o.ProjectDir, config)
 	if err != nil {
 		return err
 	}

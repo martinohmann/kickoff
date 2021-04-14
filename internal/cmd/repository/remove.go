@@ -28,7 +28,7 @@ func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
 		Example: cmdutil.Examples(`
 			# Remove a skeleton repository
 			kickoff repository remove myrepo`),
-		Args: cobra.ExactArgs(1),
+		Args: cmdutil.ExactNonEmptyArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -64,13 +64,9 @@ func (o *RemoveOptions) Complete(args []string) error {
 
 // Validate validates the remove options.
 func (o *RemoveOptions) Validate() error {
-	if o.RepoName == "" {
-		return ErrEmptyRepositoryName
-	}
-
 	_, ok := o.Repositories[o.RepoName]
 	if !ok {
-		return cmdutil.RepositoryNotConfiguredError{Name: o.RepoName}
+		return cmdutil.RepositoryNotConfiguredError(o.RepoName)
 	}
 
 	return nil

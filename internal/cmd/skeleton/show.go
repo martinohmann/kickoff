@@ -34,7 +34,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 
 			# Show skeleton config using different output
 			kickoff skeleton show myskeleton --output json`),
-		Args: cobra.ExactArgs(1),
+		Args: cmdutil.ExactNonEmptyArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -62,12 +62,12 @@ type ShowOptions struct {
 	cmdutil.OutputFlag
 	cmdutil.TimeoutFlag
 
-	Skeleton string
+	SkeletonName string
 }
 
 // Complete completes the show options.
 func (o *ShowOptions) Complete(args []string) error {
-	o.Skeleton = args[0]
+	o.SkeletonName = args[0]
 
 	return o.ConfigFlags.Complete()
 }
@@ -83,7 +83,7 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repository.LoadSkeleton(ctx, repo, o.Skeleton)
+	skeleton, err := repository.LoadSkeleton(ctx, repo, o.SkeletonName)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/martinohmann/kickoff/internal/file"
@@ -11,26 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	// DefaultTimeout is the default timeout for operations that cross API
-	// boundaries.
-	DefaultTimeout = 20 * time.Second
-)
-
 // AddConfigFlag adds the --config flag to cmd and binds it to val.
 func AddConfigFlag(cmd *cobra.Command, val *string) {
 	cmd.Flags().StringVarP(val, "config", "c", *val, fmt.Sprintf("Path to config file (defaults to %q if the file exists)", kickoff.DefaultConfigPath))
-	cmd.MarkFlagFilename("config")
-}
-
-// AddForceFlag adds the --force flag to cmd and binds it to val.
-func AddForceFlag(cmd *cobra.Command, val *bool) {
-	cmd.Flags().BoolVar(val, "force", *val, "Forces writing into existing output directory")
-}
-
-// AddOverwriteFlag adds the --overwrite flag to cmd and binds it to val.
-func AddOverwriteFlag(cmd *cobra.Command, val *bool) {
-	cmd.Flags().BoolVar(val, "overwrite", *val, "Overwrite files that are already present in output directory")
+	cmd.MarkFlagFilename("config", "yaml", "yml")
 }
 
 // ConfigFlags provide a flag for configuring the path to the kickoff config
@@ -40,7 +27,8 @@ func AddOverwriteFlag(cmd *cobra.Command, val *bool) {
 type ConfigFlags struct {
 	kickoff.Config
 
-	ConfigPath   string
+	ConfigPath string
+
 	repositories []string
 }
 
@@ -65,6 +53,11 @@ func (f *ConfigFlags) Complete() (err error) {
 		}
 	}
 
+	f.ConfigPath, err = filepath.Abs(f.ConfigPath)
+	if err != nil {
+		return err
+	}
+
 	// We allow the default config file to be absent and simply skip loading it
 	// if it does not exist. For all other config file paths this will result
 	// in a load error. This is a convenience feature to keep kickoff usable
@@ -82,9 +75,8 @@ func (f *ConfigFlags) Complete() (err error) {
 	if len(f.repositories) > 0 {
 		// Ensure that the repos provided by the user are configured.
 		for _, name := range f.repositories {
-			_, ok := f.Repositories[name]
-			if !ok {
-				return RepositoryNotConfiguredError{Name: name}
+			if _, ok := f.Repositories[name]; !ok {
+				return RepositoryNotConfiguredError(name)
 			}
 		}
 
@@ -101,22 +93,44 @@ func (f *ConfigFlags) Complete() (err error) {
 
 // OutputFlag manage and validate a flag related to output format.
 type OutputFlag struct {
-	Output string
+	Output      string
+	ValidValues []string
+}
+
+// NewOutputFlag creates a new OutputFlag with a list of valid values. If
+// empty, validValues defaults to [json, yaml].
+func NewOutputFlag(validValues ...string) OutputFlag {
+	return OutputFlag{ValidValues: validValues}
 }
 
 // AddFlag adds the flag for configuring output format to cmd.
 func (f *OutputFlag) AddFlag(cmd *cobra.Command) {
+	if len(f.ValidValues) == 0 {
+		f.ValidValues = []string{"json", "yaml"}
+	}
+
 	cmd.Flags().StringVarP(&f.Output, "output", "o", f.Output, "Output format")
+	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return f.ValidValues, cobra.ShellCompDirectiveDefault
+	})
 }
 
 // Validate validates the output format and returns an error if the user
 // provided an invalid value.
 func (f *OutputFlag) Validate() error {
-	if f.Output != "" && f.Output != "yaml" && f.Output != "json" {
-		return ErrInvalidOutputFormat
+	if f.Output == "" {
+		return nil
 	}
 
-	return nil
+	for _, v := range f.ValidValues {
+		if v == f.Output {
+			return nil
+		}
+	}
+
+	sort.Strings(f.ValidValues)
+
+	return fmt.Errorf(`--output must be one of: '%s'`, strings.Join(f.ValidValues, `', '`))
 }
 
 // TimeoutFlag configure the timeout for operations that cross API boundaries,
@@ -128,9 +142,7 @@ type TimeoutFlag struct {
 // NewDefaultTimeoutFlag creates a new TimeoutFlag which uses the
 // DefaultTimeout is not overridded.
 func NewDefaultTimeoutFlag() TimeoutFlag {
-	return TimeoutFlag{
-		Timeout: DefaultTimeout,
-	}
+	return TimeoutFlag{Timeout: 20 * time.Second}
 }
 
 // AddFlag adds the timeout flag to cmd.
