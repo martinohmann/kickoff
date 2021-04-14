@@ -45,6 +45,10 @@ func Create(path string) (*kickoff.RepoRef, error) {
 // .kickoff.yaml and example README.md.skel as starter. Returns an error if
 // creating path or writing any of the files fails.
 func CreateSkeleton(ref *kickoff.RepoRef, name string) error {
+	if name == "" {
+		return errors.New("skeleton name must not be empty")
+	}
+
 	if ref.IsRemote() {
 		return errors.New("creating skeletons in remote repositories is not supported")
 	}

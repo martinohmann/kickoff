@@ -29,13 +29,9 @@ func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 		Example: cmdutil.Examples(`
 			# Show the content of a skeleton file in a specific repository
 			kickoff skeleton show-file myrepo:myskeleton relpath/to/file`),
-		Args: cobra.ExactArgs(2),
+		Args: cmdutil.ExactNonEmptyArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
-				return err
-			}
-
-			if err := o.Validate(); err != nil {
 				return err
 			}
 
@@ -55,13 +51,13 @@ type ShowFileOptions struct {
 	cmdutil.ConfigFlags
 	cmdutil.TimeoutFlag
 
-	Skeleton string
-	FilePath string
+	SkeletonName string
+	FilePath     string
 }
 
 // Complete completes the show options.
 func (o *ShowFileOptions) Complete(args []string) error {
-	o.Skeleton = args[0]
+	o.SkeletonName = args[0]
 	o.FilePath = filepath.Clean(args[1])
 
 	return o.ConfigFlags.Complete()
@@ -78,7 +74,7 @@ func (o *ShowFileOptions) Run() error {
 		return err
 	}
 
-	skeleton, err := repository.LoadSkeleton(ctx, repo, o.Skeleton)
+	skeleton, err := repository.LoadSkeleton(ctx, repo, o.SkeletonName)
 	if err != nil {
 		return err
 	}

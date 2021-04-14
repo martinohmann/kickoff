@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -61,22 +60,6 @@ func NewEditCmd(streams cli.IOStreams) *cobra.Command {
 type EditOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-}
-
-// Complete completes the command options.
-func (o *EditOptions) Complete() (err error) {
-	err = o.ConfigFlags.Complete()
-	if err != nil {
-		return err
-	}
-
-	if o.ConfigPath == "" {
-		o.ConfigPath = kickoff.DefaultConfigPath
-	}
-
-	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
-
-	return err
 }
 
 // Run loads the config file using the configured editor. The config file is

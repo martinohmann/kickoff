@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
@@ -35,8 +34,7 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 		`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := o.Complete()
-			if err != nil {
+			if err := o.Complete(); err != nil {
 				return err
 			}
 
@@ -61,18 +59,8 @@ type InitOptions struct {
 }
 
 // Complete completes the command options.
-func (o *InitOptions) Complete() (err error) {
-	err = o.ConfigFlags.Complete()
-	if err != nil {
-		return err
-	}
-
-	if o.ConfigPath == "" {
-		o.ConfigPath = kickoff.DefaultConfigPath
-	}
-
-	o.ConfigPath, err = filepath.Abs(o.ConfigPath)
-	if err != nil {
+func (o *InitOptions) Complete() error {
+	if err := o.ConfigFlags.Complete(); err != nil {
 		return err
 	}
 
@@ -81,7 +69,7 @@ func (o *InitOptions) Complete() (err error) {
 	o.GitignoreClient = gitignore.NewClient(httpClient)
 	o.LicenseClient = license.NewClient(httpClient)
 
-	return
+	return nil
 }
 
 // Run runs the interactive configuration of kickoff.

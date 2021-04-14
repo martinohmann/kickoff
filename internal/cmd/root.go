@@ -54,6 +54,13 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVar(&logLevel, "log-level", logLevel, "Level for stderr log output")
+	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		completions := make([]string, len(log.AllLevels))
+		for i, lvl := range log.AllLevels {
+			completions[i] = lvl.String()
+		}
+		return completions, cobra.ShellCompDirectiveDefault
+	})
 
 	cmd.AddCommand(NewCacheCmd(streams))
 	cmd.AddCommand(NewCompletionCmd(streams))

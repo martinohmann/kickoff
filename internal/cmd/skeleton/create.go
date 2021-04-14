@@ -1,7 +1,6 @@
 package skeleton
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -25,7 +24,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 		Example: cmdutil.Examples(`
 			# Create a new skeleton in myrepo
 			kickoff skeleton create myrepo myskeleton`),
-		Args: cobra.ExactArgs(2),
+		Args: cmdutil.ExactNonEmptyArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(args); err != nil {
 				return err
@@ -48,6 +47,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 type CreateOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+
 	RepoName     string
 	SkeletonName string
 }
@@ -62,19 +62,11 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 
 // Validate validates the create options.
 func (o *CreateOptions) Validate() error {
-	if o.RepoName == "" {
-		return errors.New("repository name must not be empty")
-	}
-
-	if o.SkeletonName == "" {
-		return errors.New("skeleton name must not be empty")
-	}
-
 	if _, ok := o.Repositories[o.RepoName]; !ok {
-		return cmdutil.RepositoryNotConfiguredError{Name: o.RepoName}
+		return cmdutil.RepositoryNotConfiguredError(o.RepoName)
 	}
 
-	return o.ConfigFlags.Validate()
+	return nil
 }
 
 // Run creates a new project skeleton in the provided output directory.
