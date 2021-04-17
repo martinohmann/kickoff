@@ -25,8 +25,6 @@ import (
 	"helm.sh/helm/pkg/strvals"
 )
 
-var colorBold = color.New(color.Bold)
-
 // NewCreateCmd creates a command that can create projects from project
 // skeletons using a variety of user-defined options.
 func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
