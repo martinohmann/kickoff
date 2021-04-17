@@ -13,8 +13,6 @@ import (
 
 var highlightRegexp = regexp.MustCompile(`(\{\{[^{]+\}\}|\.skel$)`)
 
-var bold = color.New(color.Bold)
-
 type tree struct {
 	gotree.Tree
 }
@@ -48,10 +46,10 @@ func New(text string) gotree.Tree {
 func (t *tree) Text() string {
 	text := t.Tree.Text()
 	if len(t.Items()) > 0 {
-		return bold.Sprint(text + "/")
+		text += "/"
 	}
 
-	return highlightRegexp.ReplaceAllString(text, color.YellowString(`$1`))
+	return highlightRegexp.ReplaceAllString(text, color.CyanString(`$1`))
 }
 
 // AddTree implements gotree.Tree.

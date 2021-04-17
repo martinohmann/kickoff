@@ -42,9 +42,10 @@ type Stats map[ActionType]int
 // Returns a string which contains counts of the actions in s.
 func (s Stats) String() string {
 	return fmt.Sprintf(
-		"Created: %d, Overwritten: %d, Skipped: %d",
-		s[ActionTypeCreate], s[ActionTypeOverwrite],
-		s[ActionTypeSkipUser]+s[ActionTypeSkipExisting],
+		"%s created %s skipped %s overwritten",
+		color.GreenString("%d", s[ActionTypeCreate]),
+		color.YellowString("%d", s[ActionTypeSkipUser]+s[ActionTypeSkipExisting]),
+		color.RedString("%d", s[ActionTypeOverwrite]),
 	)
 }
 
@@ -55,53 +56,59 @@ type Result struct {
 	Actions []Action
 }
 
-func writeSummary(w io.Writer, result *Result) {
+func (p *Project) writeSummary(w io.Writer) {
 	tw := cli.NewTableWriter(w)
 	tw.SetTablePadding(" ")
 
-	for _, action := range result.Actions {
+	for _, action := range p.result.Actions {
 		var (
-			actionSuffix string
-			sourceType   string
-			pathSuffix   string
+			status    string
+			dirSuffix string
 		)
 
 		source := action.Source
 		dest := action.Destination
 
-		switch {
-		case source.IsTemplate():
-			sourceType = "template"
-		case source.Mode().IsDir():
-			sourceType = "dir"
-			pathSuffix = "/"
-		default:
-			sourceType = "file"
+		if source.Mode().IsDir() {
+			dirSuffix = "/"
 		}
 
 		switch action.Type {
 		case ActionTypeSkipUser:
-			actionSuffix = color.CyanString("(skip)")
+			status = color.YellowString("! skip ") + color.HiBlackString("(user)")
 		case ActionTypeSkipExisting:
-			actionSuffix = color.YellowString("(skip existing)")
+			status = color.YellowString("! skip ") + color.HiBlackString("(exists)")
 		case ActionTypeOverwrite:
-			actionSuffix = color.RedString("(overwrite)")
+			status = color.RedString("✓ overwrite")
+		default:
+			status = color.GreenString("✓ create")
+		}
+
+		var destPath string
+
+		if source.Path() != dest.RelPath() {
+			destPath = fmt.Sprintf(
+				"%s %s",
+				color.HiBlackString("=❯"),
+				colorizePath(dest.RelPath()+dirSuffix),
+			)
 		}
 
 		tw.Append(
-			fmt.Sprintf("❯ %s", color.BlueString(sourceType)),
-			colorizePath(source.Path()+pathSuffix),
-			color.GreenString("=❯"),
-			colorizePath(dest.RelPath()+pathSuffix),
-			actionSuffix,
+			color.HiBlackString("❯"),
+			colorizePath(source.Path()+dirSuffix),
+			destPath,
+			status,
 		)
 	}
 
 	tw.Render()
 	fmt.Fprintln(w)
-	colorBold.Fprintf(w, "Project creation complete. %s.\n", result.Stats.String())
+	fmt.Fprintf(w, "Project %s created in %s\n", colorBold.Sprint(p.name), colorBold.Sprint(p.targetDir))
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "File statistics: %s\n", p.result.Stats)
 }
 
 func colorizePath(path string) string {
-	return highlightRegexp.ReplaceAllString(path, color.YellowString(`$1`))
+	return highlightRegexp.ReplaceAllString(path, color.CyanString(`$1`))
 }

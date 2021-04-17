@@ -13,7 +13,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
-	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
@@ -270,12 +269,9 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 	}
 
 	if o.DryRun {
-		fmt.Fprintln(o.Out, color.YellowString("[Dry Run] Actions will only be printed but not executed.\n"))
-
 		config.Filesystem = afero.NewMemMapFs()
+		fmt.Fprintf(o.Out, "%s changes will not be persisted to disk\n\n", color.YellowString("dry-run:"))
 	}
-
-	fmt.Fprintf(o.Out, "Creating project in %s.\n\n", colorBold.Sprint(homedir.MustCollapse(o.ProjectDir)))
 
 	result, err := project.Create(s, o.ProjectDir, config)
 	if err != nil {
@@ -283,7 +279,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 	}
 
 	if result.Stats[project.ActionTypeSkipExisting] > 0 {
-		fmt.Fprintln(o.Out, "\nSome targets were skipped because they already existed, use --overwrite or --overwrite-file to overwrite.")
+		fmt.Fprintln(o.Out, "\nSome targets were skipped because they already existed, use --overwrite or --overwrite-file to overwrite")
 	}
 
 	return nil

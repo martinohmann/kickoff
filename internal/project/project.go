@@ -154,7 +154,7 @@ func (p *Project) Create(s *kickoff.Skeleton) (*Result, error) {
 		return nil, err
 	}
 
-	writeSummary(p.output, p.result)
+	p.writeSummary(p.output)
 
 	return p.result, nil
 }
