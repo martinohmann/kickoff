@@ -17,7 +17,6 @@ var (
 
 // Base validation errors.
 var (
-	invalidParentRef     = "invalid parent ref"
 	invalidProjectConfig = "invalid project config"
 	invalidRepositoryRef = "invalid repository ref"
 	invalidSkeletonRef   = "invalid skeleton ref"
@@ -54,10 +53,6 @@ func newProjectConfigError(format string, args ...interface{}) *ValidationError 
 
 func newRepositoryRefError(format string, args ...interface{}) *ValidationError {
 	return newValidationError(invalidRepositoryRef, format, args...)
-}
-
-func newParentRefError(format string, args ...interface{}) *ValidationError {
-	return newValidationError(invalidParentRef, format, args...)
 }
 
 func newSkeletonRefError(format string, args ...interface{}) *ValidationError {

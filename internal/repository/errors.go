@@ -33,17 +33,6 @@ func (e SkeletonNotFoundError) Error() string {
 	return fmt.Sprintf("skeleton %q not found in repository %q", e.Name, e.RepoName)
 }
 
-// DependencyCycleError is the error returned while loading a skeleton's parent
-// if a dependency cycle is detected.
-type DependencyCycleError struct {
-	ParentRef kickoff.ParentRef
-}
-
-// Error implements the error interface.
-func (e DependencyCycleError) Error() string {
-	return fmt.Sprintf("dependency cycle detected for parent: %#v", e.ParentRef)
-}
-
 type RevisionNotFoundError struct {
 	RepoRef kickoff.RepoRef
 }

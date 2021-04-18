@@ -31,8 +31,5 @@ existing projects to a new one.
   [gitignore.io](https://gitignore.io).
 - Set local author, repository and skeleton defaults using custom config file.
 - Dry run for project creation.
-- Skeleton inheritance: skeletons can inherit files and values from an optional
-  parent skeleton.
 - Skeleton composition: projects can be created by composing multiple skeletons
-  together. This is similar to inheritance but allows for way more flexible use
-  of skeletons.
+  together.

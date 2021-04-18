@@ -15,11 +15,8 @@ func TestSkeleton(t *testing.T) {
 		s0 := &Skeleton{Ref: &SkeletonRef{Name: "foo"}}
 		assert.Equal("foo", s0.String())
 
-		s1 := &Skeleton{Ref: &SkeletonRef{Name: "bar", Repo: &RepoRef{Name: "repo"}}, Parent: s0}
-		assert.Equal("foo->repo:bar", s1.String())
-
-		s2 := &Skeleton{Parent: s1}
-		assert.Equal("foo->repo:bar-><anonymous-skeleton>", s2.String())
+		s1 := &Skeleton{Ref: &SkeletonRef{Name: "bar", Repo: &RepoRef{Name: "repo"}}}
+		assert.Equal("repo:bar", s1.String())
 	})
 }
 

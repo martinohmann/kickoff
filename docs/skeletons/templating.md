@@ -163,5 +163,4 @@ directory name was resolved. You can take a look at [this example skeleton](http
 
 ## Next steps
 
-* [Skeleton inheritance](inheritance): Inheriting from a parent skeleton.
 * [Skeleton composition](composition): Creating projects from multiple project skeletons.

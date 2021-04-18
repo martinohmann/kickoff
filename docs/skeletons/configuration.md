@@ -32,7 +32,7 @@ directory for kickoff to be able to identify it as such.
 The file has the following special properties:
 
 * Acts as a marker to identify the root of a project skeleton.
-* May contain metadata about a skeleton like description or parent.
+* May contain metadata about a skeleton.
 * May contain defaults for values used within templates.
 * Defining metadata and value defaults is totally optional, thus a valid
   `.kickoff.yaml` can also be empty.
@@ -48,9 +48,6 @@ description: |
 
   Upon project creation you may want to pass `--set travis.enabled=true` if you
   want to enable travis-ci for your project!
-parent:
-  repositoryURL: https://github.com/someuser/kickoff-skeletons?revision=v1.0
-  skeletonName: javascript/react-project
 values:
   myVar: 'myValue'
   travis:
@@ -70,16 +67,6 @@ Users can view the `description` of a skeleton by inspecting the skeleton:
 ```bash
 $ kickoff skeleton show <name-of-the-skeleton>
 ```
-
-### Configuring a `parent` skeleton
-
-Sometimes you might want to extend an existing skeleton instead of duplicating
-it. This is where the `parent` field comes into play. It lets you specify a
-parent skeleton which can either reside in a remote skeleton repository or in
-the same repository as the skeleton itself.
-
-Check out the [inheritance documentation](inheritance) for details.
-
 
 ### Configuring default `values`
 
@@ -109,5 +96,4 @@ multiple values from file via `--values`.
 
 * [Templating](templating): Learn more about `.skel` templates and the usage of
   template variables within file and directory names.
-* [Skeleton inheritance](inheritance): Inheriting from a parent skeleton.
 * [Skeleton composition](composition): Creating projects from multiple project skeletons.
