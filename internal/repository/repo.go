@@ -25,23 +25,6 @@ func NewNamed(name, url string) (kickoff.Repository, error) {
 // NewFromRef creates a new kickoff.Repository from a repository reference. Ref
 // may reference a local or remote repository.
 func NewFromRef(ref kickoff.RepoRef) (kickoff.Repository, error) {
-	key := cacheKey{ref.Name, ref.String()}
-
-	if repo, ok := repoCache.get(key); ok {
-		return repo, nil
-	}
-
-	repo, err := newFromRef(ref)
-	if err != nil {
-		return nil, err
-	}
-
-	repoCache.set(key, repo)
-
-	return repo, nil
-}
-
-func newFromRef(ref kickoff.RepoRef) (kickoff.Repository, error) {
 	if err := ref.Validate(); err != nil {
 		return nil, err
 	}

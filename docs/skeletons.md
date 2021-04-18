@@ -8,7 +8,7 @@ has_children: true
 # Project skeletons
 
 Project skeletons are blueprints that can be used to create new projects. They
-can be fully templated and composed, or inherit from other skeletons.
+can be fully templated and composed together.
 
 This section provides documentation for creating, customizing and using project
 skeletons.
@@ -60,7 +60,6 @@ Path            ~/kickoff-skeletons/skeletons/myskeleton
 Description     -
 Files           myskeleton
                 └── README.md.skel
-Parent          -
 Values          travis:
                   enabled: false
 ```

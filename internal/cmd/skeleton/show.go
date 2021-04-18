@@ -119,12 +119,6 @@ func (o *ShowOptions) Run() error {
 			tw.Append("Description", description)
 		}
 
-		if skeleton.Parent != nil {
-			parentPath := homedir.MustCollapse(skeleton.Parent.Ref.Path)
-
-			tw.Append("Parent", parentPath)
-		}
-
 		if len(skeleton.Values) > 0 {
 			var buf bytes.Buffer
 

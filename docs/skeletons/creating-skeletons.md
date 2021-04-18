@@ -47,7 +47,6 @@ Path            ~/kickoff-skeletons/skeletons/myskeleton
 Description     -
 Files           myskeleton
                 └── README.md.skel
-Parent          -
 Values          travis:
                   enabled: false
 ```

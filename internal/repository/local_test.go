@@ -73,14 +73,8 @@ func TestFindSkeletons(t *testing.T) {
 
 		expected := []*kickoff.SkeletonRef{
 			{Name: "bar", Path: ref.SkeletonPath("bar"), Repo: ref},
-			{Name: "child", Path: ref.SkeletonPath("child"), Repo: ref},
-			{Name: "childofchild", Path: ref.SkeletonPath("childofchild"), Repo: ref},
-			{Name: "cyclea", Path: ref.SkeletonPath("cyclea"), Repo: ref},
-			{Name: "cycleb", Path: ref.SkeletonPath("cycleb"), Repo: ref},
-			{Name: "cyclec", Path: ref.SkeletonPath("cyclec"), Repo: ref},
 			{Name: "foo/bar", Path: ref.SkeletonPath("foo/bar"), Repo: ref},
 			{Name: "nested/dir", Path: ref.SkeletonPath("nested/dir"), Repo: ref},
-			{Name: "parent", Path: ref.SkeletonPath("parent"), Repo: ref},
 		}
 
 		require.Equal(t, expected, skeletons)

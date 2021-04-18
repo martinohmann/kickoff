@@ -18,13 +18,10 @@ type Skeleton struct {
 	// skeleton. May be nil if the skeleton is the merged result of composing
 	// multiple skeletons.
 	Ref *SkeletonRef `json:"ref,omitempty"`
-	// Parent points to the parent skeleton if there is one.
-	Parent *Skeleton `json:"parent,omitempty"`
-	// The Files slice contains a merged and sorted list of file references
-	// that includes all files from the skeleton and its parents (if any).
+	// The Files slice contains a sorted list of files that are present in the
+	// skeleton.
 	Files []File `json:"files,omitempty"`
-	// Values are the template values from the skeleton's metadata merged with
-	// those of it's parents (if any).
+	// Values are the template values from the skeleton's metadata.
 	Values template.Values `json:"values,omitempty"`
 }
 
@@ -35,11 +32,7 @@ func (s *Skeleton) String() string {
 		name = s.Ref.String()
 	}
 
-	if s.Parent == nil {
-		return name
-	}
-
-	return fmt.Sprintf("%s->%s", s.Parent, name)
+	return name
 }
 
 // SkeletonRef holds information about the location of a skeleton.
@@ -86,11 +79,9 @@ func (r *SkeletonRef) LoadConfig() (*SkeletonConfig, error) {
 // *Skeleton. The skeletons are merged left to right with template values,
 // skeleton files and skeleton info of the rightmost skeleton taking preference
 // over already existing values. Template values are recursively merged and may
-// cause errors on type mismatch. The resulting *Skeleton will have the
-// second-to-last skeleton set as its parent, the second-to-last will have the
-// third-to-last as parent and so forth. The original skeletons are not
-// altered. If only one skeleton is passed it will be returned as is without
-// modification. Passing a slice with length of zero will return in an error.
+// cause errors on type mismatch. The original skeletons are not altered. If
+// only one skeleton is passed it will be returned as is without modification.
+// Passing a slice with length of zero will return in an error.
 func MergeSkeletons(skeletons ...*Skeleton) (*Skeleton, error) {
 	if len(skeletons) == 0 {
 		return nil, ErrMergeEmpty
@@ -117,8 +108,7 @@ func MergeSkeletons(skeletons ...*Skeleton) (*Skeleton, error) {
 // Merge merges two skeletons. The skeletons are merged left to right with
 // template values, skeleton files and skeleton ref of the rightmost skeleton
 // taking preference over already existing values. Template values are
-// recursively merged and may cause errors on type mismatch. The resulting
-// *Skeleton will have the lhs skeleton set as its parent. The original
+// recursively merged and may cause errors on type mismatch. The original
 // skeletons are not altered.
 func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
 	values, err := template.MergeValues(s.Values, other.Values)
@@ -130,7 +120,6 @@ func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
 		Values:      values,
 		Files:       mergeFiles(s.Files, other.Files),
 		Description: other.Description,
-		Parent:      s,
 		Ref:         other.Ref,
 	}, nil
 }

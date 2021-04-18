@@ -10,11 +10,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	// disable caching
-	oldCache := repoCache
-	defer func() { repoCache = oldCache }()
-	DisableCache()
-
 	t.Run("creates local repositories", func(t *testing.T) {
 		repo, err := New("../testdata/repos/repo1")
 		require.NoError(t, err)
@@ -27,32 +22,6 @@ func TestNew(t *testing.T) {
 		assert.IsType(t, &remoteRepository{}, repo)
 	})
 
-	t.Run("enabled repository cache", func(t *testing.T) {
-		EnableCache()
-
-		repo1, err := New("../testdata/repos/repo1")
-		require.NoError(t, err)
-
-		repo2, err := New("../testdata/repos/repo1")
-		require.NoError(t, err)
-
-		assert.Same(t, repo1, repo2)
-	})
-
-	t.Run("disabled repository cache", func(t *testing.T) {
-		DisableCache()
-
-		repo1, err := New("../testdata/repos/repo1")
-		require.NoError(t, err)
-
-		repo2, err := New("../testdata/repos/repo1")
-		require.NoError(t, err)
-
-		if repo1 == repo2 {
-			t.Fatal("pointer are equal when they should not")
-		}
-	})
-
 	t.Run("fails to create repositories from invalid urls", func(t *testing.T) {
 		_, err := New("\nhttpxd::/asdf\\invalid")
 		require.Error(t, err)
@@ -60,11 +29,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewNamed(t *testing.T) {
-	// disable caching
-	oldCache := repoCache
-	defer func() { repoCache = oldCache }()
-	DisableCache()
-
 	t.Run("propagates name into skeleton info", func(t *testing.T) {
 		repo, err := NewNamed("the-name", "../testdata/repos/repo1")
 		require.NoError(t, err)
