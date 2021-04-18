@@ -178,12 +178,10 @@ func TestCreate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			repo, err := repository.New("../testdata/repos/repo1")
+			repo, err := repository.Open(context.Background(), "../testdata/repos/repo1", nil)
 			require.NoError(t, err)
 
-			skeleton, err := repository.LoadSkeleton(ctx, repo, "advanced")
+			skeleton, err := repo.LoadSkeleton("advanced")
 			require.NoError(t, err)
 
 			tmpdir, err := ioutil.TempDir("", "kickoff-")

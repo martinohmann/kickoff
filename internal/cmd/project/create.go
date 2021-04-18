@@ -213,12 +213,12 @@ func (o *CreateOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewFromMap(o.Repositories)
+	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
 	if err != nil {
 		return err
 	}
 
-	skeletons, err := repository.LoadSkeletons(ctx, repo, o.SkeletonNames)
+	skeletons, err := repository.LoadSkeletons(repo, o.SkeletonNames)
 	if err != nil {
 		return err
 	}

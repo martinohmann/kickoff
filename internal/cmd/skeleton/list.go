@@ -53,12 +53,12 @@ func (o *ListOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewFromMap(o.Repositories)
+	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
 	if err != nil {
 		return err
 	}
 
-	skeletons, err := repo.ListSkeletons(ctx)
+	skeletons, err := repo.ListSkeletons()
 	if err != nil {
 		return err
 	}

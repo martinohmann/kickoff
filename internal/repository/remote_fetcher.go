@@ -3,10 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/go-git/go-git/v5/config"
@@ -17,84 +15,43 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var _ kickoff.Repository = (*remoteRepository)(nil)
+// RemoteFetcher can fetch remote repositories.
+type RemoteFetcher interface {
+	// FetchRemote fetches the remote repository referenced by ref and places
+	// it in the local path dictated by the ref and checks out the desired
+	// revision (if configured).
+	// Must return non-recoverable errors while fetching the repository or
+	// checking out the desired revision.
+	FetchRemote(ctx context.Context, ref kickoff.RepoRef) error
+}
 
-// remoteRepository is a skeleton repository that resides in a remote git
+var defaultFetcher = NewRemoteFetcher(git.NewClient())
+
+// remoteFetcher is a skeleton repository that resides in a remote git
 // repository.
-type remoteRepository struct {
-	*localRepository
-	localPath string
-	revision  string
-	url       string
-
-	err    error
-	once   sync.Once
+type remoteFetcher struct {
 	client git.Client
 }
 
-// newRemote creates a *remoteRepository from ref. Returns
-// ErrNotARemoteRepository if ref does not describe a remote repository
-// location. Internally creates a *LocalRepository for the cached copy of the
-// remote and returns any error that might occur while creating it.
-func newRemote(ref kickoff.RepoRef) (*remoteRepository, error) {
-	if !ref.IsRemote() {
-		return nil, ErrNotARemoteRepository
-	}
-
-	local := newLocal(ref)
-
-	r := &remoteRepository{
-		localRepository: local,
-		localPath:       ref.LocalPath(),
-		url:             ref.URL,
-		revision:        ref.Revision,
-		client:          git.NewClient(),
-	}
-
-	return r, nil
+// NewRemoteFetcher creates a RemoteFetcher which uses a git client to clone
+// and fetch remote repositories.
+func NewRemoteFetcher(client git.Client) RemoteFetcher {
+	return &remoteFetcher{client: client}
 }
 
-// GetSkeleton implements kickoff.Repository.
-//
-// Lazily synchronizes the cached local copy of the remote repository before
-// looking up the skeleton.
-func (r *remoteRepository) GetSkeleton(ctx context.Context, name string) (*kickoff.SkeletonRef, error) {
-	err := r.syncRemoteOnce(ctx)
-	if err != nil {
-		return nil, err
+func (r *remoteFetcher) FetchRemote(ctx context.Context, ref kickoff.RepoRef) error {
+	if ref.IsLocal() {
+		return nil
 	}
 
-	return r.localRepository.GetSkeleton(ctx, name)
-}
-
-// ListSkeletons implements kickoff.Repository.
-//
-// Lazily synchronizes the cached local copy of the remote repository before
-// listing skeletons.
-func (r *remoteRepository) ListSkeletons(ctx context.Context) ([]*kickoff.SkeletonRef, error) {
-	err := r.syncRemoteOnce(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.localRepository.ListSkeletons(ctx)
-}
-
-func (r *remoteRepository) syncRemoteOnce(ctx context.Context) error {
-	r.once.Do(func() {
-		r.err = r.syncRemote(ctx)
-	})
-
-	return r.err
-}
-
-func (r *remoteRepository) syncRemote(ctx context.Context) error {
-	err := r.updateLocalCache(ctx, r.url, r.revision)
+	err := r.updateLocalCache(ctx, ref)
 	if err == nil {
 		return nil
 	}
 
-	if !file.Exists(r.localPath) {
+	localPath := ref.LocalPath()
+
+	if !file.Exists(localPath) {
 		return err
 	}
 
@@ -105,57 +62,58 @@ func (r *remoteRepository) syncRemote(ctx context.Context) error {
 		// error, we will do best effort and try to serve the local cache
 		// instead of failing. At least log a warning.
 		log.WithError(netErr).
-			WithField("url", r.url).
+			WithField("url", ref.URL).
 			Warn("failed to update local repository cache")
 
 		return nil
 	}
 
 	if errors.Is(err, plumbing.ErrReferenceNotFound) {
-		err = RevisionNotFoundError{RepoRef: r.ref}
+		err = RevisionNotFoundError{RepoRef: ref}
 		// A git reference error indicates that we cloned a repository but
 		// the desired revision was not found. The local cache is in a
 		// potentially invalid state now and needs to be cleaned.
-		log.WithField("path", r.localPath).Debug("cleaning up repository cache")
+		log.WithField("path", localPath).Debug("cleaning up repository cache")
 
-		osErr := os.RemoveAll(r.localPath)
-		if osErr != nil {
-			err = fmt.Errorf("failed to cleanup after error: %v: %w", err, osErr)
+		if err := os.RemoveAll(localPath); err != nil {
+			log.WithError(err).
+				WithField("path", localPath).
+				Error("failed to cleanup cache dir")
 		}
 	}
 
 	return err
 }
 
-func (r *remoteRepository) updateLocalCache(ctx context.Context, url, revision string) error {
-	repo, err := r.fetchOrCloneRemote(ctx, url)
+func (r *remoteFetcher) updateLocalCache(ctx context.Context, ref kickoff.RepoRef) error {
+	repo, err := r.fetchOrCloneRemote(ctx, ref.URL, ref.LocalPath())
 	if err != nil {
 		return err
 	}
 
-	if revision == "" {
+	if ref.Revision == "" {
 		return nil
 	}
 
-	return checkoutRevision(repo, revision)
+	return checkoutRevision(repo, ref.Revision)
 }
 
-func (r *remoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (git.Repository, error) {
-	repo, err := r.client.Open(r.localPath)
+func (r *remoteFetcher) fetchOrCloneRemote(ctx context.Context, url, path string) (git.Repository, error) {
+	repo, err := r.client.Open(path)
 	if err == git.ErrRepositoryNotExists {
 		log.WithFields(log.Fields{
 			"url":  url,
-			"path": r.localPath,
+			"path": path,
 		}).Debug("cloning remote repository")
 
-		return r.client.Clone(ctx, url, r.localPath)
+		return r.client.Clone(ctx, url, path)
 	} else if err != nil {
 		return nil, err
 	}
 
-	log.WithFields(log.Fields{"path": r.localPath}).Debug("opened repository")
+	log.WithField("path", path).Debug("opened repository")
 
-	err = r.fetchRefs(ctx, repo)
+	err = r.fetchRefs(ctx, repo, path)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +121,7 @@ func (r *remoteRepository) fetchOrCloneRemote(ctx context.Context, url string) (
 	return repo, nil
 }
 
-func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) error {
+func (r *remoteFetcher) fetchRefs(ctx context.Context, repo git.Repository, path string) error {
 	// As git operations that fetch refs from remotes can be slow, we are
 	// trying to avoid doing too many of them. We are going to only attempt
 	// to fetch refs if the modification timestamp of the checked out local
@@ -173,7 +131,7 @@ func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) e
 	// skeleton list`, `kickoff skeleton show foobar`) shortly after
 	// another, but it is short enough to avoid having a stale version of a
 	// remote repository checked out locally for too long.
-	fileInfo, err := os.Stat(r.localPath)
+	fileInfo, err := os.Stat(path)
 	if err != nil {
 		return err
 	}
@@ -190,7 +148,7 @@ func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) e
 
 	refs := []config.RefSpec{"refs/*:refs/*", "HEAD:refs/heads/HEAD"}
 
-	log.WithFields(log.Fields{"refs": refs}).Debug("fetching refs")
+	log.WithField("refs", refs).Debug("fetching refs")
 
 	err = repo.Fetch(ctx, refs...)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
@@ -201,7 +159,7 @@ func (r *remoteRepository) fetchRefs(ctx context.Context, repo git.Repository) e
 
 	// Important: update the modification date after fetching the refs so
 	// we can actually make use of the improvement above.
-	return os.Chtimes(r.localPath, now, now)
+	return os.Chtimes(path, now, now)
 }
 
 func resolveRevision(repo git.Repository, revision string) (*plumbing.Hash, error) {

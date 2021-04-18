@@ -317,7 +317,13 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return nil
 	}
 
-	return repository.CreateWithSkeleton(localPath, kickoff.DefaultSkeletonName)
+	repo, err := repository.Create(localPath)
+	if err != nil {
+		return err
+	}
+
+	_, err = repo.CreateSkeleton(kickoff.DefaultSkeletonName)
+	return err
 }
 
 func (o *InitOptions) persistConfiguration() error {

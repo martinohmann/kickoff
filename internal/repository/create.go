@@ -13,8 +13,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Create creates a new repository at path and returns a reference to it.
-func Create(path string) (*kickoff.RepoRef, error) {
+// Create creates a new repository at path and returns it. If path points to a
+// remote repository or if path already exists, Create fails.
+func Create(path string) (kickoff.Repository, error) {
 	ref, err := kickoff.ParseRepoRef(path)
 	if err != nil {
 		return nil, err
@@ -36,15 +37,10 @@ func Create(path string) (*kickoff.RepoRef, error) {
 		return nil, fmt.Errorf("failed to create repository in %q: %w", localPath, err)
 	}
 
-	return ref, nil
+	return newRepository(*ref)
 }
 
-// CreateSkeleton creates a new skeleton with name in the referenced
-// repository. Skeleton creation will fail with an error if ref does not
-// reference a local repository. The created skeleton contains an example
-// .kickoff.yaml and example README.md.skel as starter. Returns an error if
-// creating path or writing any of the files fails.
-func CreateSkeleton(ref *kickoff.RepoRef, name string) error {
+func createSkeleton(ref kickoff.RepoRef, name string) error {
 	if name == "" {
 		return errors.New("skeleton name must not be empty")
 	}
@@ -53,16 +49,10 @@ func CreateSkeleton(ref *kickoff.RepoRef, name string) error {
 		return errors.New("creating skeletons in remote repositories is not supported")
 	}
 
-	localPath := ref.LocalPath()
-
-	if !file.Exists(localPath) {
-		return fmt.Errorf("cannot create skeleton: local repository %q does not exist", localPath)
-	}
-
 	path := ref.SkeletonPath(name)
 
 	if file.Exists(path) {
-		return fmt.Errorf("skeleton %q already exists in repository %q", name, ref.Name)
+		return SkeletonAlreadyExistsError{Name: name, RepoName: ref.Name}
 	}
 
 	log.WithField("path", path).Info("creating directory")
@@ -72,17 +62,6 @@ func CreateSkeleton(ref *kickoff.RepoRef, name string) error {
 	}
 
 	return writeFiles(path)
-}
-
-// CreateWithSkeleton creates a new local repository at path and seeds it with
-// a skeleton.
-func CreateWithSkeleton(path, skeletonName string) error {
-	ref, err := Create(path)
-	if err != nil {
-		return err
-	}
-
-	return CreateSkeleton(ref, skeletonName)
 }
 
 func writeFiles(dir string) error {

@@ -80,21 +80,7 @@ func (o *RemoveOptions) Run() error {
 	}
 
 	if repoRef.IsRemote() {
-		localPath := repoRef.LocalPath()
-
-		// Prevent removal of anything outside of the local user cache dir.
-		// Remote repos should never ever reside outside of the user cache dir.
-		// If they do this is a programmer error.
-		if !strings.HasPrefix(localPath, kickoff.LocalRepositoryCacheDir) {
-			log.WithField("path", localPath).
-				Panic("unexpected repository location: found remote repository cache outside of user cache dir, refusing to delete")
-		}
-
-		log.WithField("path", localPath).Debug("deleting repository cache dir")
-
-		if err := os.RemoveAll(localPath); err != nil {
-			return fmt.Errorf("failed to delete repository cache dir: %w", err)
-		}
+		removeCacheDir(repoRef)
 	}
 
 	delete(o.Repositories, o.RepoName)
@@ -107,4 +93,28 @@ func (o *RemoveOptions) Run() error {
 	fmt.Fprintln(o.Out, "Repository removed.")
 
 	return nil
+}
+
+func removeCacheDir(ref *kickoff.RepoRef) {
+	if ref.IsLocal() {
+		return
+	}
+
+	localPath := ref.LocalPath()
+
+	// Prevent removal of anything outside of the local user cache dir.
+	// Remote repos should never ever reside outside of the user cache dir.
+	// If they do this is a programmer error.
+	if !strings.HasPrefix(localPath, kickoff.LocalRepositoryCacheDir) {
+		log.WithField("path", localPath).
+			Panic("unexpected repository location: found remote repository cache outside of user cache dir, refusing to delete")
+	}
+
+	log.WithField("path", localPath).Debug("deleting repository cache dir")
+
+	if err := os.RemoveAll(localPath); err != nil {
+		log.WithError(err).
+			WithField("path", localPath).
+			Error("failed to delete repository cache dir")
+	}
 }

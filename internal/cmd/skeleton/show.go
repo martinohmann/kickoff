@@ -78,12 +78,12 @@ func (o *ShowOptions) Run() error {
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
-	repo, err := repository.NewFromMap(o.Repositories)
+	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
 	if err != nil {
 		return err
 	}
 
-	skeleton, err := repository.LoadSkeleton(ctx, repo, o.SkeletonName)
+	skeleton, err := repo.LoadSkeleton(o.SkeletonName)
 	if err != nil {
 		return err
 	}
