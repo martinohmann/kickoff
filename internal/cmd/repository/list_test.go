@@ -1,4 +1,4 @@
-package skeleton
+package repository
 
 import (
 	"io/ioutil"
@@ -15,6 +15,7 @@ import (
 func TestListCmd(t *testing.T) {
 	configFile := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
+		WithRepository("other", "https://foo.bar.baz/owner/repo").
 		Create()
 	defer os.Remove(configFile.Name())
 
@@ -30,8 +31,9 @@ func TestListCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		assert.Regexp(t, `Repository\s+Name`, out.String())
-		assert.Regexp(t, `default\s+minimal`, out.String())
+		assert.Regexp(t, `Name\s+Type\s+URL\s+Revision`, out.String())
+		assert.Regexp(t, `default\s+local`, out.String())
+		assert.Regexp(t, `other\s+remote`, out.String())
 	})
 
 	t.Run("wide output", func(t *testing.T) {
@@ -43,8 +45,9 @@ func TestListCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		assert.Regexp(t, `Repository\s+Name\s+Path`, out.String())
-		assert.Regexp(t, `default\s+minimal\s+`, out.String())
+		assert.Regexp(t, `Name\s+Type\s+URL\s+Revision\s+Local Path`, out.String())
+		assert.Regexp(t, `default\s+local\s+`, out.String())
+		assert.Regexp(t, `other\s+remote\s+`, out.String())
 	})
 
 	t.Run("only names", func(t *testing.T) {
@@ -56,6 +59,6 @@ func TestListCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		assert.Equal(t, out.String(), "default:advanced\ndefault:minimal\n")
+		assert.Equal(t, out.String(), "default\nother\n")
 	})
 }

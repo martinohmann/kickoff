@@ -13,9 +13,10 @@ import (
 
 // NewListCmd creates a command for listing all configured skeleton
 // repositories.
-func NewListCmd(streams cli.IOStreams) *cobra.Command {
+func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &ListOptions{
-		IOStreams: streams,
+		IOStreams: f.IOStreams,
+		Config:    f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -24,20 +25,11 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		Short:   "List configured skeleton repositories",
 		Long: cmdutil.LongDesc(`
 			Lists all configured skeleton repositories.`),
-		Example: cmdutil.Examples(`
-			# List repositories for different config
-			kickoff repository list --config custom-config.yaml`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
-
-	o.ConfigFlags.AddFlags(cmd)
 
 	cmdutil.AddOutputFlag(cmd, &o.Output, "table", "wide", "name")
 
@@ -47,15 +39,23 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 // ListOptions holds the options for the list command.
 type ListOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
+
+	Config func() (*kickoff.Config, error)
 
 	Output string
 }
 
 // Run lists all configured skeleton repositories.
 func (o *ListOptions) Run() error {
-	repoNames := make([]string, 0, len(o.Repositories))
-	for name := range o.Repositories {
+	config, err := o.Config()
+	if err != nil {
+		return err
+	}
+
+	repos := config.Repositories
+
+	repoNames := make([]string, 0, len(repos))
+	for name := range repos {
 		repoNames = append(repoNames, name)
 	}
 
@@ -71,7 +71,7 @@ func (o *ListOptions) Run() error {
 		tw.SetHeader("Name", "Type", "URL", "Revision", "Local Path")
 
 		for _, name := range repoNames {
-			ref, err := kickoff.ParseRepoRef(o.Repositories[name])
+			ref, err := kickoff.ParseRepoRef(repos[name])
 			if err != nil {
 				return err
 			}
@@ -88,7 +88,7 @@ func (o *ListOptions) Run() error {
 		tw.SetHeader("Name", "Type", "URL", "Revision")
 
 		for _, name := range repoNames {
-			ref, err := kickoff.ParseRepoRef(o.Repositories[name])
+			ref, err := kickoff.ParseRepoRef(repos[name])
 			if err != nil {
 				return err
 			}

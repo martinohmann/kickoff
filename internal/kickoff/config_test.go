@@ -37,33 +37,6 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 	assert.Equal(t, expected, config)
 }
 
-func TestConfig_MergeFromFile(t *testing.T) {
-	config := Config{
-		Project: ProjectConfig{
-			Host: DefaultProjectHost,
-		},
-	}
-
-	err := config.MergeFromFile("../testdata/config/config.yaml")
-	require.NoError(t, err)
-
-	expected := Config{
-		Project: ProjectConfig{
-			Host:  DefaultProjectHost,
-			Owner: "johndoe",
-		},
-		Repositories: map[string]string{
-			"local":  "/some/local/path",
-			"remote": "https://git.john.doe/johndoe/remote-repo",
-		},
-		Values: template.Values{
-			"foo": "bar",
-		},
-	}
-
-	assert.Equal(t, expected, config)
-}
-
 type validatorTestCase struct {
 	name string
 	v    Validator
@@ -91,12 +64,8 @@ func runValidatorTests(t *testing.T, testCases []validatorTestCase) {
 func TestConfig_Validate(t *testing.T) {
 	testCases := []validatorTestCase{
 		{
-			name: "config with defaults is valid",
-			v: func() *Config {
-				c := Config{}
-				c.ApplyDefaults()
-				return &c
-			}(),
+			name: "default config is valid",
+			v:    DefaultConfig(),
 		},
 		{
 			name: "config with invalid defaults",

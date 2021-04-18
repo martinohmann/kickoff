@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
-	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
@@ -27,9 +27,13 @@ import (
 
 // NewCreateCmd creates a command that can create projects from project
 // skeletons using a variety of user-defined options.
-func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
+func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Config:     f.Config,
+		HTTPClient: f.HTTPClient,
+		Repository: f.Repository,
+		GitClient:  git.NewClient(),
 	}
 
 	cmd := &cobra.Command{
@@ -74,12 +78,21 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 			# Selectively skip the creating of certain files or dirs
 			kickoff project create myskeleton ~/repos/myproject --skip-file README.md`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+		},
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			o.SkeletonNames = strings.Split(args[0], ",")
+
+			o.ProjectDir, err = filepath.Abs(args[1])
+			if err != nil {
 				return err
 			}
 
-			if err := o.Validate(); err != nil {
+			if err := o.Complete(); err != nil {
 				return err
 			}
 
@@ -89,8 +102,9 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.MarkZshCompPositionalArgumentFile(2)
 
+	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
+
 	o.AddFlags(cmd)
-	o.ConfigFlags.AddFlags(cmd)
 
 	return cmd
 }
@@ -98,52 +112,67 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	GitClient       git.Client
-	GitignoreClient *gitignore.Client
-	LicenseClient   *license.Client
+	Config     func() (*kickoff.Config, error)
+	HTTPClient func() *http.Client
+	Repository func(...string) (kickoff.Repository, error)
 
-	ProjectName    string
-	ProjectDir     string
+	GitClient git.Client
+
+	ProjectName  string
+	ProjectDir   string
+	ProjectHost  string
+	ProjectOwner string
+	License      string
+	Gitignore    string
+	Values       template.Values
+
+	RepoNames      []string
 	SkeletonNames  []string
 	DryRun         bool
 	Force          bool
 	Overwrite      bool
 	OverwriteFiles []string
 	SkipFiles      []string
+	InitGit        bool
 
 	rawValues   []string
 	valuesFiles []string
-	initGit     bool
 }
 
 // AddFlags adds flags for all project creation options to cmd.
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
 	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces writing into existing output directory")
-
-	cmd.Flags().StringVar(&o.Project.Gitignore, "gitignore", o.Project.Gitignore, "Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
-	cmd.Flags().StringVar(&o.Project.Host, "host", o.Project.Host, "Project repository host")
-	cmd.Flags().StringVar(&o.Project.License, "license", o.Project.License, "License to use for the project. If set this will automatically populate the LICENSE file")
-	cmd.Flags().StringVar(&o.ProjectName, "name", o.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
-	cmd.Flags().StringVar(&o.Project.Owner, "owner", o.Project.Owner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
-
-	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles, "Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
-	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues, "Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
-
-	cmd.Flags().BoolVar(&o.initGit, "init-git", o.initGit, "Initialize git in the project directory")
-
+	cmd.Flags().BoolVar(&o.InitGit, "init-git", o.InitGit, "Initialize git in the project directory")
 	cmd.Flags().BoolVar(&o.Overwrite, "overwrite", o.Overwrite, "Overwrite files that are already present in output directory")
-	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles, "Overwrite a specific file in the output directory, if present. File path must be relative to the output directory. If file is a dir, present files contained in it will be overwritten")
-	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles, "Skip writing a specific file to the output directory. File path must be relative to the output directory. If file is a dir, files contained in it will be skipped as well")
+
+	cmd.Flags().StringArrayVar(&o.OverwriteFiles, "overwrite-file", o.OverwriteFiles,
+		"Overwrite a specific file in the output directory, if present. File path must be relative to the output directory. "+
+			"If file is a dir, present files contained in it will be overwritten")
+	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles,
+		"Skip writing a specific file to the output directory. File path must be relative to the output directory. "+
+			"If file is a dir, files contained in it will be skipped as well")
+	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues,
+		"Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
+	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles,
+		"Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
+	cmd.Flags().StringVar(&o.Gitignore, "gitignore", o.Gitignore,
+		"Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
+
+	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
+	cmd.Flags().StringVar(&o.ProjectHost, "host", o.ProjectHost, "Project repository host")
+	cmd.Flags().StringVar(&o.ProjectName, "name", o.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
+	cmd.Flags().StringVar(&o.ProjectOwner, "owner", o.ProjectOwner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 }
 
 // Complete completes the project creation options.
-func (o *CreateOptions) Complete(args []string) (err error) {
-	o.SkeletonNames = strings.Split(args[0], ",")
+func (o *CreateOptions) Complete() (err error) {
+	if file.Exists(o.ProjectDir) && !o.Force {
+		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
+	}
 
-	o.ProjectDir, err = filepath.Abs(args[1])
+	config, err := o.Config()
 	if err != nil {
 		return err
 	}
@@ -152,10 +181,27 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		o.ProjectName = filepath.Base(o.ProjectDir)
 	}
 
-	err = o.ConfigFlags.Complete()
-	if err != nil {
-		return err
+	if o.ProjectHost == "" {
+		o.ProjectHost = config.Project.Host
 	}
+
+	if o.ProjectOwner == "" {
+		o.ProjectOwner = config.Project.Owner
+	}
+
+	if o.ProjectOwner == "" {
+		return errors.New("--owner needs to be set as it could not be inferred")
+	}
+
+	if o.License == "" {
+		o.License = config.Project.License
+	}
+
+	if o.Gitignore == "" {
+		o.Gitignore = config.Project.Gitignore
+	}
+
+	o.Values = config.Values
 
 	if len(o.valuesFiles) > 0 {
 		for _, path := range o.valuesFiles {
@@ -180,36 +226,13 @@ func (o *CreateOptions) Complete(args []string) (err error) {
 		}
 	}
 
-	httpClient := httpcache.NewClient()
-
-	o.GitignoreClient = gitignore.NewClient(httpClient)
-	o.LicenseClient = license.NewClient(httpClient)
-	o.GitClient = git.NewClient()
-
-	return nil
-}
-
-// Validate validates the project creation options.
-func (o *CreateOptions) Validate() error {
-	if file.Exists(o.ProjectDir) && !o.Force {
-		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
-	}
-
-	if o.Project.Owner == "" {
-		return errors.New("--owner needs to be set as it could not be inferred")
-	}
-
 	return nil
 }
 
 // Run loads all project skeletons that the user provided and creates the
 // project at the output directory.
 func (o *CreateOptions) Run() error {
-	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
-
-	ctx := context.Background()
-
-	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
+	repo, err := o.Repository(o.RepoNames...)
 	if err != nil {
 		return err
 	}
@@ -224,8 +247,8 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	err = o.createProject(ctx, skeleton)
-	if err != nil || !o.initGit {
+	err = o.createProject(context.Background(), skeleton)
+	if err != nil || !o.InitGit {
 		return err
 	}
 
@@ -235,8 +258,8 @@ func (o *CreateOptions) Run() error {
 func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) error {
 	config := &project.Config{
 		ProjectName:    o.ProjectName,
-		Host:           o.Project.Host,
-		Owner:          o.Project.Owner,
+		Host:           o.ProjectHost,
+		Owner:          o.ProjectOwner,
 		Overwrite:      o.Overwrite,
 		OverwriteFiles: o.OverwriteFiles,
 		SkipFiles:      o.SkipFiles,
@@ -244,8 +267,10 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		Output:         o.Out,
 	}
 
-	if o.Project.License != "" && o.Project.License != kickoff.NoLicense {
-		license, err := o.LicenseClient.GetLicense(ctx, o.Project.License)
+	if o.License != "" && o.License != kickoff.NoLicense {
+		client := license.NewClient(o.HTTPClient())
+
+		license, err := client.GetLicense(ctx, o.License)
 		if err != nil {
 			return err
 		}
@@ -253,8 +278,10 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		config.License = license
 	}
 
-	if o.Project.Gitignore != "" && o.Project.Gitignore != kickoff.NoGitignore {
-		template, err := o.GitignoreClient.GetTemplate(ctx, o.Project.Gitignore)
+	if o.Gitignore != "" && o.Gitignore != kickoff.NoGitignore {
+		client := gitignore.NewClient(o.HTTPClient())
+
+		template, err := client.GetTemplate(ctx, o.Gitignore)
 		if err != nil {
 			return err
 		}

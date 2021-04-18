@@ -14,9 +14,11 @@ import (
 
 // NewRemoveCmd creates a command for removing skeleton repositories from the
 // config.
-func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
+func NewRemoveCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &RemoveOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Config:     f.Config,
+		ConfigPath: f.ConfigPath,
 	}
 
 	cmd := &cobra.Command{
@@ -29,20 +31,18 @@ func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
 			# Remove a skeleton repository
 			kickoff repository remove myrepo`),
 		Args: cmdutil.ExactNonEmptyArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
-			}
-
-			if err := o.Validate(); err != nil {
-				return err
-			}
+			o.RepoName = args[0]
 
 			return o.Run()
 		},
 	}
-
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
@@ -50,31 +50,25 @@ func NewRemoveCmd(streams cli.IOStreams) *cobra.Command {
 // RemoveOptions holds the options for the remove command.
 type RemoveOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	RepoName string
-}
+	Config func() (*kickoff.Config, error)
 
-// Complete completes the remove options.
-func (o *RemoveOptions) Complete(args []string) error {
-	o.RepoName = args[0]
-
-	return o.ConfigFlags.Complete()
-}
-
-// Validate validates the remove options.
-func (o *RemoveOptions) Validate() error {
-	_, ok := o.Repositories[o.RepoName]
-	if !ok {
-		return cmdutil.RepositoryNotConfiguredError(o.RepoName)
-	}
-
-	return nil
+	ConfigPath string
+	RepoName   string
 }
 
 // Run removes a skeleton repository from the config.
 func (o *RemoveOptions) Run() error {
-	repoRef, err := kickoff.ParseRepoRef(o.Repositories[o.RepoName])
+	config, err := o.Config()
+	if err != nil {
+		return err
+	}
+
+	if _, ok := config.Repositories[o.RepoName]; !ok {
+		return cmdutil.RepositoryNotConfiguredError(o.RepoName)
+	}
+
+	repoRef, err := kickoff.ParseRepoRef(config.Repositories[o.RepoName])
 	if err != nil {
 		return err
 	}
@@ -83,9 +77,9 @@ func (o *RemoveOptions) Run() error {
 		removeCacheDir(repoRef)
 	}
 
-	delete(o.Repositories, o.RepoName)
+	delete(config.Repositories, o.RepoName)
 
-	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	err = kickoff.SaveConfig(o.ConfigPath, config)
 	if err != nil {
 		return err
 	}

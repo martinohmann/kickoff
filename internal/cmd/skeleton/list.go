@@ -1,20 +1,20 @@
 package skeleton
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/spf13/cobra"
 )
 
 // NewListCmd creates a command for listing available project skeletons.
-func NewListCmd(streams cli.IOStreams) *cobra.Command {
+func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &ListOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Repository: f.Repository,
 	}
 
 	cmd := &cobra.Command{
@@ -28,17 +28,12 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff skeleton list --repository myrepo`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
-	o.ConfigFlags.AddFlags(cmd)
-
 	cmdutil.AddOutputFlag(cmd, &o.Output, "table", "wide", "name")
+	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
 
 	return cmd
 }
@@ -46,15 +41,17 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 // ListOptions holds the options for the list command.
 type ListOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	Output string
+	Repository func(...string) (kickoff.Repository, error)
+
+	Output    string
+	RepoNames []string
 }
 
 // Run lists all project skeletons available in the configured skeleton
 // repositories.
 func (o *ListOptions) Run() error {
-	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
+	repo, err := o.Repository(o.RepoNames...)
 	if err != nil {
 		return err
 	}

@@ -1,19 +1,19 @@
 package skeleton
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/spf13/cobra"
 )
 
 // NewCreateCmd creates a command for creating project skeletons.
-func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
+func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Repository: f.Repository,
 	}
 
 	cmd := &cobra.Command{
@@ -25,20 +25,19 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 			# Create a new skeleton in myrepo
 			kickoff skeleton create myrepo myskeleton`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
-			}
-
-			if err := o.Validate(); err != nil {
-				return err
-			}
+			o.RepoName = args[0]
+			o.SkeletonName = args[1]
 
 			return o.Run()
 		},
 	}
-
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
@@ -46,32 +45,16 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
+
+	Repository func(...string) (kickoff.Repository, error)
 
 	RepoName     string
 	SkeletonName string
 }
 
-// Complete completes the create options.
-func (o *CreateOptions) Complete(args []string) (err error) {
-	o.RepoName = args[0]
-	o.SkeletonName = args[1]
-
-	return o.ConfigFlags.Complete()
-}
-
-// Validate validates the create options.
-func (o *CreateOptions) Validate() error {
-	if _, ok := o.Repositories[o.RepoName]; !ok {
-		return cmdutil.RepositoryNotConfiguredError(o.RepoName)
-	}
-
-	return nil
-}
-
 // Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
-	repo, err := repository.Open(context.Background(), o.Repositories[o.RepoName], nil)
+	repo, err := o.Repository(o.RepoName)
 	if err != nil {
 		return err
 	}

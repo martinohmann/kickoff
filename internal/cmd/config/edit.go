@@ -10,7 +10,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -25,9 +24,11 @@ var (
 
 // NewEditCmd creates a new command that opens the kickoff config in a
 // configurable editor so that the user can edit it.
-func NewEditCmd(streams cli.IOStreams) *cobra.Command {
+func NewEditCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &EditOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Config:     f.Config,
+		ConfigPath: f.ConfigPath,
 	}
 
 	cmd := &cobra.Command{
@@ -37,21 +38,12 @@ func NewEditCmd(streams cli.IOStreams) *cobra.Command {
 			Edit the kickoff config with the editor in the configured the $KICKOFF_EDITOR or $EDITOR environment variable.`),
 		Example: cmdutil.Examples(`
 			# Edit the default config file
-			kickoff config edit
-
-			# Edit custom config file
-			kickoff config edit --config custom-config.yaml`),
+			kickoff config edit`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
-
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
@@ -59,24 +51,21 @@ func NewEditCmd(streams cli.IOStreams) *cobra.Command {
 // EditOptions holds the options for the edit command.
 type EditOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
+
+	Config func() (*kickoff.Config, error)
+
+	ConfigPath string
 }
 
 // Run loads the config file using the configured editor. The config file is
 // saved after the editor is closed.
 func (o *EditOptions) Run() (err error) {
-	var contents []byte
-
-	if !file.Exists(o.ConfigPath) {
-		if o.ConfigPath != kickoff.DefaultConfigPath {
-			return fmt.Errorf("file %q does not exist", o.ConfigPath)
-		}
-
-		contents, err = yaml.Marshal(o.Config)
-	} else {
-		contents, err = ioutil.ReadFile(o.ConfigPath)
+	config, err := o.Config()
+	if err != nil {
+		return err
 	}
 
+	contents, err := yaml.Marshal(config)
 	if err != nil {
 		return err
 	}
@@ -107,14 +96,12 @@ func (o *EditOptions) Run() (err error) {
 
 	// Sanity check: if we fail to load the config from the tmpfile, we
 	// consider it invalid and abort without copying it back.
-	cfg, err := kickoff.LoadConfig(tmpfilePath)
+	config, err = kickoff.LoadConfig(tmpfilePath)
 	if err != nil {
 		return fmt.Errorf("not saving invalid kickoff config: %w", err)
 	}
 
-	log.WithField("config", o.ConfigPath).Info("writing config")
-
-	err = kickoff.SaveConfig(o.ConfigPath, cfg)
+	err = kickoff.SaveConfig(o.ConfigPath, config)
 	if err != nil {
 		return fmt.Errorf("error while saving config file: %w", err)
 	}

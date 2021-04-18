@@ -1,86 +1,69 @@
 package skeleton
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestShowFileCmd_Execute_NonexistentRepository(t *testing.T) {
+func TestShowFileCmd(t *testing.T) {
+	configFile := testutil.NewConfigFileBuilder(t).
+		WithRepository("default", "../../testdata/repos/repo1").
+		Create()
+	defer os.Remove(configFile.Name())
+
+	streams, _, out, _ := cli.NewTestIOStreams()
+	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+
 	t.Run("nonexistent repository", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
-			WithRepository("default", "../../testdata/repos/repo1").
-			Create()
-		defer os.Remove(configFile.Name())
+		cmd := NewShowFileCmd(f)
+		cmd.SetArgs([]string{"myskeleton", "asdf", "-r", "nonexistent"})
+		cmd.SetOut(ioutil.Discard)
 
-		streams, _, _, _ := cli.NewTestIOStreams()
-		cmd := NewShowFileCmd(streams)
-		cmd.SetArgs([]string{
-			"myskeleton",
-			"asdf",
-			"--config", configFile.Name(),
-			"--repository", "nonexistent",
-		})
+		require.Error(t, cmd.Execute())
+	})
 
-		err := cmd.Execute()
-		require.Error(t, err)
+	t.Run("nonexistent skeleton", func(t *testing.T) {
+		cmd := NewShowFileCmd(f)
+		cmd.SetArgs([]string{"nonexistent", "README.md.skel"})
+		cmd.SetOut(ioutil.Discard)
+
+		require.Error(t, cmd.Execute())
 	})
 
 	t.Run("show file", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
-			WithRepository("default", "../../testdata/repos/repo1").
-			Create()
-		defer os.Remove(configFile.Name())
+		out.Reset()
 
-		streams, _, out, _ := cli.NewTestIOStreams()
-		cmd := NewShowFileCmd(streams)
-		cmd.SetArgs([]string{
-			"advanced",
-			"README.md.skel",
-			"--config", configFile.Name(),
-		})
+		cmd := NewShowFileCmd(f)
+		cmd.SetArgs([]string{"advanced", "README.md.skel"})
+		cmd.SetOut(ioutil.Discard)
 
-		err := cmd.Execute()
-		require.NoError(t, err)
+		require.NoError(t, cmd.Execute())
 
 		assert.Contains(t, out.String(), `{{.Project.Name}}`)
 	})
 
 	t.Run("nonexistent file", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
-			WithRepository("default", "../../testdata/repos/repo1").
-			Create()
-		defer os.Remove(configFile.Name())
-
-		streams, _, _, _ := cli.NewTestIOStreams()
-		cmd := NewShowFileCmd(streams)
-		cmd.SetArgs([]string{
-			"advanced",
-			"nonexistent-file",
-			"--config", configFile.Name(),
-		})
+		cmd := NewShowFileCmd(f)
+		cmd.SetArgs([]string{"advanced", "nonexistent-file"})
+		cmd.SetOut(ioutil.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, os.ErrNotExist.Error())
 	})
 
 	t.Run("directory", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
-			WithRepository("default", "../../testdata/repos/repo1").
-			Create()
-		defer os.Remove(configFile.Name())
+		out.Reset()
 
-		streams, _, _, _ := cli.NewTestIOStreams()
-		cmd := NewShowFileCmd(streams)
-		cmd.SetArgs([]string{
-			"advanced",
-			"{{.Values.filename}}",
-			"--config", configFile.Name(),
-		})
+		cmd := NewShowFileCmd(f)
+		cmd.SetArgs([]string{"advanced", "{{.Values.filename}}"})
+		cmd.SetOut(ioutil.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, `"{{.Values.filename}}" is a directory`)

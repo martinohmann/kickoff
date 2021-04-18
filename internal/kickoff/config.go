@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/imdario/mergo"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
 	gitconfig "github.com/tcnksm/go-gitconfig"
@@ -29,6 +28,13 @@ type Config struct {
 	// Values holds user-defined values that get merged on to of skeleton
 	// values.
 	Values template.Values `json:"values,omitempty"`
+}
+
+// DefaultConfig returns the default config.
+func DefaultConfig() *Config {
+	var config Config
+	config.ApplyDefaults()
+	return &config
 }
 
 // ApplyDefaults applies default values to the config.
@@ -65,18 +71,6 @@ func (c *Config) Validate() error {
 	}
 
 	return c.Project.Validate()
-}
-
-// MergeFromFile loads the config from path and merges it into c. Returns any
-// errors that may occur during loading or merging. Non-zero fields in c will
-// not be overridden if present in the file at path.
-func (c *Config) MergeFromFile(path string) error {
-	config, err := LoadConfig(path)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
-
-	return mergo.Merge(c, config)
 }
 
 // ProjectConfig contains project specific configuration like git host, owner and
@@ -131,7 +125,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	err := Load(path, &config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
 	err = config.Validate()

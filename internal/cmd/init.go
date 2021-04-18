@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
@@ -12,7 +13,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
@@ -22,9 +22,12 @@ import (
 
 // NewInitCmd creates a new command which lets users interactively initialize
 // the kickoff configuration.
-func NewInitCmd(streams cli.IOStreams) *cobra.Command {
+func NewInitCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &InitOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Config:     f.Config,
+		ConfigPath: f.ConfigPath,
+		HTTPClient: f.HTTPClient,
 	}
 
 	cmd := &cobra.Command{
@@ -35,15 +38,9 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 		`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
-
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
 }
@@ -51,29 +48,21 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 // InitOptions holds the options for the init command.
 type InitOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	GitignoreClient *gitignore.Client
-	LicenseClient   *license.Client
-}
+	Config     func() (*kickoff.Config, error)
+	HTTPClient func() *http.Client
 
-// Complete completes the command options.
-func (o *InitOptions) Complete() error {
-	if err := o.ConfigFlags.Complete(); err != nil {
-		return err
-	}
-
-	httpClient := httpcache.NewClient()
-
-	o.GitignoreClient = gitignore.NewClient(httpClient)
-	o.LicenseClient = license.NewClient(httpClient)
-
-	return nil
+	ConfigPath string
 }
 
 // Run runs the interactive configuration of kickoff.
 func (o *InitOptions) Run() error {
-	configureFuncs := []func() error{
+	config, err := o.Config()
+	if err != nil {
+		return err
+	}
+
+	configureFuncs := []func(*kickoff.Config) error{
 		o.configureProject,
 		o.configureLicense,
 		o.configureGitignoreTemplates,
@@ -82,7 +71,7 @@ func (o *InitOptions) Run() error {
 	}
 
 	for _, configure := range configureFuncs {
-		err := configure()
+		err := configure(config)
 		if err != nil {
 			return err
 		}
@@ -91,13 +80,13 @@ func (o *InitOptions) Run() error {
 	return nil
 }
 
-func (o *InitOptions) configureProject() error {
+func (o *InitOptions) configureProject(config *kickoff.Config) error {
 	questions := []*survey.Question{
 		{
 			Name: "host",
 			Prompt: &survey.Input{
 				Message: "Default project host",
-				Default: o.Project.Host,
+				Default: config.Project.Host,
 				Help: cmdutil.LongDesc(`
 					Default project host
 
@@ -111,7 +100,7 @@ func (o *InitOptions) configureProject() error {
 			Name: "owner",
 			Prompt: &survey.Input{
 				Message: "Default project owner",
-				Default: o.Project.Owner,
+				Default: config.Project.Owner,
 				Help: cmdutil.LongDesc(`
 					Default project owner
 
@@ -124,11 +113,13 @@ func (o *InitOptions) configureProject() error {
 		},
 	}
 
-	return survey.Ask(questions, &o.Project)
+	return survey.Ask(questions, &config.Project)
 }
 
-func (o *InitOptions) configureLicense() error {
-	licenses, err := o.LicenseClient.ListLicenses(context.Background())
+func (o *InitOptions) configureLicense(config *kickoff.Config) error {
+	client := license.NewClient(o.HTTPClient())
+
+	licenses, err := client.ListLicenses(context.Background())
 	if err != nil {
 		log.WithError(err).
 			Debug("failed to fetch licenses, skipping configuration")
@@ -164,7 +155,7 @@ func (o *InitOptions) configureLicense() error {
 	}
 
 	if !chooseLicense {
-		o.Project.License = ""
+		config.Project.License = ""
 		return nil
 	}
 
@@ -186,13 +177,15 @@ func (o *InitOptions) configureLicense() error {
 		return err
 	}
 
-	o.Project.License = licenseMap[chosenLicense]
+	config.Project.License = licenseMap[chosenLicense]
 
 	return nil
 }
 
-func (o *InitOptions) configureGitignoreTemplates() error {
-	gitignoreOptions, err := o.GitignoreClient.ListTemplates(context.Background())
+func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error {
+	client := gitignore.NewClient(o.HTTPClient())
+
+	gitignoreOptions, err := client.ListTemplates(context.Background())
 	if err != nil {
 		log.WithError(err).
 			Debug("failed to fetch gitignore templates, skipping configuration")
@@ -221,7 +214,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 	}
 
 	if !selectGitignores {
-		o.Project.Gitignore = ""
+		config.Project.Gitignore = ""
 		return nil
 	}
 
@@ -244,17 +237,17 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 		return err
 	}
 
-	o.Project.Gitignore = strings.Join(selectedGitignores, ",")
+	config.Project.Gitignore = strings.Join(selectedGitignores, ",")
 
 	return nil
 }
 
-func (o *InitOptions) configureDefaultSkeletonRepository() error {
+func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config) error {
 	var repoURL string
 
 	err := survey.AskOne(&survey.Input{
 		Message: "Default skeleton repository",
-		Default: o.Repositories[kickoff.DefaultRepositoryName],
+		Default: config.Repositories[kickoff.DefaultRepositoryName],
 		Help: cmdutil.LongDesc(`
 			Default skeleton repository
 
@@ -271,7 +264,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 		return err
 	}
 
-	o.Repositories[kickoff.DefaultRepositoryName] = repoURL
+	config.Repositories[kickoff.DefaultRepositoryName] = repoURL
 
 	if ref.IsRemote() {
 		return nil
@@ -312,7 +305,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository() error {
 	return err
 }
 
-func (o *InitOptions) persistConfiguration() error {
+func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 	var reviewConfig bool
 
 	err := survey.AskOne(&survey.Confirm{
@@ -352,9 +345,7 @@ func (o *InitOptions) persistConfiguration() error {
 		return nil
 	}
 
-	log.WithField("path", o.ConfigPath).Info("writing config")
-
-	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	err = kickoff.SaveConfig(o.ConfigPath, config)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package skeleton
 
 import (
 	"bytes"
-	"context"
 	"strings"
 
 	"github.com/fatih/color"
@@ -10,16 +9,17 @@ import (
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/filetree"
 	"github.com/martinohmann/kickoff/internal/homedir"
-	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/spf13/cobra"
 )
 
 var bold = color.New(color.Bold)
 
 // NewShowCmd creates a command for inspecting project skeletons.
-func NewShowCmd(streams cli.IOStreams) *cobra.Command {
+func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &ShowOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Repository: f.Repository,
 	}
 
 	cmd := &cobra.Command{
@@ -37,18 +37,21 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			# Show skeleton config using different output
 			kickoff skeleton show myskeleton --output json`),
 		Args: cmdutil.ExactNonEmptyArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
+			return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			o.SkeletonName = args[0]
 
 			return o.Run()
 		},
 	}
 
-	o.ConfigFlags.AddFlags(cmd)
-
 	cmdutil.AddOutputFlag(cmd, &o.Output, "full", "json", "yaml")
+	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
 
 	return cmd
 }
@@ -56,23 +59,18 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 // ShowOptions holds options for the show command.
 type ShowOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
+
+	Repository func(...string) (kickoff.Repository, error)
 
 	Output       string
+	RepoNames    []string
 	SkeletonName string
-}
-
-// Complete completes the show options.
-func (o *ShowOptions) Complete(args []string) error {
-	o.SkeletonName = args[0]
-
-	return o.ConfigFlags.Complete()
 }
 
 // Run prints information about a project skeleton in the output format
 // specified by the user.
 func (o *ShowOptions) Run() error {
-	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
+	repo, err := o.Repository(o.RepoNames...)
 	if err != nil {
 		return err
 	}

@@ -4,16 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/spf13/cobra"
 )
 
 // NewShowCmd creates a command that shows the license text of a specific
 // license.
-func NewShowCmd(streams cli.IOStreams) *cobra.Command {
+func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show <key>",
 		Short: "Fetch a license text",
@@ -23,15 +21,21 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			# Show MIT license text
 			kickoff license show mit`),
 		Args: cobra.ExactArgs(1),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return cmdutil.LicenseNames(f), cobra.ShellCompDirectiveDefault
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client := license.NewClient(httpcache.NewClient())
+			client := license.NewClient(f.HTTPClient())
 
 			license, err := client.GetLicense(context.Background(), args[0])
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(streams.Out, license.Body)
+			fmt.Fprintln(f.IOStreams.Out, license.Body)
 
 			return nil
 		},

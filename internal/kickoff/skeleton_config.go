@@ -1,6 +1,8 @@
 package kickoff
 
 import (
+	"fmt"
+
 	"github.com/martinohmann/kickoff/internal/template"
 )
 
@@ -21,7 +23,7 @@ func LoadSkeletonConfig(path string) (*SkeletonConfig, error) {
 
 	err := Load(path, &config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
 	}
 
 	return &config, nil
