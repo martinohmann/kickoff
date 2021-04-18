@@ -10,6 +10,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
@@ -129,31 +130,26 @@ func (o *InitOptions) configureProject() error {
 }
 
 func (o *InitOptions) configureLicense() error {
-	var (
-		licensesAvailable bool
-		licenseOptions    []string
-		licenseMap        map[string]string
-	)
-
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
 	licenses, err := o.LicenseClient.ListLicenses(ctx)
 	if err != nil {
-		log.Debugf("skipping license configuration due to: %v", err)
-	} else if len(licenses) > 0 {
-		licensesAvailable = true
-
-		licenseMap = make(map[string]string)
-
-		for _, license := range licenses {
-			licenseOptions = append(licenseOptions, license.Name)
-			licenseMap[license.Name] = license.Key
-		}
+		log.WithError(err).
+			Debug("failed to fetch licenses, skipping configuration")
+		return nil
 	}
 
-	if !licensesAvailable {
+	if len(licenses) == 0 {
 		return nil
+	}
+
+	licenseOptions := make([]string, 0, len(licenses))
+	licenseMap := make(map[string]string, len(licenses))
+
+	for _, license := range licenses {
+		licenseOptions = append(licenseOptions, license.Name)
+		licenseMap[license.Name] = license.Key
 	}
 
 	var chooseLicense bool
@@ -173,7 +169,7 @@ func (o *InitOptions) configureLicense() error {
 	}
 
 	if !chooseLicense {
-		o.Project.License = kickoff.NoLicense
+		o.Project.License = ""
 		return nil
 	}
 
@@ -201,19 +197,17 @@ func (o *InitOptions) configureLicense() error {
 }
 
 func (o *InitOptions) configureGitignoreTemplates() error {
-	var gitignoresAvailable bool
-
 	ctx, cancel := o.TimeoutFlag.Context()
 	defer cancel()
 
 	gitignoreOptions, err := o.GitignoreClient.ListTemplates(ctx)
 	if err != nil {
-		log.Debugf("skipping gitignore configuration due to: %v", err)
-	} else if len(gitignoreOptions) > 0 {
-		gitignoresAvailable = true
+		log.WithError(err).
+			Debug("failed to fetch gitignore templates, skipping configuration")
+		return nil
 	}
 
-	if !gitignoresAvailable {
+	if len(gitignoreOptions) == 0 {
 		return nil
 	}
 
@@ -235,7 +229,7 @@ func (o *InitOptions) configureGitignoreTemplates() error {
 	}
 
 	if !selectGitignores {
-		o.Project.Gitignore = kickoff.NoGitignore
+		o.Project.Gitignore = ""
 		return nil
 	}
 
@@ -350,7 +344,7 @@ func (o *InitOptions) persistConfiguration() error {
 	if file.Exists(o.ConfigPath) {
 		message = fmt.Sprintf(
 			"There is already a config at %s, do you want to overwrite it?",
-			o.ConfigPath,
+			homedir.MustCollapse(o.ConfigPath),
 		)
 	}
 

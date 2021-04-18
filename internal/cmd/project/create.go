@@ -284,7 +284,7 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {
-	log.Debug("initializing git repository")
+	log.WithField("path", path).Debug("initializing git repository")
 
 	if !o.DryRun {
 		_, err := o.GitClient.Init(path)

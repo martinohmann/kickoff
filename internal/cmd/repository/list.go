@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -13,7 +14,10 @@ import (
 // NewListCmd creates a command for listing all configured skeleton
 // repositories.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ListOptions{IOStreams: streams}
+	o := &ListOptions{
+		IOStreams:  streams,
+		OutputFlag: cmdutil.NewOutputFlag("name", "table", "wide"),
+	}
 
 	cmd := &cobra.Command{
 		Use:     "list",
@@ -30,11 +34,16 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
+			if err := o.Validate(); err != nil {
+				return err
+			}
+
 			return o.Run()
 		},
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
+	o.OutputFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -43,6 +52,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+	cmdutil.OutputFlag
 }
 
 // Run lists all configured skeleton repositories.
@@ -54,37 +64,59 @@ func (o *ListOptions) Run() error {
 
 	sort.Strings(repoNames)
 
-	tw := cli.NewTableWriter(o.Out)
-	tw.SetHeader("Name", "Type", "Path", "URL", "Revision")
-
-	for _, name := range repoNames {
-		repoURL := o.Repositories[name]
-
-		ref, err := kickoff.ParseRepoRef(repoURL)
-		if err != nil {
-			return err
+	switch o.Output {
+	case "name":
+		for _, name := range repoNames {
+			fmt.Fprintln(o.Out, name)
 		}
+	case "wide":
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetHeader("Name", "Type", "URL", "Revision", "Local Path")
 
-		url := "-"
-		revision := "-"
-		typ := "local"
-
-		if ref.IsRemote() {
-			url = ref.URL
-			typ = "remote"
-			revision = "<default-branch>"
-
-			if ref.Revision != "" {
-				revision = ref.Revision
+		for _, name := range repoNames {
+			ref, err := kickoff.ParseRepoRef(o.Repositories[name])
+			if err != nil {
+				return err
 			}
+
+			typ, url, revision := makeListTableFields(ref)
+			localPath := homedir.MustCollapse(ref.LocalPath())
+
+			tw.Append(name, typ, url, revision, localPath)
 		}
 
-		localPath := homedir.MustCollapse(ref.LocalPath())
+		tw.Render()
+	default:
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetHeader("Name", "Type", "URL", "Revision")
 
-		tw.Append(name, typ, localPath, url, revision)
+		for _, name := range repoNames {
+			ref, err := kickoff.ParseRepoRef(o.Repositories[name])
+			if err != nil {
+				return err
+			}
+
+			typ, url, revision := makeListTableFields(ref)
+
+			tw.Append(name, typ, url, revision)
+		}
+
+		tw.Render()
 	}
 
-	tw.Render()
-
 	return nil
+}
+
+func makeListTableFields(ref *kickoff.RepoRef) (typ string, url string, rev string) {
+	if ref.IsRemote() {
+		revision := "<default-branch>"
+
+		if ref.Revision != "" {
+			revision = ref.Revision
+		}
+
+		return "remote", ref.URL, revision
+	}
+
+	return "local", ref.Path, "-"
 }

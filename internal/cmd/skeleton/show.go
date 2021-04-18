@@ -13,10 +13,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var bold = color.New(color.Bold)
+
 // NewShowCmd creates a command for inspecting project skeletons.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ShowOptions{
 		IOStreams:   streams,
+		OutputFlag:  cmdutil.NewOutputFlag("json", "yaml", "table"),
 		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
 	}
 
@@ -96,28 +99,18 @@ func (o *ShowOptions) Run() error {
 	default:
 		tw := cli.NewTableWriter(o.Out)
 
-		path := homedir.MustCollapse(skeleton.Ref.Path)
-
-		repoInfo := skeleton.Ref.Repo
-
-		tw.Append("Name", skeleton.Ref.Name)
-		tw.Append("Repository", repoInfo.Name)
-
-		if repoInfo.IsRemote() {
-			tw.Append("URL", repoInfo.URL)
-			if repoInfo.Revision != "" {
-				tw.Append("Revision", repoInfo.Revision)
-			}
-			tw.Append("Local Path", path)
-		} else {
-			tw.Append("Path", path)
-		}
+		tw.Append(bold.Sprint("Name"), skeleton.Ref.String())
+		tw.Append(bold.Sprint("Path"), homedir.MustCollapse(skeleton.Ref.Path))
 
 		description := strings.TrimSpace(skeleton.Description)
 
 		if description != "" {
-			tw.Append("Description", description)
+			tw.Append(bold.Sprint("Description"), description)
 		}
+
+		tree := filetree.Build(skeleton)
+
+		tw.Append(bold.Sprint("Files"), tree.Print())
 
 		if len(skeleton.Values) > 0 {
 			var buf bytes.Buffer
@@ -127,12 +120,8 @@ func (o *ShowOptions) Run() error {
 				return err
 			}
 
-			tw.Append("Values", color.BlueString(buf.String()))
+			tw.Append(bold.Sprint("Values"), color.BlueString(strings.TrimRight(buf.String(), "\n")))
 		}
-
-		tree := filetree.Build(skeleton)
-
-		tw.Append("Files", tree.Print())
 
 		tw.Render()
 

@@ -1,6 +1,8 @@
 package skeleton
 
 import (
+	"fmt"
+
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
@@ -12,6 +14,7 @@ import (
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ListOptions{
 		IOStreams:   streams,
+		OutputFlag:  cmdutil.NewOutputFlag("name", "table", "wide"),
 		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
 	}
 
@@ -30,11 +33,16 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
+			if err := o.Validate(); err != nil {
+				return err
+			}
+
 			return o.Run()
 		},
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
+	o.OutputFlag.AddFlag(cmd)
 	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
@@ -44,6 +52,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+	cmdutil.OutputFlag
 	cmdutil.TimeoutFlag
 }
 
@@ -63,16 +72,32 @@ func (o *ListOptions) Run() error {
 		return err
 	}
 
-	tw := cli.NewTableWriter(o.Out)
-	tw.SetHeader("RepoName", "Name", "Path")
+	switch o.Output {
+	case "name":
+		for _, skeleton := range skeletons {
+			fmt.Fprintln(o.Out, skeleton.String())
+		}
+	case "wide":
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetHeader("Repository", "Name", "Path")
 
-	for _, skeleton := range skeletons {
-		path := homedir.MustCollapse(skeleton.Path)
+		for _, skeleton := range skeletons {
+			path := homedir.MustCollapse(skeleton.Path)
 
-		tw.Append(skeleton.Repo.Name, skeleton.Name, path)
+			tw.Append(skeleton.Repo.Name, skeleton.Name, path)
+		}
+
+		tw.Render()
+	default:
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetHeader("Repository", "Name")
+
+		for _, skeleton := range skeletons {
+			tw.Append(skeleton.Repo.Name, skeleton.Name)
+		}
+
+		tw.Render()
 	}
-
-	tw.Render()
 
 	return nil
 }
