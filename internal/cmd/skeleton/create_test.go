@@ -17,9 +17,11 @@ import (
 func TestCreateCmd(t *testing.T) {
 	tmpdir := t.TempDir() + "/repo"
 
-	ref, err := repository.Create(tmpdir)
+	repo, err := repository.Create(tmpdir)
 	require.NoError(t, err)
-	require.NoError(t, repository.CreateSkeleton(ref, "default"))
+
+	_, err = repo.CreateSkeleton("default")
+	require.NoError(t, err)
 
 	myskelDir := filepath.Join(tmpdir, kickoff.SkeletonsDir, "myskel")
 
@@ -52,7 +54,7 @@ func TestCreateCmd(t *testing.T) {
 		cmd.SetArgs([]string{"default", "default", "--config", configFile.Name()})
 
 		err := cmd.Execute()
-		assert.EqualError(t, err, `skeleton "default" already exists in repository "default"`)
+		assert.EqualError(t, err, `skeleton "default" already exists`)
 		assert.NoDirExists(t, myskelDir)
 	})
 

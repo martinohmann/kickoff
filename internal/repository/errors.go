@@ -7,15 +7,9 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
-var (
-	// ErrNoRepositories is returned by NewMultiRepository if no repositories are
-	// configured.
-	ErrNoRepositories = errors.New("no skeleton repositories configured")
-
-	// ErrNotARemoteRepository is returned by NewRemoteRepository if the provided
-	// info does not describe a remote repository.
-	ErrNotARemoteRepository = errors.New("not a remote repository")
-)
+// ErrNoRepositories is returned by NewMultiRepository if no repositories are
+// configured.
+var ErrNoRepositories = errors.New("no skeleton repositories configured")
 
 // SkeletonNotFoundError is the error returned if a skeleton cannot be found in
 // a repository.
@@ -31,6 +25,22 @@ func (e SkeletonNotFoundError) Error() string {
 	}
 
 	return fmt.Sprintf("skeleton %q not found in repository %q", e.Name, e.RepoName)
+}
+
+// SkeletonAlreadyExistsError is the error returned if a skeleton already
+// exists in a repository.
+type SkeletonAlreadyExistsError struct {
+	Name     string
+	RepoName string
+}
+
+// Error implements the error interface.
+func (e SkeletonAlreadyExistsError) Error() string {
+	if e.RepoName == "" {
+		return fmt.Sprintf("skeleton %q already exists", e.Name)
+	}
+
+	return fmt.Sprintf("skeleton %q already exists in repository %q", e.Name, e.RepoName)
 }
 
 type RevisionNotFoundError struct {

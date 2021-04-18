@@ -2,12 +2,14 @@ package repository
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -85,8 +87,18 @@ func (o *CreateOptions) Validate() error {
 // Run creates a new skeleton repository in the provided output directory and
 // seeds it with a default skeleton.
 func (o *CreateOptions) Run() error {
-	err := repository.CreateWithSkeleton(o.RepoDir, o.SkeletonName)
+	repo, err := repository.Create(o.RepoDir)
 	if err != nil {
+		return err
+	}
+
+	if _, err := repo.CreateSkeleton(o.SkeletonName); err != nil {
+		if err := os.RemoveAll(o.RepoDir); err != nil {
+			log.WithError(err).
+				WithField("path", o.RepoDir).
+				Error("failed to remove newly created repository directory")
+		}
+
 		return err
 	}
 

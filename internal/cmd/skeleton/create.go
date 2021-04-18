@@ -5,7 +5,6 @@ import (
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +12,8 @@ import (
 // NewCreateCmd creates a command for creating project skeletons.
 func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams: streams,
+		IOStreams:   streams,
+		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
 	}
 
 	cmd := &cobra.Command{
@@ -39,6 +39,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
+	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -47,6 +48,7 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 type CreateOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
+	cmdutil.TimeoutFlag
 
 	RepoName     string
 	SkeletonName string
@@ -71,20 +73,21 @@ func (o *CreateOptions) Validate() error {
 
 // Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
-	repoRef, err := kickoff.ParseRepoRef(o.Repositories[o.RepoName])
+	ctx, cancel := o.TimeoutFlag.Context()
+	defer cancel()
+
+	repo, err := repository.Open(ctx, o.Repositories[o.RepoName], nil)
 	if err != nil {
 		return err
 	}
 
-	repoRef.Name = o.RepoName
-
-	err = repository.CreateSkeleton(repoRef, o.SkeletonName)
+	ref, err := repo.CreateSkeleton(o.SkeletonName)
 	if err != nil {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Created new skeleton %q in repository %q\n\n", o.SkeletonName, o.RepoName)
-	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton show %s:%s`.\n", o.RepoName, o.SkeletonName)
+	fmt.Fprintf(o.Out, "Created new skeleton %q in repository %q\n\n", ref.Name, o.RepoName)
+	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton show %s:%s`.\n", o.RepoName, ref.Name)
 
 	return nil
 }
