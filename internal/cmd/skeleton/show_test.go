@@ -59,7 +59,7 @@ func TestShowCmd_Execute(t *testing.T) {
 
 	output := out.String()
 
-	assert.Regexp(t, `Name\s+minimal`, output)
+	assert.Regexp(t, `Name\s+default:minimal`, output)
 	assert.Regexp(t, `Values\s+foo: bar`, output)
 }
 

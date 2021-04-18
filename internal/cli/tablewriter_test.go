@@ -24,7 +24,7 @@ func TestTableWriter_Render(t *testing.T) {
 
 	tw.Render()
 
-	expected := "ONE       \tTWO        \n00        \t0000000000\t\n1111      \t11111111  \t\n222222    \t222222    \t\n33333333  \t3333      \t\n4444444444\t44        \t\n"
+	expected := "One        Two        \n00         0000000000 \n1111       11111111   \n222222     222222     \n33333333   3333       \n4444444444 44         \n"
 
 	assert.Equal(t, expected, buf.String())
 }
