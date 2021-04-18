@@ -1,6 +1,8 @@
 package gitignore
 
 import (
+	"context"
+
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
@@ -11,8 +13,6 @@ import (
 // NewListCmd creates a command that lists all gitignore templates available on
 // gitignore.io.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
-	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -25,10 +25,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := gitignore.NewClient(httpcache.NewClient())
 
-			ctx, cancel := timeoutFlag.Context()
-			defer cancel()
-
-			gitignores, err := client.ListTemplates(ctx)
+			gitignores, err := client.ListTemplates(context.Background())
 			if err != nil {
 				return err
 			}
@@ -45,8 +42,6 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
-
-	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

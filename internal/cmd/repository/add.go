@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -14,8 +15,7 @@ import (
 // kickoff config.
 func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 	o := &AddOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -44,10 +44,9 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmd.MarkZshCompPositionalArgumentFile(2)
-
 	cmd.Flags().StringVar(&o.Revision, "revision", o.Revision, "Revision to checkout. Can be a branch name, tag or commit SHA.")
+
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
-	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -56,7 +55,6 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 type AddOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.TimeoutFlag
 
 	RepoName string
 	RepoURL  string
@@ -82,9 +80,6 @@ func (o *AddOptions) Validate() error {
 
 // Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
 	ref, err := kickoff.ParseRepoRef(o.RepoURL)
 	if err != nil {
 		return err
@@ -96,7 +91,7 @@ func (o *AddOptions) Run() error {
 		o.RepoURL = ref.String()
 	}
 
-	_, err = repository.OpenRef(ctx, *ref, nil)
+	_, err = repository.OpenRef(context.Background(), *ref, nil)
 	if err != nil {
 		removeCacheDir(ref)
 		return err

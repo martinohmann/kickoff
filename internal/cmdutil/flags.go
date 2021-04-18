@@ -1,13 +1,11 @@
 package cmdutil
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -91,78 +89,6 @@ func (f *ConfigFlags) Complete() (err error) {
 	return nil
 }
 
-// OutputFlag manage and validate a flag related to output format.
-type OutputFlag struct {
-	Output      string
-	ValidValues []string
-}
-
-// NewOutputFlag creates a new OutputFlag with a list of valid values. If
-// empty, validValues defaults to [json, yaml].
-func NewOutputFlag(validValues ...string) OutputFlag {
-	return OutputFlag{ValidValues: validValues}
-}
-
-// AddFlag adds the flag for configuring output format to cmd.
-func (f *OutputFlag) AddFlag(cmd *cobra.Command) {
-	if len(f.ValidValues) == 0 {
-		f.ValidValues = []string{"json", "yaml"}
-	}
-
-	cmd.Flags().StringVarP(&f.Output, "output", "o", f.Output, "Output format")
-	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return f.ValidValues, cobra.ShellCompDirectiveDefault
-	})
-}
-
-// Validate validates the output format and returns an error if the user
-// provided an invalid value.
-func (f *OutputFlag) Validate() error {
-	if f.Output == "" {
-		return nil
-	}
-
-	for _, v := range f.ValidValues {
-		if v == f.Output {
-			return nil
-		}
-	}
-
-	sort.Strings(f.ValidValues)
-
-	return fmt.Errorf(`--output must be one of: '%s'`, strings.Join(f.ValidValues, `', '`))
-}
-
-// TimeoutFlag configure the timeout for operations that cross API boundaries,
-// such as http requests to third-party integrations.
-type TimeoutFlag struct {
-	Timeout time.Duration
-}
-
-// NewDefaultTimeoutFlag creates a new TimeoutFlag which uses the
-// DefaultTimeout is not overridded.
-func NewDefaultTimeoutFlag() TimeoutFlag {
-	return TimeoutFlag{Timeout: 20 * time.Second}
-}
-
-// AddFlag adds the timeout flag to cmd.
-func (f *TimeoutFlag) AddFlag(cmd *cobra.Command) {
-	cmd.Flags().DurationVar(&f.Timeout, "timeout", f.Timeout, "Timeout for remote operations. Zero or less means that there is no timeout.")
-}
-
-// Context returns a context with the timeout set and a cancel func to cancel
-// the context. If the timeout less or equal to zero, a normal background
-// context is returned.
-func (f *TimeoutFlag) Context() (context.Context, func()) {
-	ctx := context.Background()
-
-	if f.Timeout <= 0 {
-		return context.WithCancel(ctx)
-	}
-
-	return context.WithTimeout(ctx, f.Timeout)
-}
-
 func contains(haystack []string, needle string) bool {
 	for _, item := range haystack {
 		if item == needle {
@@ -171,4 +97,68 @@ func contains(haystack []string, needle string) bool {
 	}
 
 	return false
+}
+
+// AddOutputFlag adds the --output flag to cmd and binds it to p. The first
+// value from allowedValues is set as the default. Panics if allowedValues is
+// empty.
+func AddOutputFlag(cmd *cobra.Command, p *string, allowedValues ...string) {
+	if len(allowedValues) == 0 {
+		panic("cmdutil.AddOutputFlag: allowedValues must not be empty")
+	}
+
+	allowedValuesMsg := fmt.Sprintf(`allowed values: "%s"`, strings.Join(allowedValues, `", "`))
+
+	value := newValidatedStringValue(allowedValues[0], p, func(s string) error {
+		for _, vv := range allowedValues {
+			if vv == s {
+				return nil
+			}
+		}
+
+		return errors.New(allowedValuesMsg)
+	})
+
+	cmd.Flags().VarP(value, "output", "o", fmt.Sprintf(`Output format, %s`, allowedValuesMsg))
+	cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return allowedValues, cobra.ShellCompDirectiveDefault
+	})
+}
+
+// validatedStringValue is a pflag.Value that validates a string flag value
+// while it is set.
+type validatedStringValue struct {
+	p        *string
+	validate func(string) error
+}
+
+// newValidatedStringValue creates a *validatedStringValue with val as default
+// value and binds it to p. The validator func validates the (new) flag value
+// before it is set.
+func newValidatedStringValue(val string, p *string, validator func(string) error) *validatedStringValue {
+	*p = val
+	return &validatedStringValue{
+		p:        p,
+		validate: validator,
+	}
+}
+
+// String implements the pflag.Value interface.
+func (f *validatedStringValue) String() string {
+	return *f.p
+}
+
+// Set implements the pflag.Value interface.
+func (f *validatedStringValue) Set(s string) error {
+	if err := f.validate(s); err != nil {
+		return err
+	}
+
+	*f.p = s
+	return nil
+}
+
+// Type implements the pflag.Value interface.
+func (f *validatedStringValue) Type() string {
+	return "string"
 }

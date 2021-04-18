@@ -1,6 +1,7 @@
 package skeleton
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,8 +17,7 @@ import (
 // NewShowFileCmd creates a command for inspecting project skeleton files.
 func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ShowFileOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -40,7 +40,6 @@ func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
-	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -49,7 +48,6 @@ func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 type ShowFileOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.TimeoutFlag
 
 	SkeletonName string
 	FilePath     string
@@ -66,10 +64,7 @@ func (o *ShowFileOptions) Complete(args []string) error {
 // Run prints information about a project skeleton in the output format
 // specified by the user.
 func (o *ShowFileOptions) Run() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
+	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
 	if err != nil {
 		return err
 	}

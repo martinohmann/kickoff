@@ -29,8 +29,7 @@ import (
 // skeletons using a variety of user-defined options.
 func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -92,7 +91,6 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 
 	o.AddFlags(cmd)
 	o.ConfigFlags.AddFlags(cmd)
-	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -101,7 +99,6 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 type CreateOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.TimeoutFlag
 
 	GitClient       git.Client
 	GitignoreClient *gitignore.Client
@@ -210,8 +207,7 @@ func (o *CreateOptions) Validate() error {
 func (o *CreateOptions) Run() error {
 	log.WithField("config", fmt.Sprintf("%#v", o.Config)).Debug("using config")
 
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
+	ctx := context.Background()
 
 	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
 	if err != nil {

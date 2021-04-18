@@ -1,6 +1,7 @@
 package skeleton
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -13,9 +14,7 @@ import (
 // NewListCmd creates a command for listing available project skeletons.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ListOptions{
-		IOStreams:   streams,
-		OutputFlag:  cmdutil.NewOutputFlag("name", "table", "wide"),
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -33,17 +32,13 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := o.Validate(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
-	o.OutputFlag.AddFlag(cmd)
-	o.TimeoutFlag.AddFlag(cmd)
+
+	cmdutil.AddOutputFlag(cmd, &o.Output, "table", "wide", "name")
 
 	return cmd
 }
@@ -52,17 +47,14 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.OutputFlag
-	cmdutil.TimeoutFlag
+
+	Output string
 }
 
 // Run lists all project skeletons available in the configured skeleton
 // repositories.
 func (o *ListOptions) Run() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
+	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
 	if err != nil {
 		return err
 	}

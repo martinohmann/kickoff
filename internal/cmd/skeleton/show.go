@@ -2,6 +2,7 @@ package skeleton
 
 import (
 	"bytes"
+	"context"
 	"strings"
 
 	"github.com/fatih/color"
@@ -18,9 +19,7 @@ var bold = color.New(color.Bold)
 // NewShowCmd creates a command for inspecting project skeletons.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ShowOptions{
-		IOStreams:   streams,
-		OutputFlag:  cmdutil.NewOutputFlag("json", "yaml", "table"),
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -43,17 +42,13 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := o.Validate(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
-	o.OutputFlag.AddFlag(cmd)
 	o.ConfigFlags.AddFlags(cmd)
-	o.TimeoutFlag.AddFlag(cmd)
+
+	cmdutil.AddOutputFlag(cmd, &o.Output, "full", "json", "yaml")
 
 	return cmd
 }
@@ -62,9 +57,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.OutputFlag
-	cmdutil.TimeoutFlag
 
+	Output       string
 	SkeletonName string
 }
 
@@ -78,10 +72,7 @@ func (o *ShowOptions) Complete(args []string) error {
 // Run prints information about a project skeleton in the output format
 // specified by the user.
 func (o *ShowOptions) Run() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	repo, err := repository.OpenMap(ctx, o.Repositories, nil)
+	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
 	if err != nil {
 		return err
 	}

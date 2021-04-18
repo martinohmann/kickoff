@@ -1,6 +1,7 @@
 package license
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -13,8 +14,6 @@ import (
 // NewShowCmd creates a command that shows the license text of a specific
 // license.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
 	cmd := &cobra.Command{
 		Use:   "show <key>",
 		Short: "Fetch a license text",
@@ -27,10 +26,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := license.NewClient(httpcache.NewClient())
 
-			ctx, cancel := timeoutFlag.Context()
-			defer cancel()
-
-			license, err := client.GetLicense(ctx, args[0])
+			license, err := client.GetLicense(context.Background(), args[0])
 			if err != nil {
 				return err
 			}
@@ -40,8 +36,6 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
-
-	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

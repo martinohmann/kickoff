@@ -1,6 +1,8 @@
 package license
 
 import (
+	"context"
+
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/httpcache"
@@ -11,8 +13,6 @@ import (
 // NewListCmd creates a command that lists all open source licenses available
 // via the GitHub Licenses API.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
-	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -23,10 +23,7 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := license.NewClient(httpcache.NewClient())
 
-			ctx, cancel := timeoutFlag.Context()
-			defer cancel()
-
-			licenses, err := client.ListLicenses(ctx)
+			licenses, err := client.ListLicenses(context.Background())
 			if err != nil {
 				return err
 			}
@@ -43,8 +40,6 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
-
-	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }

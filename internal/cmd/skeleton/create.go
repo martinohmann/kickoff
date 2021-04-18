@@ -1,6 +1,7 @@
 package skeleton
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -12,8 +13,7 @@ import (
 // NewCreateCmd creates a command for creating project skeletons.
 func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -39,7 +39,6 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 	}
 
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
-	o.TimeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
@@ -48,7 +47,6 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 type CreateOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.TimeoutFlag
 
 	RepoName     string
 	SkeletonName string
@@ -73,10 +71,7 @@ func (o *CreateOptions) Validate() error {
 
 // Run creates a new project skeleton in the provided output directory.
 func (o *CreateOptions) Run() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	repo, err := repository.Open(ctx, o.Repositories[o.RepoName], nil)
+	repo, err := repository.Open(context.Background(), o.Repositories[o.RepoName], nil)
 	if err != nil {
 		return err
 	}

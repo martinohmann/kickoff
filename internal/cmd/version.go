@@ -12,8 +12,7 @@ import (
 // NewVersionCmd creates a command which can print the kickoff version.
 func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 	o := &VersionOptions{
-		IOStreams:  streams,
-		OutputFlag: cmdutil.NewOutputFlag("json", "yaml", "short"),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -21,15 +20,11 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 		Short: "Displays the version",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Validate(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
-	o.OutputFlag.AddFlag(cmd)
+	cmdutil.AddOutputFlag(cmd, &o.Output, "full", "short", "json", "yaml")
 
 	return cmd
 }
@@ -37,7 +32,8 @@ func NewVersionCmd(streams cli.IOStreams) *cobra.Command {
 // VersionOptions holds the options for the version command.
 type VersionOptions struct {
 	cli.IOStreams
-	cmdutil.OutputFlag
+
+	Output string
 }
 
 // Run prints the version in the provided output format.

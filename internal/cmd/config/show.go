@@ -9,7 +9,9 @@ import (
 // NewShowCmd creates a new command that prints the kickoff config in a
 // configurable output format.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	o := &ShowOptions{IOStreams: streams}
+	o := &ShowOptions{
+		IOStreams: streams,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "show",
@@ -31,16 +33,12 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := o.Validate(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
-	o.OutputFlag.AddFlag(cmd)
+	cmdutil.AddOutputFlag(cmd, &o.Output, "yaml", "json")
 
 	return cmd
 }
@@ -49,7 +47,8 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 type ShowOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.OutputFlag
+
+	Output string
 }
 
 // Run prints the kickoff config in the configured format.

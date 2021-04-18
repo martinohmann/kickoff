@@ -15,8 +15,7 @@ import (
 // repositories.
 func NewListCmd(streams cli.IOStreams) *cobra.Command {
 	o := &ListOptions{
-		IOStreams:  streams,
-		OutputFlag: cmdutil.NewOutputFlag("name", "table", "wide"),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -34,16 +33,13 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := o.Validate(); err != nil {
-				return err
-			}
-
 			return o.Run()
 		},
 	}
 
 	o.ConfigFlags.AddFlags(cmd)
-	o.OutputFlag.AddFlag(cmd)
+
+	cmdutil.AddOutputFlag(cmd, &o.Output, "table", "wide", "name")
 
 	return cmd
 }
@@ -52,7 +48,8 @@ func NewListCmd(streams cli.IOStreams) *cobra.Command {
 type ListOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.OutputFlag
+
+	Output string
 }
 
 // Run lists all configured skeleton repositories.

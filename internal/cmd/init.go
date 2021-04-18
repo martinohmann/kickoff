@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -23,8 +24,7 @@ import (
 // the kickoff configuration.
 func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 	o := &InitOptions{
-		IOStreams:   streams,
-		TimeoutFlag: cmdutil.NewDefaultTimeoutFlag(),
+		IOStreams: streams,
 	}
 
 	cmd := &cobra.Command{
@@ -43,7 +43,6 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 		},
 	}
 
-	o.TimeoutFlag.AddFlag(cmd)
 	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
 
 	return cmd
@@ -53,7 +52,6 @@ func NewInitCmd(streams cli.IOStreams) *cobra.Command {
 type InitOptions struct {
 	cli.IOStreams
 	cmdutil.ConfigFlags
-	cmdutil.TimeoutFlag
 
 	GitignoreClient *gitignore.Client
 	LicenseClient   *license.Client
@@ -130,10 +128,7 @@ func (o *InitOptions) configureProject() error {
 }
 
 func (o *InitOptions) configureLicense() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	licenses, err := o.LicenseClient.ListLicenses(ctx)
+	licenses, err := o.LicenseClient.ListLicenses(context.Background())
 	if err != nil {
 		log.WithError(err).
 			Debug("failed to fetch licenses, skipping configuration")
@@ -197,10 +192,7 @@ func (o *InitOptions) configureLicense() error {
 }
 
 func (o *InitOptions) configureGitignoreTemplates() error {
-	ctx, cancel := o.TimeoutFlag.Context()
-	defer cancel()
-
-	gitignoreOptions, err := o.GitignoreClient.ListTemplates(ctx)
+	gitignoreOptions, err := o.GitignoreClient.ListTemplates(context.Background())
 	if err != nil {
 		log.WithError(err).
 			Debug("failed to fetch gitignore templates, skipping configuration")

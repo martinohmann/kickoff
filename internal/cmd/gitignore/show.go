@@ -1,6 +1,7 @@
 package gitignore
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -13,8 +14,6 @@ import (
 // NewShowCmd creates a command that shows the content of one or multiple
 // gitignore templates.
 func NewShowCmd(streams cli.IOStreams) *cobra.Command {
-	timeoutFlag := cmdutil.NewDefaultTimeoutFlag()
-
 	cmd := &cobra.Command{
 		Use:   "show <name>",
 		Short: "Fetch a gitignore template",
@@ -32,10 +31,7 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := gitignore.NewClient(httpcache.NewClient())
 
-			ctx, cancel := timeoutFlag.Context()
-			defer cancel()
-
-			template, err := client.GetTemplate(ctx, args[0])
+			template, err := client.GetTemplate(context.Background(), args[0])
 			if err != nil {
 				return err
 			}
@@ -45,8 +41,6 @@ func NewShowCmd(streams cli.IOStreams) *cobra.Command {
 			return nil
 		},
 	}
-
-	timeoutFlag.AddFlag(cmd)
 
 	return cmd
 }
