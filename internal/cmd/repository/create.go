@@ -3,7 +3,6 @@ package repository
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -14,9 +13,11 @@ import (
 )
 
 // NewCreateCmd creates a command for creating a local skeleton repository.
-func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
+func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &CreateOptions{
-		IOStreams:    streams,
+		IOStreams:    f.IOStreams,
+		Config:       f.Config,
+		ConfigPath:   f.ConfigPath,
 		SkeletonName: kickoff.DefaultSkeletonName,
 	}
 
@@ -27,19 +28,11 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 			Creates a new skeleton repository with a default skeleton to get you started.`),
 		Example: cmdutil.Examples(`
 			# Create a new repository
-			kickoff repository create myrepo /repository/output/path
-
-            # Create a new repository
 			kickoff repository create myrepo /repository/output/path`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
-			}
-
-			if err := o.Validate(); err != nil {
-				return err
-			}
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			o.RepoName = args[0]
+			o.RepoDir = args[1]
 
 			return o.Run()
 		},
@@ -47,8 +40,8 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.MarkZshCompPositionalArgumentFile(2)
 
-	cmd.Flags().StringVarP(&o.SkeletonName, "skeleton-name", "s", o.SkeletonName, "Name of the default skeleton that will be created in the new repository.")
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
+	cmd.Flags().StringVarP(&o.SkeletonName, "skeleton-name", "s", o.SkeletonName,
+		"Name of the default skeleton that will be created in the new repository.")
 
 	return cmd
 }
@@ -56,37 +49,27 @@ func NewCreateCmd(streams cli.IOStreams) *cobra.Command {
 // CreateOptions holds the options for the create command.
 type CreateOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
+	Config func() (*kickoff.Config, error)
+
+	ConfigPath   string
 	RepoName     string
 	RepoDir      string
 	SkeletonName string
 }
 
-// Complete completes the options for the create command.
-func (o *CreateOptions) Complete(args []string) (err error) {
-	o.RepoName = args[0]
-
-	o.RepoDir, err = filepath.Abs(args[1])
+// Run creates a new skeleton repository in the provided output directory and
+// seeds it with a default skeleton.
+func (o *CreateOptions) Run() error {
+	config, err := o.Config()
 	if err != nil {
 		return err
 	}
 
-	return o.ConfigFlags.Complete()
-}
-
-// Validate validates the create options.
-func (o *CreateOptions) Validate() error {
-	if _, ok := o.Repositories[o.RepoName]; ok {
+	if _, ok := config.Repositories[o.RepoName]; ok {
 		return cmdutil.RepositoryAlreadyExistsError(o.RepoName)
 	}
 
-	return nil
-}
-
-// Run creates a new skeleton repository in the provided output directory and
-// seeds it with a default skeleton.
-func (o *CreateOptions) Run() error {
 	repo, err := repository.Create(o.RepoDir)
 	if err != nil {
 		return err
@@ -102,9 +85,9 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	o.Repositories[o.RepoName] = o.RepoDir
+	config.Repositories[o.RepoName] = o.RepoDir
 
-	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	err = kickoff.SaveConfig(o.ConfigPath, config)
 	if err != nil {
 		return err
 	}

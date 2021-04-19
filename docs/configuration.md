@@ -21,9 +21,6 @@ On MacOS this may be:
 If none of this suits you, use the `KICKOFF_CONFIG` [environment
 variable](/configuration/environment-variables) to override the configuration file path.
 
-Alternatively, you can also pass the configuration file path via the `--config`
-flag to kickoff commands that make use of the config.
-
 1. TOC
 {:toc}
 

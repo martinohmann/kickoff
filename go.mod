@@ -12,6 +12,7 @@ require (
 	github.com/go-git/go-git/v5 v5.3.0
 	github.com/google/go-github/v28 v28.1.1
 	github.com/imdario/mergo v0.3.12
+	github.com/jarcoal/httpmock v1.0.8
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/martinohmann/httpcache v0.0.0-20200615162652-221549dc7015

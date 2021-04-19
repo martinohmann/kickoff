@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
@@ -66,42 +67,47 @@ func TestGetEditCmdArgs(t *testing.T) {
 	}
 }
 
-func TestEditCmd_Run_InvalidEditor(t *testing.T) {
-	oldEditor := os.Getenv("EDITOR")
-	oldShell := os.Getenv("SHELL")
+func TestEditCmd(t *testing.T) {
+	t.Run("invalid editor", func(t *testing.T) {
+		oldEditor := os.Getenv("EDITOR")
+		oldShell := os.Getenv("SHELL")
 
-	defer func() {
-		os.Setenv("EDITOR", oldEditor)
-		os.Setenv("SHELL", oldShell)
-	}()
+		defer func() {
+			os.Setenv("EDITOR", oldEditor)
+			os.Setenv("SHELL", oldShell)
+		}()
 
-	os.Setenv("EDITOR", "./nonexistent")
-	os.Setenv("SHELL", "sh")
+		os.Setenv("EDITOR", "./nonexistent")
+		os.Setenv("SHELL", "sh")
 
-	configFile := testutil.NewConfigFileBuilder(t).
-		WithProjectOwner("johndoe").
-		WithRepository("local", "/some/local/path").
-		WithRepository("remove", "https://git.john.doe/johndoe/remote-repo").
-		WithValues(template.Values{"foo": "bar"}).
-		Create()
-	defer os.Remove(configFile.Name())
+		configFile := testutil.NewConfigFileBuilder(t).
+			WithProjectOwner("johndoe").
+			WithRepository("local", "/some/local/path").
+			WithRepository("remove", "https://git.john.doe/johndoe/remote-repo").
+			WithValues(template.Values{"foo": "bar"}).
+			Create()
+		defer os.Remove(configFile.Name())
 
-	configBuf, err := ioutil.ReadAll(configFile)
-	require.NoError(t, err)
+		configBuf, err := ioutil.ReadAll(configFile)
+		require.NoError(t, err)
 
-	streams, _, _, _ := cli.NewTestIOStreams()
-	cmd := NewEditCmd(streams)
-	cmd.SetArgs([]string{"--config", configFile.Name()})
+		streams, _, _, _ := cli.NewTestIOStreams()
 
-	expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
+		f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
 
-	err = cmd.Execute()
-	require.Error(t, err)
+		cmd := NewEditCmd(f)
+		cmd.SetOut(ioutil.Discard)
 
-	assert.Regexp(t, expectedErrPattern, err)
+		expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
 
-	configBuf2, err := ioutil.ReadFile(configFile.Name())
-	require.NoError(t, err)
+		err = cmd.Execute()
+		require.Error(t, err)
 
-	assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")
+		assert.Regexp(t, expectedErrPattern, err)
+
+		configBuf2, err := ioutil.ReadFile(configFile.Name())
+		require.NoError(t, err)
+
+		assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")
+	})
 }

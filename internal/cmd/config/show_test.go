@@ -1,47 +1,49 @@
 package config
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/martinohmann/kickoff/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestShowCmd_Execute_NonexistentConfig(t *testing.T) {
-	streams, _, _, _ := cli.NewTestIOStreams()
-	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"--config", "nonexistent"})
+func TestShowCmd(t *testing.T) {
+	t.Run("default output", func(t *testing.T) {
+		configFile := testutil.NewConfigFileBuilder(t).
+			WithValues(template.Values{"foo": "bar"}).
+			Create()
+		defer os.Remove(configFile.Name())
 
-	assert.Error(t, cmd.Execute())
-}
+		streams, _, out, _ := cli.NewTestIOStreams()
+		f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
 
-func TestShowCmd_Execute_InvalidOutput(t *testing.T) {
-	streams, _, _, _ := cli.NewTestIOStreams()
-	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"--output", "enterprise-xml"})
+		cmd := NewShowCmd(f)
+		cmd.SetOut(ioutil.Discard)
 
-	err := cmd.Execute()
-	require.Error(t, err)
-}
+		require.NoError(t, cmd.Execute())
 
-func TestShowCmd_Execute(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
-		WithValues(template.Values{"foo": "bar"}).
-		Create()
-	defer os.Remove(configFile.Name())
-
-	streams, _, out, _ := cli.NewTestIOStreams()
-	cmd := NewShowCmd(streams)
-	cmd.SetArgs([]string{"--config", configFile.Name()})
-
-	require.NoError(t, cmd.Execute())
-
-	expected := `values:
+		expected := `values:
   foo: bar`
 
-	assert.Contains(t, out.String(), expected)
+		assert.Contains(t, out.String(), expected)
+	})
+
+	t.Run("nonexistent config", func(t *testing.T) {
+		nonexistent := filepath.Join(t.TempDir(), "nonexistent")
+
+		streams, _, _, _ := cli.NewTestIOStreams()
+		f := cmdutil.NewFactoryWithConfigPath(streams, nonexistent)
+
+		cmd := NewShowCmd(f)
+		cmd.SetOut(ioutil.Discard)
+
+		require.Error(t, cmd.Execute())
+	})
 }

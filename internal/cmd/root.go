@@ -21,7 +21,7 @@ import (
 )
 
 // NewRootCmd creates the root command for kickoff.
-func NewRootCmd(streams cli.IOStreams) *cobra.Command {
+func NewRootCmd(f *cmdutil.Factory) *cobra.Command {
 	logLevel := log.WarnLevel.String()
 	if lvl := os.Getenv("KICKOFF_LOG_LEVEL"); lvl != "" {
 		logLevel = lvl
@@ -31,7 +31,7 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 		Use:           "kickoff",
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			err := configureLogger(streams.ErrOut, logLevel)
+			err := configureLogger(f.IOStreams.ErrOut, logLevel)
 			if err != nil {
 				return err
 			}
@@ -55,31 +55,28 @@ func NewRootCmd(streams cli.IOStreams) *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&logLevel, "log-level", logLevel, "Level for stderr log output")
 	cmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		completions := make([]string, len(log.AllLevels))
-		for i, lvl := range log.AllLevels {
-			completions[i] = lvl.String()
-		}
-		return completions, cobra.ShellCompDirectiveDefault
+		return cmdutil.LogLevelNames(), cobra.ShellCompDirectiveDefault
 	})
 
-	cmd.AddCommand(NewCacheCmd(streams))
-	cmd.AddCommand(NewCompletionCmd(streams))
-	cmd.AddCommand(NewConfigCmd(streams))
-	cmd.AddCommand(NewGitignoreCmd(streams))
-	cmd.AddCommand(NewInitCmd(streams))
-	cmd.AddCommand(NewLicenseCmd(streams))
-	cmd.AddCommand(NewProjectCmd(streams))
-	cmd.AddCommand(NewRepositoryCmd(streams))
-	cmd.AddCommand(NewSkeletonCmd(streams))
-	cmd.AddCommand(NewVersionCmd(streams))
+	cmd.AddCommand(NewCacheCmd(f.IOStreams))
+	cmd.AddCommand(NewCompletionCmd(f.IOStreams))
+	cmd.AddCommand(NewConfigCmd(f))
+	cmd.AddCommand(NewGitignoreCmd(f))
+	cmd.AddCommand(NewInitCmd(f))
+	cmd.AddCommand(NewLicenseCmd(f))
+	cmd.AddCommand(NewProjectCmd(f))
+	cmd.AddCommand(NewRepositoryCmd(f))
+	cmd.AddCommand(NewSkeletonCmd(f))
+	cmd.AddCommand(NewVersionCmd(f.IOStreams))
 
 	return cmd
 }
 
 func Execute() {
 	streams := cli.DefaultIOStreams
+	f := cmdutil.NewFactory(streams)
 
-	cmd := NewRootCmd(streams)
+	cmd := NewRootCmd(f)
 
 	if err := cmd.Execute(); err != nil {
 		handleError(streams.ErrOut, err)

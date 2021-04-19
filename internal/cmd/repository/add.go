@@ -13,9 +13,11 @@ import (
 
 // NewAddCmd creates a new command for added a skeleton repository to the
 // kickoff config.
-func NewAddCmd(streams cli.IOStreams) *cobra.Command {
+func NewAddCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &AddOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		ConfigPath: f.ConfigPath,
+		Config:     f.Config,
 	}
 
 	cmd := &cobra.Command{
@@ -31,13 +33,8 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 			kickoff repository add myskeletons https://github.com/martinohmann/kickoff-skeletons --revision v1.0.0`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
-			}
-
-			if err := o.Validate(); err != nil {
-				return err
-			}
+			o.RepoName = args[0]
+			o.RepoURL = args[1]
 
 			return o.Run()
 		},
@@ -46,40 +43,32 @@ func NewAddCmd(streams cli.IOStreams) *cobra.Command {
 	cmd.MarkZshCompPositionalArgumentFile(2)
 	cmd.Flags().StringVar(&o.Revision, "revision", o.Revision, "Revision to checkout. Can be a branch name, tag or commit SHA.")
 
-	cmdutil.AddConfigFlag(cmd, &o.ConfigPath)
-
 	return cmd
 }
 
 // AddOptions holds the options for the add command.
 type AddOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	RepoName string
-	RepoURL  string
-	Revision string
-}
+	Config func() (*kickoff.Config, error)
 
-// Complete completes the add options.
-func (o *AddOptions) Complete(args []string) error {
-	o.RepoName = args[0]
-	o.RepoURL = args[1]
-
-	return o.ConfigFlags.Complete()
-}
-
-// Validate validates the options before adding a new repository.
-func (o *AddOptions) Validate() error {
-	if _, ok := o.Repositories[o.RepoName]; ok {
-		return cmdutil.RepositoryAlreadyExistsError(o.RepoName)
-	}
-
-	return nil
+	ConfigPath string
+	RepoName   string
+	RepoURL    string
+	Revision   string
 }
 
 // Run adds a skeleton repository to the kickoff config.
 func (o *AddOptions) Run() error {
+	config, err := o.Config()
+	if err != nil {
+		return err
+	}
+
+	if _, ok := config.Repositories[o.RepoName]; ok {
+		return cmdutil.RepositoryAlreadyExistsError(o.RepoName)
+	}
+
 	ref, err := kickoff.ParseRepoRef(o.RepoURL)
 	if err != nil {
 		return err
@@ -97,9 +86,9 @@ func (o *AddOptions) Run() error {
 		return err
 	}
 
-	o.Repositories[o.RepoName] = o.RepoURL
+	config.Repositories[o.RepoName] = o.RepoURL
 
-	err = kickoff.SaveConfig(o.ConfigPath, &o.Config)
+	err = kickoff.SaveConfig(o.ConfigPath, config)
 	if err != nil {
 		return err
 	}

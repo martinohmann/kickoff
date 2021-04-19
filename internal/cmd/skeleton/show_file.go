@@ -1,7 +1,6 @@
 package skeleton
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,14 +9,14 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
 // NewShowFileCmd creates a command for inspecting project skeleton files.
-func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
+func NewShowFileCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &ShowFileOptions{
-		IOStreams: streams,
+		IOStreams:  f.IOStreams,
+		Repository: f.Repository,
 	}
 
 	cmd := &cobra.Command{
@@ -30,16 +29,25 @@ func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 			# Show the content of a skeleton file in a specific repository
 			kickoff skeleton show-file myrepo:myskeleton relpath/to/file`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := o.Complete(args); err != nil {
-				return err
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+			case 1:
+				return cmdutil.SkeletonFilenames(f, args[0]), cobra.ShellCompDirectiveDefault
+			default:
+				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			o.SkeletonName = args[0]
+			o.FilePath = filepath.Clean(args[1])
 
 			return o.Run()
 		},
 	}
 
-	o.ConfigFlags.AddFlags(cmd)
+	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
 
 	return cmd
 }
@@ -47,24 +55,18 @@ func NewShowFileCmd(streams cli.IOStreams) *cobra.Command {
 // ShowFileOptions holds options for the show command.
 type ShowFileOptions struct {
 	cli.IOStreams
-	cmdutil.ConfigFlags
 
-	SkeletonName string
+	Repository func(...string) (kickoff.Repository, error)
+
 	FilePath     string
-}
-
-// Complete completes the show options.
-func (o *ShowFileOptions) Complete(args []string) error {
-	o.SkeletonName = args[0]
-	o.FilePath = filepath.Clean(args[1])
-
-	return o.ConfigFlags.Complete()
+	RepoNames    []string
+	SkeletonName string
 }
 
 // Run prints information about a project skeleton in the output format
 // specified by the user.
 func (o *ShowFileOptions) Run() error {
-	repo, err := repository.OpenMap(context.Background(), o.Repositories, nil)
+	repo, err := o.Repository(o.RepoNames...)
 	if err != nil {
 		return err
 	}
