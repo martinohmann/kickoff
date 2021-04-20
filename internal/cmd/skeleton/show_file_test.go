@@ -13,13 +13,12 @@ import (
 )
 
 func TestShowFileCmd(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, out, _ := cli.NewTestIOStreams()
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 	t.Run("nonexistent repository", func(t *testing.T) {
 		cmd := NewShowFileCmd(f)

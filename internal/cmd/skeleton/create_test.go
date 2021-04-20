@@ -2,7 +2,6 @@ package skeleton
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -26,15 +25,14 @@ func TestCreateCmd(t *testing.T) {
 
 	myskelDir := filepath.Join(tmpdir, kickoff.SkeletonsDir, "myskel")
 
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", tmpdir).
 		WithRepository("remote", "https://github.com/martinohmann/kickoff-skeletons").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, _, _ := cli.NewTestIOStreams()
 
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 	t.Run("repository does not exist", func(t *testing.T) {
 		cmd := NewCreateCmd(f)

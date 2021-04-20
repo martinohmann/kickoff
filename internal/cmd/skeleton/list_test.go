@@ -2,7 +2,6 @@ package skeleton
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -16,11 +15,10 @@ func TestListCmd(t *testing.T) {
 	configFile := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, out, _ := cli.NewTestIOStreams()
 
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configFile)
 
 	t.Run("default output", func(t *testing.T) {
 		out.Reset()

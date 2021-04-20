@@ -14,17 +14,16 @@ import (
 
 func TestFactory(t *testing.T) {
 	t.Run("with valid config", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
+		configPath := testutil.NewConfigFileBuilder(t).
 			WithRepository("default", "../testdata/repos/repo1").
 			WithRepository("other", "../testdata/repos/repo2").
 			Create()
-		defer os.Remove(configFile.Name())
 
 		streams, _, _, _ := cli.NewTestIOStreams()
 
-		f := NewFactoryWithConfigPath(streams, configFile.Name())
+		f := NewFactoryWithConfigPath(streams, configPath)
 
-		assert.Equal(t, configFile.Name(), f.ConfigPath)
+		assert.Equal(t, configPath, f.ConfigPath)
 
 		config, err := f.Config()
 		require.NoError(t, err)

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -13,14 +12,13 @@ import (
 )
 
 func TestCreateCmd(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, _, _ := cli.NewTestIOStreams()
 
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 	t.Run("repo already exists", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "repo")

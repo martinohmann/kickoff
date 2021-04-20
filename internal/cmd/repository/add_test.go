@@ -2,7 +2,6 @@ package repository
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -14,14 +13,13 @@ import (
 )
 
 func TestAddCmd(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, _, _ := cli.NewTestIOStreams()
 
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 	t.Run("repo already exists", func(t *testing.T) {
 		cmd := NewAddCmd(f)
@@ -31,7 +29,7 @@ func TestAddCmd(t *testing.T) {
 		err := cmd.Execute()
 		require.EqualError(t, err, `repository "default" already exists`)
 
-		config, err := kickoff.LoadConfig(configFile.Name())
+		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Equal(t, "../../testdata/repos/repo1", config.Repositories["default"])
 	})
@@ -44,7 +42,7 @@ func TestAddCmd(t *testing.T) {
 		err := cmd.Execute()
 		require.EqualError(t, err, `invalid repo URL "invalid\\:": parse "invalid\\:": first path segment in URL cannot contain colon`)
 
-		config, err := kickoff.LoadConfig(configFile.Name())
+		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Equal(t, "../../testdata/repos/repo1", config.Repositories["default"])
 	})
@@ -56,7 +54,7 @@ func TestAddCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		config, err := kickoff.LoadConfig(configFile.Name())
+		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Len(t, config.Repositories, 2)
 		assert.Equal(t, "../../testdata/repos/repo2", config.Repositories["new-repo"])

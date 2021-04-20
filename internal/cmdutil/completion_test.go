@@ -2,7 +2,6 @@ package cmdutil
 
 import (
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -12,15 +11,14 @@ import (
 )
 
 func TestCompletion(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../testdata/repos/repo1").
 		WithRepository("other", "../testdata/repos/repo2").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, _, _ := cli.NewTestIOStreams()
 
-	f := NewFactoryWithConfigPath(streams, configFile.Name())
+	f := NewFactoryWithConfigPath(streams, configPath)
 	f.HTTPClient = func() *http.Client { return http.DefaultClient }
 
 	httpmock.Activate()

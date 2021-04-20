@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,13 +15,12 @@ import (
 
 func TestShowCmd(t *testing.T) {
 	t.Run("default output", func(t *testing.T) {
-		configFile := testutil.NewConfigFileBuilder(t).
+		configPath := testutil.NewConfigFileBuilder(t).
 			WithValues(template.Values{"foo": "bar"}).
 			Create()
-		defer os.Remove(configFile.Name())
 
 		streams, _, out, _ := cli.NewTestIOStreams()
-		f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+		f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 		cmd := NewShowCmd(f)
 		cmd.SetOut(ioutil.Discard)

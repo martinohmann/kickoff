@@ -80,20 +80,19 @@ func TestEditCmd(t *testing.T) {
 		os.Setenv("EDITOR", "./nonexistent")
 		os.Setenv("SHELL", "sh")
 
-		configFile := testutil.NewConfigFileBuilder(t).
+		configPath := testutil.NewConfigFileBuilder(t).
 			WithProjectOwner("johndoe").
 			WithRepository("local", "/some/local/path").
 			WithRepository("remove", "https://git.john.doe/johndoe/remote-repo").
 			WithValues(template.Values{"foo": "bar"}).
 			Create()
-		defer os.Remove(configFile.Name())
 
-		configBuf, err := ioutil.ReadAll(configFile)
+		configBuf, err := ioutil.ReadFile(configPath)
 		require.NoError(t, err)
 
 		streams, _, _, _ := cli.NewTestIOStreams()
 
-		f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+		f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 		cmd := NewEditCmd(f)
 		cmd.SetOut(ioutil.Discard)
@@ -105,7 +104,7 @@ func TestEditCmd(t *testing.T) {
 
 		assert.Regexp(t, expectedErrPattern, err)
 
-		configBuf2, err := ioutil.ReadFile(configFile.Name())
+		configBuf2, err := ioutil.ReadFile(configPath)
 		require.NoError(t, err)
 
 		assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")

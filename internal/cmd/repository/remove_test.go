@@ -2,7 +2,6 @@ package repository
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -14,15 +13,14 @@ import (
 )
 
 func TestRemoveCmd(t *testing.T) {
-	configFile := testutil.NewConfigFileBuilder(t).
+	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		WithRepository("other", "../../testdata/repos/repo3").
 		Create()
-	defer os.Remove(configFile.Name())
 
 	streams, _, _, _ := cli.NewTestIOStreams()
 
-	f := cmdutil.NewFactoryWithConfigPath(streams, configFile.Name())
+	f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 	t.Run("repo not exists", func(t *testing.T) {
 		cmd := NewRemoveCmd(f)
@@ -32,7 +30,7 @@ func TestRemoveCmd(t *testing.T) {
 		err := cmd.Execute()
 		require.EqualError(t, err, `repository "non-existent" not configured`)
 
-		config, err := kickoff.LoadConfig(configFile.Name())
+		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Len(t, config.Repositories, 2)
 	})
@@ -44,7 +42,7 @@ func TestRemoveCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		config, err := kickoff.LoadConfig(configFile.Name())
+		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Len(t, config.Repositories, 1)
 	})

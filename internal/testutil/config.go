@@ -1,8 +1,7 @@
 package testutil
 
 import (
-	"io/ioutil"
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -44,15 +43,10 @@ func (b *ConfigFileBuilder) WithValues(values template.Values) *ConfigFileBuilde
 	return b
 }
 
-// Create creates the config file in the temp directory. The config files are
-// named `kickoff-config-*.yaml` and need to be cleaned by calling `os.Remove`
-// after tests are finished.
-//
-//  configFile := testutil.NewConfigFileBuilder(t).Create()
-//  defer os.Remove(configFile.Name())
-func (b *ConfigFileBuilder) Create() *os.File {
-	f, err := ioutil.TempFile("", "kickoff-config-*.yaml")
-	require.NoError(b, err)
-	require.NoError(b, kickoff.SaveConfig(f.Name(), &b.Config))
-	return f
+// Create creates the config file in a temp dir that gets cleaned up after the
+// current test.
+func (b *ConfigFileBuilder) Create() string {
+	path := filepath.Join(b.TempDir(), "config.yaml")
+	require.NoError(b, kickoff.SaveConfig(path, &b.Config))
+	return path
 }
