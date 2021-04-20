@@ -41,6 +41,7 @@ jobs:
           skip-pkg-cache: true
           skip-build-cache: true
       - name: Upload coverage
+        continue-on-error: true
         uses: codecov/codecov-action@v1.4.0
         if: matrix.go-version == '1.16.x'
         with:
