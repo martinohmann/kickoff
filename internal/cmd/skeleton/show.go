@@ -39,7 +39,7 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 		Args: cmdutil.ExactNonEmptyArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) == 0 {
-				return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+				return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 			}
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		},

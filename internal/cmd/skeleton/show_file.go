@@ -32,9 +32,9 @@ func NewShowFileCmd(f *cmdutil.Factory) *cobra.Command {
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			switch len(args) {
 			case 0:
-				return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+				return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 			case 1:
-				return cmdutil.SkeletonFilenames(f, args[0]), cobra.ShellCompDirectiveDefault
+				return cmdutil.SkeletonFilenames(f, args[0], o.RepoNames...), cobra.ShellCompDirectiveDefault
 			default:
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}

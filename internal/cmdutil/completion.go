@@ -28,8 +28,8 @@ func RepositoryNames(f *Factory) []string {
 
 // SkeletonNames compiles a sorted list of skeleton names from the configured
 // repositories. Used for completion.
-func SkeletonNames(f *Factory) []string {
-	repo, err := f.Repository()
+func SkeletonNames(f *Factory, repoNames ...string) []string {
+	repo, err := f.Repository(repoNames...)
 	if err != nil {
 		return nil
 	}
@@ -50,8 +50,8 @@ func SkeletonNames(f *Factory) []string {
 
 // SkeletonFilenames compiles a sorted list of skeleton file names from the
 // configured repositories. Used for completion.
-func SkeletonFilenames(f *Factory, skeletonName string) []string {
-	repo, err := f.Repository()
+func SkeletonFilenames(f *Factory, skeletonName string, repoNames ...string) []string {
+	repo, err := f.Repository(repoNames...)
 	if err != nil {
 		return nil
 	}

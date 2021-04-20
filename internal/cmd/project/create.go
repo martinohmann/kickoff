@@ -80,7 +80,7 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		Args: cmdutil.ExactNonEmptyArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) == 0 {
-				return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+				return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 			}
 			return nil, cobra.ShellCompDirectiveFilterDirs
 		},
