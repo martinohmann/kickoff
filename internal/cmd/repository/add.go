@@ -32,6 +32,12 @@ func NewAddCmd(f *cmdutil.Factory) *cobra.Command {
 			# Add a remote skeleton repository in a specific revision
 			kickoff repository add myskeletons https://github.com/martinohmann/kickoff-skeletons --revision v1.0.0`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return nil, cobra.ShellCompDirectiveFilterDirs
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.RepoName = args[0]
 			o.RepoURL = args[1]
@@ -40,7 +46,6 @@ func NewAddCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.MarkZshCompPositionalArgumentFile(2)
 	cmd.Flags().StringVar(&o.Revision, "revision", o.Revision, "Revision to checkout. Can be a branch name, tag or commit SHA.")
 
 	return cmd

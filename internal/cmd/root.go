@@ -115,9 +115,12 @@ func handleError(w io.Writer, err error) {
 	case errors.As(err, &invalidRepoErr):
 		ref := invalidRepoErr.RepoRef
 
-		errorContext = fmt.Sprintf("Ensure that the repository contains a `skeletons/` subdirectory.\n\n"+
-			"You can remove it by running:\n"+
-			"  kickoff repository remove %s", ref.Name)
+		errorContext = "Ensure that the repository contains a `skeletons/` subdirectory."
+
+		if ref.Name != "" {
+			errorContext += fmt.Sprintf("\n\nYou can remove it by running:\n"+
+				"  kickoff repository remove %s", ref.Name)
+		}
 	case errors.As(err, &netErr):
 		if netErr.Temporary() {
 			errorContext = "Temporary network error. Check your internet connection."

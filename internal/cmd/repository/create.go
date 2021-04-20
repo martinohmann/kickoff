@@ -30,6 +30,12 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			# Create a new repository
 			kickoff repository create myrepo /repository/output/path`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return nil, cobra.ShellCompDirectiveFilterDirs
+		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			o.RepoName = args[0]
 			o.RepoDir = args[1]
@@ -37,8 +43,6 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			return o.Run()
 		},
 	}
-
-	cmd.MarkZshCompPositionalArgumentFile(2)
 
 	cmd.Flags().StringVarP(&o.SkeletonName, "skeleton-name", "s", o.SkeletonName,
 		"Name of the default skeleton that will be created in the new repository.")

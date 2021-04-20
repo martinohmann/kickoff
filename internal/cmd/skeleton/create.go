@@ -26,10 +26,10 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			kickoff skeleton create myrepo myskeleton`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveDefault
+			if len(args) == 0 {
+				return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
 			}
-			return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.RepoName = args[0]

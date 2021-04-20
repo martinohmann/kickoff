@@ -79,10 +79,10 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			kickoff project create myskeleton ~/repos/myproject --skip-file README.md`),
 		Args: cmdutil.ExactNonEmptyArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveDefault
+			if len(args) == 0 {
+				return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
 			}
-			return cmdutil.SkeletonNames(f), cobra.ShellCompDirectiveDefault
+			return nil, cobra.ShellCompDirectiveFilterDirs
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			o.SkeletonNames = strings.Split(args[0], ",")
@@ -100,11 +100,16 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.MarkZshCompPositionalArgumentFile(2)
-
 	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
 
 	o.AddFlags(cmd)
+
+	cmd.RegisterFlagCompletionFunc("license", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cmdutil.LicenseNames(f), cobra.ShellCompDirectiveDefault
+	})
+	cmd.RegisterFlagCompletionFunc("gitignore", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cmdutil.GitignoreNames(f), cobra.ShellCompDirectiveDefault
+	})
 
 	return cmd
 }

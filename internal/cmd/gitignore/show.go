@@ -27,10 +27,10 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 			kickoff gitignore show go,helm,hugo`),
 		Args: cobra.ExactArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
+			if len(args) == 0 {
+				return cmdutil.GitignoreNames(f), cobra.ShellCompDirectiveDefault
 			}
-			return cmdutil.GitignoreNames(f), cobra.ShellCompDirectiveDefault
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := gitignore.NewClient(f.HTTPClient())

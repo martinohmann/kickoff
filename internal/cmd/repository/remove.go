@@ -32,10 +32,10 @@ func NewRemoveCmd(f *cmdutil.Factory) *cobra.Command {
 			kickoff repository remove myrepo`),
 		Args: cmdutil.ExactNonEmptyArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
+			if len(args) == 0 {
+				return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
 			}
-			return cmdutil.RepositoryNames(f), cobra.ShellCompDirectiveDefault
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.RepoName = args[0]
