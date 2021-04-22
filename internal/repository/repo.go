@@ -237,8 +237,9 @@ func loadSkeletonFiles(ref *kickoff.SkeletonRef) ([]*kickoff.BufferedFile, error
 
 		if fi.Mode().IsDir() {
 			files = append(files, &kickoff.BufferedFile{
-				RelPath: relPath,
-				Mode:    fi.Mode(),
+				RelPath:     relPath,
+				Mode:        fi.Mode(),
+				SkeletonRef: ref,
 			})
 			return nil
 		}
@@ -257,9 +258,10 @@ func loadSkeletonFiles(ref *kickoff.SkeletonRef) ([]*kickoff.BufferedFile, error
 		}
 
 		files = append(files, &kickoff.BufferedFile{
-			RelPath: relPath,
-			Content: buf,
-			Mode:    fi.Mode(),
+			RelPath:     relPath,
+			Content:     buf,
+			Mode:        fi.Mode(),
+			SkeletonRef: ref,
 		})
 		return nil
 	})

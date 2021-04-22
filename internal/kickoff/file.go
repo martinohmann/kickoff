@@ -16,6 +16,10 @@ type BufferedFile struct {
 	// Mode is the os.Mode for the file. This provides information about the
 	// type of file, e.g. whether it is a directory or not.
 	Mode os.FileMode `json:"mode"`
+	// SkeletonRef contains the ref to the skeleton the file originated from or
+	// nil if it does not belong to a specific skeleton. Used to keep track of
+	// file origins during skeleton composition.
+	SkeletonRef *SkeletonRef `json:"-"`
 }
 
 // MergeFiles merges two lists of files. Files in the rhs list take precedence
