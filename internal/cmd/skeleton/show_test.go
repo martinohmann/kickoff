@@ -1,9 +1,12 @@
 package skeleton
 
 import (
+	"encoding/json"
 	"io/ioutil"
+	"os"
 	"testing"
 
+	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/testutil"
@@ -71,6 +74,77 @@ func TestShowCmd(t *testing.T) {
 
 		require.NoError(t, cmd.Execute())
 
-		assert.Contains(t, out.String(), "  \"values\": {\n    \"foo\": \"bar\"\n  }")
+		buf := out.Bytes()
+
+		assert.NotEmpty(t, buf)
+		var m map[string]interface{}
+		require.NoError(t, json.Unmarshal(buf, &m))
+		assert.Equal(t, map[string]interface{}{"foo": "bar"}, m["values"])
+	})
+
+	t.Run("show file", func(t *testing.T) {
+		out.Reset()
+
+		cmd := NewShowCmd(f)
+		cmd.SetArgs([]string{"advanced", "README.md.skel"})
+		cmd.SetOut(ioutil.Discard)
+
+		require.NoError(t, cmd.Execute())
+
+		assert.Contains(t, out.String(), `{{.Project.Name}}`)
+	})
+
+	t.Run("show file as json", func(t *testing.T) {
+		out.Reset()
+
+		cmd := NewShowCmd(f)
+		cmd.SetArgs([]string{"advanced", "README.md.skel", "-o", "json"})
+		cmd.SetOut(ioutil.Discard)
+
+		require.NoError(t, cmd.Execute())
+
+		buf := out.Bytes()
+
+		assert.NotEmpty(t, buf)
+		var m map[string]interface{}
+		require.NoError(t, json.Unmarshal(buf, &m))
+		assert.Equal(t, "README.md.skel", m["relPath"])
+	})
+
+	t.Run("show file as yaml", func(t *testing.T) {
+		out.Reset()
+
+		cmd := NewShowCmd(f)
+		cmd.SetArgs([]string{"advanced", "README.md.skel", "-o", "yaml"})
+		cmd.SetOut(ioutil.Discard)
+
+		require.NoError(t, cmd.Execute())
+
+		buf := out.Bytes()
+
+		assert.NotEmpty(t, buf)
+		var m map[string]interface{}
+		require.NoError(t, yaml.Unmarshal(buf, &m))
+		assert.Equal(t, "README.md.skel", m["relPath"])
+	})
+
+	t.Run("nonexistent file", func(t *testing.T) {
+		cmd := NewShowCmd(f)
+		cmd.SetArgs([]string{"advanced", "nonexistent-file"})
+		cmd.SetOut(ioutil.Discard)
+
+		err := cmd.Execute()
+		require.EqualError(t, err, os.ErrNotExist.Error())
+	})
+
+	t.Run("directory", func(t *testing.T) {
+		out.Reset()
+
+		cmd := NewShowCmd(f)
+		cmd.SetArgs([]string{"advanced", "{{.Values.filename}}"})
+		cmd.SetOut(ioutil.Discard)
+
+		err := cmd.Execute()
+		require.EqualError(t, err, `"{{.Values.filename}}" is a directory`)
 	})
 }

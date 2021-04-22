@@ -2,6 +2,10 @@ package skeleton
 
 import (
 	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -23,10 +27,10 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "show <name>",
-		Short: "Show the config of a skeleton",
+		Use:   "show <name> [<filepath>]",
+		Short: "Show config and files for a skeleton",
 		Long: cmdutil.LongDesc(`
-			Show the config of a single skeleton.`),
+			Show config and files for a single skeleton.`),
 		Example: cmdutil.Examples(`
 			# Show skeleton config
 			kickoff skeleton show myskeleton
@@ -34,17 +38,28 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 			# Show skeleton config in a specific repository
 			kickoff skeleton show myrepo:myskeleton
 
+			# Show the contents of a skeleton file
+			kickoff skeleton show myrepo:myskeleton relpath/to/file
+
 			# Show skeleton config using different output
 			kickoff skeleton show myskeleton --output json`),
-		Args: cmdutil.ExactNonEmptyArgs(1),
+		Args: cobra.RangeArgs(1, 2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) == 0 {
+			switch len(args) {
+			case 0:
 				return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
+			case 1:
+				return cmdutil.SkeletonFilenames(f, args[0], o.RepoNames...), cobra.ShellCompDirectiveDefault
+			default:
+				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
-			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.SkeletonName = args[0]
+
+			if len(args) > 1 {
+				o.FilePath = filepath.Clean(args[1])
+			}
 
 			return o.Run()
 		},
@@ -62,6 +77,7 @@ type ShowOptions struct {
 
 	Repository func(...string) (kickoff.Repository, error)
 
+	FilePath     string
 	Output       string
 	RepoNames    []string
 	SkeletonName string
@@ -80,6 +96,14 @@ func (o *ShowOptions) Run() error {
 		return err
 	}
 
+	if o.FilePath != "" {
+		return o.showSkeletonFile(skeleton, o.FilePath)
+	}
+
+	return o.showSkeleton(skeleton)
+}
+
+func (o *ShowOptions) showSkeleton(skeleton *kickoff.Skeleton) error {
 	switch o.Output {
 	case "json":
 		return cmdutil.RenderJSON(o.Out, skeleton)
@@ -116,4 +140,47 @@ func (o *ShowOptions) Run() error {
 
 		return nil
 	}
+}
+
+func (o *ShowOptions) showSkeletonFile(skeleton *kickoff.Skeleton, path string) error {
+	file, err := findFile(skeleton.Files, path)
+	if err != nil {
+		return err
+	}
+
+	if file.Mode().IsDir() {
+		return fmt.Errorf("%q is a directory", file.Path())
+	}
+
+	r, err := file.Reader()
+	if err != nil {
+		return err
+	}
+
+	buf, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
+	f := kickoff.NewBufferedFile(file.Path(), buf, file.Mode())
+
+	switch o.Output {
+	case "json":
+		return cmdutil.RenderJSON(o.Out, f)
+	case "yaml":
+		return cmdutil.RenderYAML(o.Out, f)
+	default:
+		fmt.Fprintln(o.Out, string(buf))
+		return nil
+	}
+}
+
+func findFile(files []kickoff.File, path string) (kickoff.File, error) {
+	for _, file := range files {
+		if file.Path() == path {
+			return file, nil
+		}
+	}
+
+	return nil, os.ErrNotExist
 }
