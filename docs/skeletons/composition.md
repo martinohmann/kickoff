@@ -14,11 +14,11 @@ nav_order: 6
 {:toc}
 
 Projects can be created by composing multiple skeletons together. This is just
-as simple as providing multiple skeletons instead of one as comma separated
-list on project creation:
+as simple as providing multiple skeletons instead of one after the project name
+on project creation:
 
 ```bash
-kickoff project create skeleton1,skeleton2,skeleton3 /path/to/project
+$ kickoff project create myproject repo:skeleton1 otherrepo:skeleton2 skeleton3
 ```
 
 Note that the skeletons are merged left to right, so files and values from

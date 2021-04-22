@@ -127,10 +127,13 @@ create our first project from a project skeleton.
 
 Let's say, we want to create a new project at `~/projects/myproject` using the
 `default` skeleton from the `default` repository. By running the following
-command it will setup the new project from our skeleton:
+command from within `~/projects` it will setup the new project from our
+skeleton:
 
 ```bash
-$ kickoff project create default:default ~/projects/myproject
+$ mkdir ~/projects
+$ cd ~/projects
+$ kickoff project create myproject default:default
 
 Creating project in ~/projects/myproject.
 
@@ -138,6 +141,8 @@ Creating project in ~/projects/myproject.
 
 Project creation complete. Created: 1, Overwritten: 0, Skipped: 0.
 ```
+
+**Note:** You can also pass a different directory via the `--dir` flag.
 
 What happened here? Kickoff created the new directory `~/projects/myproject`
 and copied all files and directories from the `default` skeleton into it,
