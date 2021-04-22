@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -37,60 +37,41 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "create <skeleton-name> <output-dir>",
-		Short: "Create a project from a skeleton",
+		Use:   "create <name> <skeleton-name> [<skeleton-name>...]",
+		Short: "Create a project from one or more skeletons",
 		Long: cmdutil.LongDesc(`
-			Create a project from a skeleton.`),
+			Create a project from one or more skeletons.`),
 		Example: cmdutil.Examples(`
 			# Create project
-			kickoff project create myskeleton ~/repos/myproject
-
-			# Create project from skeleton in specific repo
-			kickoff project create myrepo:myskeleton ~/repos/myproject
-
-			# Create project with license
-			kickoff project create myskeleton ~/repos/myproject --license mit
-
-			# Create project with gitignore
-			kickoff project create myskeleton ~/repos/myproject --gitignore go,helm,hugo
-
-			# Create project with value overrides from files
-			kickoff project create myskeleton ~/repos/myproject --values values.yaml --values values2.yaml
-
-			# Create project with value overrides via --set
-			kickoff project create myskeleton ~/repos/myproject --set travis.enabled=true,mykey=mynewvalue
+			kickoff project create myproject myskeleton
 
 			# Dry run project creation
-			kickoff project create myskeleton ~/repos/myproject --dry-run
+			kickoff project create myproject myskeleton --dry-run
 
-			# Composition of multiple skeletons (comma separated)
-			kickoff project create firstskeleton,secondskeleton,thirdskeleton ~/repos/myproject
+			# Create project from skeleton in specific repo
+			kickoff project create myproject myrepo:myskeleton --dir /path/to/project
 
-			# Forces creation of project in existing directory, retaining existing files
-			kickoff project create myskeleton ~/repos/myproject --force
+			# Create project from multiple skeletons (composition)
+			kickoff project create myproject repo:myskeleton otherrepo:otherskeleton
 
-			# Forces creation of project in existing directory, overwriting existing files
-			kickoff project create myskeleton ~/repos/myproject --force --overwrite
+			# Create project with license and gitignore templates
+			kickoff project create myproject myskeleton --license mit --gitignore go,hugo
 
-			# Forces creation of project in existing directory, selectively overwriting existing files
-			kickoff project create myskeleton ~/repos/myproject --force --overwrite-file README.md
+			# Create project with value overrides via --set or --values
+			kickoff project create myproject myskeleton --set some.val=theval,mykey=mynewvalue --values values.yaml
 
-			# Selectively skip the creating of certain files or dirs
-			kickoff project create myskeleton ~/repos/myproject --skip-file README.md`),
-		Args: cmdutil.ExactNonEmptyArgs(2),
+			# Selectively skip creation of certain files or dirs
+			kickoff project create myproject myskeleton --skip-file README.md --skip-file some/dir`),
+		Args: cobra.MinimumNArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) == 0 {
-				return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
+				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
-			return nil, cobra.ShellCompDirectiveFilterDirs
+			return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			o.SkeletonNames = strings.Split(args[0], ",")
-
-			o.ProjectDir, err = filepath.Abs(args[1])
-			if err != nil {
-				return err
-			}
+			o.ProjectName = args[0]
+			o.SkeletonNames = args[1:]
 
 			if err := o.Complete(); err != nil {
 				return err
@@ -100,9 +81,9 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		},
 	}
 
-	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
-
 	o.AddFlags(cmd)
+
+	cmdutil.AddRepositoryFlag(cmd, f, &o.RepoNames)
 
 	cmd.RegisterFlagCompletionFunc("license", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return cmdutil.LicenseNames(f), cobra.ShellCompDirectiveDefault
@@ -164,26 +145,40 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 		"Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
 	cmd.Flags().StringVar(&o.Gitignore, "gitignore", o.Gitignore,
 		"Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
-
 	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
+
+	cmd.Flags().StringVarP(&o.ProjectDir, "dir", "d", o.ProjectDir, "Custom project directory. If empty the project is created in $PWD/<project-name>")
 	cmd.Flags().StringVar(&o.ProjectHost, "host", o.ProjectHost, "Project repository host")
-	cmd.Flags().StringVar(&o.ProjectName, "name", o.ProjectName, "Name of the project. Will be inferred from the output dir if not explicitly set")
 	cmd.Flags().StringVar(&o.ProjectOwner, "owner", o.ProjectOwner, "Project repository owner. This should be the name of the SCM user, e.g. the GitHub user or organization name")
 }
 
 // Complete completes the project creation options.
 func (o *CreateOptions) Complete() (err error) {
-	if file.Exists(o.ProjectDir) && !o.Force {
-		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
-	}
-
 	config, err := o.Config()
 	if err != nil {
 		return err
 	}
 
 	if o.ProjectName == "" {
-		o.ProjectName = filepath.Base(o.ProjectDir)
+		return errors.New("project name must not be empty")
+	}
+
+	if o.ProjectDir == "" {
+		pwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		o.ProjectDir = filepath.Join(pwd, o.ProjectName)
+	}
+
+	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
+	if err != nil {
+		return err
+	}
+
+	if file.Exists(o.ProjectDir) && !o.Force {
+		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
 	}
 
 	if o.ProjectHost == "" {

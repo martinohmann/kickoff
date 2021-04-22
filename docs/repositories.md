@@ -52,7 +52,7 @@ Add a remote skeleton repository and create a new project:
 ```bash
 $ kickoff repository add myremoterepo https://github.com/myuser/myskeletonrepo?revision=v1.0.0
 $ kickoff repository list
-$ kickoff project create myremoterepo:myskeleton ~/path/to/my/new/project
+$ kickoff project create myproject myremoterepo:myskeleton
 ```
 
 Remote repository urls can contain an optional `revision` query parameter which

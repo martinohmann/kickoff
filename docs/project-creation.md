@@ -22,11 +22,14 @@ LICENSE file to your new project.
 The basic usage of the project creation command looks like this:
 
 ```bash
-$ kickoff project create [repo:]skeleton project-dir [flags...]
+$ kickoff project create <name> <skeleton-name> [<skeleton-name>...] [flags]
 ```
 
-It expects two arguments: the skeleton to create the project from and the
-directory where the project should be created.
+It expects at least two arguments: the project name and the name of at least
+one skeleton to create the project from. The new project is created in
+`$PWD/<name>`.
+
+**Note:** You can also pass a different directory via the `--dir` flag.
 
 The skeleton needs to be prefixed with the name of the repository if the
 skeleton name is ambiguous. For example:
@@ -68,8 +71,8 @@ Values          someKey: someValue
 Using the `--set` and `--values` flags you can override these:
 
 ```bash
-$ kickoff project create myskeleton ~/myproject --set someOtherKey.someNestedKey=43
-$ kickoff project create myskeleton ~/myproject --value values.yaml 
+$ kickoff project create myproject myskeleton --set someOtherKey.someNestedKey=43
+$ kickoff project create myproject myskeleton --value values.yaml 
 ```
 
 Refer to the [Accessing and setting template
@@ -87,7 +90,7 @@ API](https://developer.github.com/v3/licenses/).
 To add a license to your project, just specify its name using the `--license` flag:
 
 ```bash
-$ kickoff project create myskeleton ~/myproject --license MIT
+$ kickoff project create myproject myskeleton --license MIT
 ```
 
 It will automatically fill in the year and project owner into the license if
@@ -122,7 +125,7 @@ be built from one or multiple gitignore templates from
 separated list via the `--gitignore` flag:
 
 ```bash
-$ kickoff project create myskeleton ~/myproject --gitignore go,hugo
+$ kickoff project create myproject myskeleton --gitignore go,hugo
 ```
 
 For a list of available `.gitignore` templates run:
@@ -141,17 +144,17 @@ Use the `--dry-run` flag if you just want to see which files and directories
 would be created for your new project:
 
 ```bash
-$ kickoff project create myskeleton ~/myproject --dry-run
+$ kickoff project create myproject myskeleton --dry-run
 ```
 
 ## Creating a project from multiple skeletons
 
 Projects can be created by composing multiple skeletons together. This is just
-as simple as providing multiple skeletons instead of one as comma separated
-list on project creation:
+as simple as providing multiple skeletons instead of one after the project name
+on project creation:
 
 ```bash
-$ kickoff project create skeleton1,skeleton2,skeleton3 ~/myproject
+$ kickoff project create myproject repo:skeleton1 otherrepo:skeleton2 skeleton3
 ```
 
 Note that the skeletons are merged left to right, so files and values from

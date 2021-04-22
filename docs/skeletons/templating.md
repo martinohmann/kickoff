@@ -104,10 +104,10 @@ values:
   myVar: myValue
 
 # on project creation via --set:
-$ kickoff project create default ~/myproj --set myVar=myValue
+$ kickoff project create myproject default --set myVar=myValue
 
 # on project creation via --values:
-$ kickoff project create default ~/myproj --values values.yaml
+$ kickoff project create myproject default --values values.yaml
 
 # where values.yaml contains myVar:
 ---
