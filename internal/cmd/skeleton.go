@@ -18,7 +18,6 @@ func NewSkeletonCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd.AddCommand(skeleton.NewCreateCmd(f))
 	cmd.AddCommand(skeleton.NewListCmd(f))
 	cmd.AddCommand(skeleton.NewShowCmd(f))
-	cmd.AddCommand(skeleton.NewShowFileCmd(f))
 
 	return cmd
 }

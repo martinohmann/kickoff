@@ -39,12 +39,12 @@ type BufferedFile struct {
 	// RelPath is the file path relative to root directory of the skeleton.
 	// This is used to construct the path for the file relative to the the
 	// target project directory.
-	RelPath string
+	RelPath string `json:"relPath"`
 	// Content holds the file contents.
-	Content []byte
+	Content []byte `json:"content"`
 	// FileMode is the os.FileMode for the file. This provides information
 	// about the type of file, e.g. whether it is a directory or not.
-	FileMode os.FileMode
+	FileMode os.FileMode `json:"mode"`
 }
 
 // NewBufferedFile creates a new *BufferedFile.
