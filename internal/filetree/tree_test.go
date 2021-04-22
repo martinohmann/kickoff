@@ -10,12 +10,12 @@ import (
 func TestBuild(t *testing.T) {
 	s := &kickoff.Skeleton{
 		Ref: &kickoff.SkeletonRef{Name: "my/skeleton"},
-		Files: []kickoff.File{
-			&kickoff.FileRef{RelPath: ".kickoff.yaml"},
-			&kickoff.FileRef{RelPath: "README.md.skel"},
-			&kickoff.FileRef{RelPath: "foo/bar"},
-			&kickoff.FileRef{RelPath: "foo/sometemplate.skel"},
-			&kickoff.FileRef{RelPath: "foo/{{.Values.filename}}/qux"},
+		Files: []*kickoff.BufferedFile{
+			{RelPath: ".kickoff.yaml"},
+			{RelPath: "README.md.skel"},
+			{RelPath: "foo/bar"},
+			{RelPath: "foo/sometemplate.skel"},
+			{RelPath: "foo/{{.Values.filename}}/qux"},
 		},
 	}
 

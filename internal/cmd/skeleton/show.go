@@ -3,7 +3,6 @@ package skeleton
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -148,36 +147,24 @@ func (o *ShowOptions) showSkeletonFile(skeleton *kickoff.Skeleton, path string) 
 		return err
 	}
 
-	if file.Mode().IsDir() {
-		return fmt.Errorf("%q is a directory", file.Path())
+	if file.Mode.IsDir() {
+		return fmt.Errorf("%q is a directory", file.RelPath)
 	}
-
-	r, err := file.Reader()
-	if err != nil {
-		return err
-	}
-
-	buf, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
-
-	f := kickoff.NewBufferedFile(file.Path(), buf, file.Mode())
 
 	switch o.Output {
 	case "json":
-		return cmdutil.RenderJSON(o.Out, f)
+		return cmdutil.RenderJSON(o.Out, file)
 	case "yaml":
-		return cmdutil.RenderYAML(o.Out, f)
+		return cmdutil.RenderYAML(o.Out, file)
 	default:
-		fmt.Fprintln(o.Out, string(buf))
+		fmt.Fprintln(o.Out, string(file.Content))
 		return nil
 	}
 }
 
-func findFile(files []kickoff.File, path string) (kickoff.File, error) {
+func findFile(files []*kickoff.BufferedFile, path string) (*kickoff.BufferedFile, error) {
 	for _, file := range files {
-		if file.Path() == path {
+		if file.RelPath == path {
 			return file, nil
 		}
 	}

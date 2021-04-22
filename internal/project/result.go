@@ -29,7 +29,7 @@ const (
 // Action defines an action that should be performed on project creation.
 type Action struct {
 	Type        ActionType
-	Source      kickoff.File
+	Source      *kickoff.BufferedFile
 	Destination Destination
 }
 
@@ -69,7 +69,7 @@ func (p *Project) writeSummary(w io.Writer) {
 		source := action.Source
 		dest := action.Destination
 
-		if source.Mode().IsDir() {
+		if source.Mode.IsDir() {
 			dirSuffix = "/"
 		}
 
@@ -86,7 +86,7 @@ func (p *Project) writeSummary(w io.Writer) {
 
 		var destPath string
 
-		if source.Path() != dest.RelPath() {
+		if source.RelPath != dest.RelPath() {
 			destPath = fmt.Sprintf(
 				"%s %s",
 				color.HiBlackString("=❯"),
@@ -96,7 +96,7 @@ func (p *Project) writeSummary(w io.Writer) {
 
 		tw.Append(
 			color.HiBlackString("❯"),
-			colorizePath(source.Path()+dirSuffix),
+			colorizePath(source.RelPath+dirSuffix),
 			destPath,
 			status,
 		)

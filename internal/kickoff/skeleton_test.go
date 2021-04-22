@@ -92,32 +92,32 @@ func TestMergeSkeletons(t *testing.T) {
 
 	t.Run("merges skeleton files", func(t *testing.T) {
 		s0 := &Skeleton{
-			Files: []File{
-				&FileRef{RelPath: "somefile.txt", AbsPath: "/s0/somefile.txt"},
-				&FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
-				&FileRef{RelPath: "somedir", AbsPath: "/s0/somedir"},
-				&FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
+			Files: []*BufferedFile{
+				{RelPath: "somefile.txt", Content: []byte("a")},
+				{RelPath: "sometemplate.json.skel"},
+				{RelPath: "somedir"},
+				{RelPath: "somedir/somefile"},
 			},
 		}
 		s1 := &Skeleton{
-			Files: []File{
-				&FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
-				&FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
-				&FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
-				&FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
+			Files: []*BufferedFile{
+				{RelPath: "somefile.txt", Content: []byte("b")},
+				{RelPath: "someothertemplate.json.skel"},
+				{RelPath: "somedir"},
+				{RelPath: "somedir/someotherfile"},
 			},
 		}
 
 		s, err := MergeSkeletons(s0, s1)
 		require.NoError(t, err)
 
-		expectedFiles := []File{
-			&FileRef{RelPath: "somedir", AbsPath: "/s1/somedir"},
-			&FileRef{RelPath: "somedir/somefile", AbsPath: "/s0/somedir/somefile"},
-			&FileRef{RelPath: "somedir/someotherfile", AbsPath: "/s1/somedir/someotherfile"},
-			&FileRef{RelPath: "somefile.txt", AbsPath: "/s1/somefile.txt"},
-			&FileRef{RelPath: "someothertemplate.json.skel", AbsPath: "/s1/someothertemplate.json.skel"},
-			&FileRef{RelPath: "sometemplate.json.skel", AbsPath: "/s0/sometemplate.json.skel"},
+		expectedFiles := []*BufferedFile{
+			{RelPath: "somedir"},
+			{RelPath: "somedir/somefile"},
+			{RelPath: "somedir/someotherfile"},
+			{RelPath: "somefile.txt", Content: []byte("b")},
+			{RelPath: "someothertemplate.json.skel"},
+			{RelPath: "sometemplate.json.skel"},
 		}
 
 		assert.Equal(t, expectedFiles, s.Files)

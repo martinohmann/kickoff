@@ -63,8 +63,8 @@ func SkeletonFilenames(f *Factory, skeletonName string, repoNames ...string) []s
 
 	paths := make([]string, 0, len(skeleton.Files))
 	for _, file := range skeleton.Files {
-		if file.Mode().IsRegular() {
-			paths = append(paths, file.Path())
+		if file.Mode.IsRegular() {
+			paths = append(paths, file.RelPath)
 		}
 	}
 

@@ -20,7 +20,7 @@ type Skeleton struct {
 	Ref *SkeletonRef `json:"ref,omitempty"`
 	// The Files slice contains a sorted list of files that are present in the
 	// skeleton.
-	Files []File `json:"files,omitempty"`
+	Files []*BufferedFile `json:"files,omitempty"`
 	// Values are the template values from the skeleton's metadata.
 	Values template.Values `json:"values,omitempty"`
 }
@@ -118,7 +118,7 @@ func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
 
 	return &Skeleton{
 		Values:      values,
-		Files:       mergeFiles(s.Files, other.Files),
+		Files:       MergeFiles(s.Files, other.Files),
 		Description: other.Description,
 		Ref:         other.Ref,
 	}, nil
