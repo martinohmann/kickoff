@@ -3,6 +3,7 @@ package skeleton
 import (
 	"fmt"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -64,8 +65,8 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Created new skeleton %q in repository %q\n\n", ref.Name, o.RepoName)
-	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton show %s:%s`.\n", o.RepoName, ref.Name)
+	fmt.Fprintf(o.Out, "%s Created new skeleton %s in repository %s\n\n", color.GreenString("✓"), bold.Sprint(ref.Name), bold.Sprint(o.RepoName))
+	fmt.Fprintln(o.Out, "You can inspect it by running:", bold.Sprintf("kickoff skeleton show %s:%s", o.RepoName, ref.Name))
 
 	return nil
 }

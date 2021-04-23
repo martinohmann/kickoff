@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -84,7 +85,7 @@ func (o *RemoveOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintln(o.Out, "Repository removed.")
+	fmt.Fprintln(o.Out, color.GreenString("✓"), "Repository removed")
 
 	return nil
 }

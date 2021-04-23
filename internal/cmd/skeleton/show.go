@@ -148,7 +148,7 @@ func (o *ShowOptions) showSkeletonFile(skeleton *kickoff.Skeleton, path string) 
 	}
 
 	if file.Mode.IsDir() {
-		return fmt.Errorf("%q is a directory", file.RelPath)
+		return fmt.Errorf("%s is a directory", file.RelPath)
 	}
 
 	switch o.Output {

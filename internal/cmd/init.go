@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
-	"github.com/ghodss/yaml"
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
@@ -19,6 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+var bold = color.New(color.Bold)
 
 // NewInitCmd creates a new command which lets users interactively initialize
 // the kickoff configuration.
@@ -279,7 +281,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 	var createRepo bool
 
 	err = survey.AskOne(&survey.Confirm{
-		Message: fmt.Sprintf("Skeleton repository %s does not exist, initialize it?", localPath),
+		Message: fmt.Sprintf("Skeleton repository %s does not exist, initialize it?", homedir.MustCollapse(localPath)),
 		Default: true,
 		Help: cmdutil.LongDesc(`
 			Initializing a skeleton repository
@@ -317,15 +319,12 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 	}
 
 	if reviewConfig {
-		buf, err := yaml.Marshal(o.Config)
-		if err != nil {
+		if err := cmdutil.RenderYAML(o.Out, config); err != nil {
 			return err
 		}
-
-		fmt.Fprintf(o.Out, "\n---\n%s\n", string(buf))
 	}
 
-	message := fmt.Sprintf("Save config to %s?", o.ConfigPath)
+	message := fmt.Sprintf("Save config to %s?", homedir.MustCollapse(o.ConfigPath))
 	if file.Exists(o.ConfigPath) {
 		message = fmt.Sprintf(
 			"There is already a config at %s, do you want to overwrite it?",
@@ -340,8 +339,10 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 		return err
 	}
 
+	fmt.Fprintln(o.Out)
+
 	if !persistConfig {
-		fmt.Fprintln(o.Out, "Did not save config")
+		fmt.Fprintln(o.Out, color.YellowString("!"), "Config was not saved")
 		return nil
 	}
 
@@ -350,7 +351,12 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 		return err
 	}
 
-	fmt.Fprintln(o.Out, "Config saved")
+	fmt.Fprintln(o.Out, color.GreenString("✓"), "Config saved")
+	fmt.Fprint(o.Out, "\nHere are some useful commands to get you started:\n\n")
+	fmt.Fprintln(o.Out, "- List repositories:", bold.Sprint("kickoff repository list"))
+	fmt.Fprintln(o.Out, "- List skeletons:", bold.Sprint("kickoff skeleton list"))
+	fmt.Fprintln(o.Out, "- Inspect a skeleton:", bold.Sprint("kickoff skeleton show <skeleton-name>"))
+	fmt.Fprintln(o.Out, "- Create new project from skeleton:", bold.Sprint("kickoff project create <name> <skeleton-name>"))
 
 	return nil
 }

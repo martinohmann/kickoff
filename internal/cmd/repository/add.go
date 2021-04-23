@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -98,8 +99,8 @@ func (o *AddOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Repository added.\n\n")
-	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton list -r %s`.\n", o.RepoName)
+	fmt.Fprintln(o.Out, color.GreenString("✓"), "Repository added")
+	fmt.Fprintf(o.Out, "\nYou can inspect it by running: %s\n", bold.Sprintf("kickoff skeleton list -r %s", o.RepoName))
 
 	return nil
 }

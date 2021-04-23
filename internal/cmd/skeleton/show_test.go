@@ -145,6 +145,6 @@ func TestShowCmd(t *testing.T) {
 		cmd.SetOut(ioutil.Discard)
 
 		err := cmd.Execute()
-		require.EqualError(t, err, `"{{.Values.filename}}" is a directory`)
+		require.EqualError(t, err, `{{.Values.filename}} is a directory`)
 	})
 }
