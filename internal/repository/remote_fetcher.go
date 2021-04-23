@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
@@ -51,7 +50,7 @@ func (r *remoteFetcher) FetchRemote(ctx context.Context, ref kickoff.RepoRef) er
 
 	localPath := ref.LocalPath()
 
-	if !file.Exists(localPath) {
+	if _, statErr := os.Stat(localPath); statErr != nil {
 		return err
 	}
 

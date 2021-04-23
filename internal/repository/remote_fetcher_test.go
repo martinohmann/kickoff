@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/testutil"
@@ -191,7 +190,7 @@ func TestDefaultFetcher_FetchRemote(t *testing.T) {
 		err := fetcher.FetchRemote(context.Background(), ref)
 		require.EqualError(t, err, `revision "master" not found in repository "https://git.kickoff.tld/owner/repo"`)
 
-		require.False(t, file.Exists(localPath))
+		require.NoDirExists(t, localPath)
 	})
 
 	t.Run("attempts to resolve multiple revisions", func(t *testing.T) {

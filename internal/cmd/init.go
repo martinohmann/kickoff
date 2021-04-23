@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -274,8 +274,8 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 
 	localPath := ref.LocalPath()
 
-	if file.Exists(localPath) {
-		return nil
+	if _, err := os.Stat(localPath); !os.IsNotExist(err) {
+		return err
 	}
 
 	var createRepo bool
@@ -325,7 +325,7 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 	}
 
 	message := fmt.Sprintf("Save config to %s?", homedir.MustCollapse(o.ConfigPath))
-	if file.Exists(o.ConfigPath) {
+	if _, err := os.Stat(o.ConfigPath); err == nil {
 		message = fmt.Sprintf(
 			"There is already a config at %s, do you want to overwrite it?",
 			homedir.MustCollapse(o.ConfigPath),

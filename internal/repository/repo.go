@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
@@ -73,7 +72,8 @@ type repository struct {
 func newRepository(ref kickoff.RepoRef) (kickoff.Repository, error) {
 	dir := ref.SkeletonsPath()
 
-	if !file.Exists(dir) {
+	fi, err := os.Stat(dir)
+	if err != nil || !fi.IsDir() {
 		return nil, InvalidSkeletonRepositoryError{RepoRef: ref}
 	}
 
