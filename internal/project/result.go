@@ -75,29 +75,26 @@ func (p *Project) writeSummary(w io.Writer) {
 
 		switch action.Type {
 		case ActionTypeSkipUser:
-			status = color.YellowString("! skip ") + color.HiBlackString("(user)")
+			status = color.YellowString("! skipped ") + color.HiBlackString("(user)")
 		case ActionTypeSkipExisting:
-			status = color.YellowString("! skip ") + color.HiBlackString("(exists)")
+			status = color.YellowString("! skipped ") + color.HiBlackString("(exists)")
 		case ActionTypeOverwrite:
-			status = color.RedString("✓ overwrite")
+			status = color.RedString("✓ overwritten")
 		default:
-			status = color.GreenString("✓ create")
+			status = color.GreenString("✓ created")
 		}
 
-		var destPath string
-
-		if source.RelPath != dest.RelPath() {
-			destPath = fmt.Sprintf(
-				"%s %s",
-				color.HiBlackString("=❯"),
-				colorizePath(dest.RelPath()+dirSuffix),
-			)
+		origin := "<generated>"
+		if ref := source.SkeletonRef; ref != nil {
+			origin = ref.String()
 		}
 
 		tw.Append(
 			color.HiBlackString("❯"),
+			color.BlueString(origin),
 			colorizePath(source.RelPath+dirSuffix),
-			destPath,
+			color.HiBlackString("=❯"),
+			colorizePath(dest.RelPath()+dirSuffix),
 			status,
 		)
 	}
