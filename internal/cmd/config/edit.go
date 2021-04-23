@@ -19,7 +19,7 @@ var (
 	defaultEditor = "vi"
 	defaultShell  = "sh"
 
-	editorEnvs = []string{"KICKOFF_EDITOR", "EDITOR"}
+	editorEnvs = []string{kickoff.EnvKeyEditor, "EDITOR"}
 )
 
 // NewEditCmd creates a new command that opens the kickoff config in a
@@ -34,8 +34,9 @@ func NewEditCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Edit the kickoff config",
-		Long: cmdutil.LongDesc(`
-			Edit the kickoff config with the editor in the configured the $KICKOFF_EDITOR or $EDITOR environment variable.`),
+		Long: fmt.Sprintf(cmdutil.LongDesc(`
+			Edit the kickoff config with the editor in the configured the $%s or $EDITOR environment variable.`),
+			kickoff.EnvKeyEditor),
 		Example: cmdutil.Examples(`
 			# Edit the default config file
 			kickoff config edit`),

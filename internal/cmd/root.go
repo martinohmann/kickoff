@@ -14,6 +14,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
@@ -22,9 +23,9 @@ import (
 
 // NewRootCmd creates the root command for kickoff.
 func NewRootCmd(f *cmdutil.Factory) *cobra.Command {
-	logLevel := log.WarnLevel.String()
-	if lvl := os.Getenv("KICKOFF_LOG_LEVEL"); lvl != "" {
-		logLevel = lvl
+	logLevel := os.Getenv(kickoff.EnvKeyLogLevel)
+	if logLevel == "" {
+		logLevel = log.WarnLevel.String()
 	}
 
 	cmd := &cobra.Command{

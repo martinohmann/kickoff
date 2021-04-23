@@ -1,7 +1,6 @@
 package cmdutil
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -79,22 +78,13 @@ func TestFactory(t *testing.T) {
 
 func TestGetConfigPath(t *testing.T) {
 	t.Run("from env", func(t *testing.T) {
-		oldEnv, ok := os.LookupEnv("KICKOFF_CONFIG")
-		if ok {
-			defer func() { os.Setenv("KICKOFF_CONFIG", oldEnv) }()
-		}
-
-		os.Setenv("KICKOFF_CONFIG", "/config/from/env/config.yaml")
+		defer testutil.Setenv(kickoff.EnvKeyConfig, "/config/from/env/config.yaml")()
 
 		assert.Equal(t, "/config/from/env/config.yaml", getConfigPath())
 	})
 
 	t.Run("default config if env empty or unset", func(t *testing.T) {
-		oldEnv, ok := os.LookupEnv("KICKOFF_CONFIG")
-		if ok {
-			defer func() { os.Setenv("KICKOFF_CONFIG", oldEnv) }()
-			os.Unsetenv("KICKOFF_CONFIG")
-		}
+		defer testutil.Unsetenv(kickoff.EnvKeyConfig)()
 
 		assert.Equal(t, kickoff.DefaultConfigPath, getConfigPath())
 	})

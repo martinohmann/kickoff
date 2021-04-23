@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -49,16 +48,8 @@ func TestGetEditCmdArgs(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			oldEditor := os.Getenv("EDITOR")
-			oldShell := os.Getenv("SHELL")
-
-			defer func() {
-				os.Setenv("EDITOR", oldEditor)
-				os.Setenv("SHELL", oldShell)
-			}()
-
-			os.Setenv("EDITOR", test.editor)
-			os.Setenv("SHELL", test.shell)
+			defer testutil.Setenv("EDITOR", test.editor)()
+			defer testutil.Setenv("SHELL", test.shell)()
 
 			actual := getEditCmdArgs(test.path)
 
@@ -69,16 +60,8 @@ func TestGetEditCmdArgs(t *testing.T) {
 
 func TestEditCmd(t *testing.T) {
 	t.Run("invalid editor", func(t *testing.T) {
-		oldEditor := os.Getenv("EDITOR")
-		oldShell := os.Getenv("SHELL")
-
-		defer func() {
-			os.Setenv("EDITOR", oldEditor)
-			os.Setenv("SHELL", oldShell)
-		}()
-
-		os.Setenv("EDITOR", "./nonexistent")
-		os.Setenv("SHELL", "sh")
+		defer testutil.Setenv("EDITOR", "./nonexistent")()
+		defer testutil.Setenv("SHELL", "sh")()
 
 		configPath := testutil.NewConfigFileBuilder(t).
 			WithProjectOwner("johndoe").

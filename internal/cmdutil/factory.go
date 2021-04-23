@@ -86,7 +86,7 @@ func NewFactoryWithConfigPath(ioStreams cli.IOStreams, configPath string) *Facto
 }
 
 func getConfigPath() string {
-	configPath := os.Getenv("KICKOFF_CONFIG")
+	configPath := os.Getenv(kickoff.EnvKeyConfig)
 	if configPath != "" {
 		return configPath
 	}

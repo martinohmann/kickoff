@@ -43,6 +43,15 @@ const (
 	NoGitignore = "none"
 )
 
+const (
+	// EnvKeyLogLevel configures custom path to the kickoff config file.
+	EnvKeyConfig = "KICKOFF_CONFIG"
+	// EnvKeyEditor configures the command used to edit config files.
+	EnvKeyEditor = "KICKOFF_EDITOR"
+	// EnvKeyLogLevel configures the log level.
+	EnvKeyLogLevel = "KICKOFF_LOG_LEVEL"
+)
+
 var (
 	// LocalConfigDir points to the user's local configuration dir which is
 	// platform specific.
