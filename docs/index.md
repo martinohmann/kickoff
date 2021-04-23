@@ -11,7 +11,7 @@ like Makefiles, CI configuration or language specific configuration files from
 existing projects to a new one.
 {: .fs-6 }
 
-[![asciicast](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk.svg)](https://asciinema.org/a/T53cAY9Uitt4I8XQT5rWPKDxk)
+[![asciicast](https://asciinema.org/a/409511.svg)](https://asciinema.org/a/409511)
 
 [Getting started](getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/martinohmann/kickoff){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
