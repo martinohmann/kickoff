@@ -313,9 +313,11 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 	}
 
 	if o.DryRun {
-		fmt.Fprintf(o.Out, "\n%s Project %s would be created in %s, no files were written yet\n", color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(o.ProjectDir))
+		fmt.Fprintf(o.Out, "\n%s Project %s would be created in %s, no files were written yet\n",
+			color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.MustCollapse(o.ProjectDir)))
 	} else {
-		fmt.Fprintf(o.Out, "\n%s Project %s created in %s\n", color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(o.ProjectDir))
+		fmt.Fprintf(o.Out, "\n%s Project %s created in %s\n",
+			color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.MustCollapse(o.ProjectDir)))
 	}
 
 	return nil
