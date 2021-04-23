@@ -157,8 +157,8 @@ func (o *ShowOptions) showSkeletonFile(skeleton *kickoff.Skeleton, path string) 
 	case "yaml":
 		return cmdutil.RenderYAML(o.Out, file)
 	default:
-		fmt.Fprintln(o.Out, string(file.Content))
-		return nil
+		_, err = o.Out.Write(file.Content)
+		return err
 	}
 }
 
