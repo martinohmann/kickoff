@@ -115,5 +115,5 @@ func makeListTableFields(ref *kickoff.RepoRef) (typ string, url string, rev stri
 		return "remote", ref.URL, revision
 	}
 
-	return "local", ref.Path, "-"
+	return "local", homedir.MustCollapse(ref.Path), "-"
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -27,7 +28,7 @@ func NewCleanCmd(streams cli.IOStreams) *cobra.Command {
 				return fmt.Errorf("failed to clean cache: %w", err)
 			}
 
-			fmt.Fprintln(streams.Out, "Cache cleaned.")
+			fmt.Fprintln(streams.Out, color.GreenString("✓"), "Cache cleaned")
 
 			return nil
 		},

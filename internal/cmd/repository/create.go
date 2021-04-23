@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/kickoff"
@@ -11,6 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
+
+var bold = color.New(color.Bold)
 
 // NewCreateCmd creates a command for creating a local skeleton repository.
 func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
@@ -96,8 +99,8 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "Created new skeleton repository in %s.\n\n", o.RepoDir)
-	fmt.Fprintf(o.Out, "You can inspect it by running `kickoff skeleton list -r %s`.\n", o.RepoName)
+	fmt.Fprintf(o.Out, "%s Created new skeleton repository in %s\n\n", color.GreenString("✓"), bold.Sprint(o.RepoDir))
+	fmt.Fprintln(o.Out, "You can inspect it by running:", bold.Sprintf("kickoff skeleton list -r %s", o.RepoName))
 
 	return nil
 }

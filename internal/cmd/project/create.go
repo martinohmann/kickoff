@@ -7,13 +7,16 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/fatih/color"
+	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
+	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
@@ -24,6 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
+
+var bold = color.New(color.Bold)
 
 // NewCreateCmd creates a command that can create projects from project
 // skeletons using a variety of user-defined options.
@@ -291,7 +296,11 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 
 	if o.DryRun {
 		config.Filesystem = afero.NewMemMapFs()
-		fmt.Fprintf(o.Out, "%s changes will not be persisted to disk\n\n", color.YellowString("dry-run:"))
+	}
+
+	err := o.writeProjectConfig(config, s)
+	if err != nil {
+		return err
 	}
 
 	result, err := project.Create(s, o.ProjectDir, config)
@@ -300,7 +309,66 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 	}
 
 	if result.Stats[project.ActionTypeSkipExisting] > 0 {
-		fmt.Fprintln(o.Out, "\nSome targets were skipped because they already existed, use --overwrite or --overwrite-file to overwrite")
+		fmt.Fprintf(o.Out, "\n%s Some targets were be skipped because they already exist, use --overwrite or --overwrite-file to overwrite\n", color.YellowString("!"))
+	}
+
+	if o.DryRun {
+		fmt.Fprintf(o.Out, "\n%s Project %s would be created in %s, no files were written yet\n", color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(o.ProjectDir))
+	} else {
+		fmt.Fprintf(o.Out, "\n%s Project %s created in %s\n", color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(o.ProjectDir))
+	}
+
+	return nil
+}
+
+func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Skeleton) error {
+	tw := cli.NewTableWriter(o.Out)
+	tw.SetTablePadding("  ")
+	tw.Append(bold.Sprint("Name"), color.CyanString(config.ProjectName), bold.Sprint("Owner"), config.Owner)
+	tw.Append(bold.Sprint("Directory"), color.CyanString(homedir.MustCollapse(o.ProjectDir)), bold.Sprint("Host"), config.Host)
+	tw.Render()
+
+	fmt.Fprintln(o.Out)
+	fmt.Fprintln(o.Out, bold.Sprint("Skeletons"))
+	fmt.Fprintln(o.Out, color.CyanString(strings.Join(o.SkeletonNames, " ")))
+	fmt.Fprintln(o.Out)
+
+	if len(s.Values) > 0 || len(config.Values) > 0 {
+		sbuf, err := yaml.Marshal(s.Values)
+		if err != nil {
+			return err
+		}
+
+		obuf, err := yaml.Marshal(config.Values)
+		if err != nil {
+			return err
+		}
+
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetTablePadding("  ")
+		tw.SetHeader("Skeleton values", "Value overrides")
+		tw.Append(string(sbuf), string(obuf))
+		tw.Render()
+	}
+
+	if config.Gitignore != nil || config.License != nil {
+		gitignore := "-"
+		if config.Gitignore != nil {
+			gitignore = config.Gitignore.Query
+		}
+
+		license := "-"
+		if config.License != nil {
+			license = config.License.Name
+		}
+
+		tw := cli.NewTableWriter(o.Out)
+		tw.SetTablePadding("  ")
+		tw.SetHeader("License", "Gitignore")
+		tw.Append(license, gitignore)
+		tw.Render()
+
+		fmt.Fprintln(o.Out)
 	}
 
 	return nil

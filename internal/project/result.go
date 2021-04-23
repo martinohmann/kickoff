@@ -10,10 +10,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 )
 
-var (
-	highlightRegexp = regexp.MustCompile(`(\{\{[^{]+\}\}|\.skel$)`)
-	colorBold       = color.New(color.Bold)
-)
+var highlightRegexp = regexp.MustCompile(`(\{\{[^{]+\}\}|\.skel$)`)
 
 // ActionType defines the action that should be performed for a given project
 // file, template or directory.
@@ -100,8 +97,6 @@ func (p *Project) writeSummary(w io.Writer) {
 	}
 
 	tw.Render()
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Project %s created in %s\n", colorBold.Sprint(p.name), colorBold.Sprint(p.targetDir))
 	fmt.Fprintln(w)
 	fmt.Fprintf(w, "File statistics: %s\n", p.result.Stats)
 }

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -107,7 +108,7 @@ func (o *EditOptions) Run() (err error) {
 		return fmt.Errorf("error while saving config file: %w", err)
 	}
 
-	fmt.Fprintln(o.Out, "Config saved")
+	fmt.Fprintln(o.Out, color.GreenString("✓"), "Config saved")
 
 	return nil
 }

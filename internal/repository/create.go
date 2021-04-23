@@ -28,13 +28,13 @@ func Create(path string) (kickoff.Repository, error) {
 	localPath := ref.LocalPath()
 
 	if file.Exists(localPath) {
-		return nil, fmt.Errorf("cannot create local repository: path %q already exists", localPath)
+		return nil, fmt.Errorf("cannot create local repository: path %s already exists", localPath)
 	}
 
 	log.WithField("path", localPath).Info("creating skeleton repository")
 
 	if err := os.MkdirAll(ref.SkeletonsPath(), 0755); err != nil {
-		return nil, fmt.Errorf("failed to create repository in %q: %w", localPath, err)
+		return nil, fmt.Errorf("failed to create repository in %s: %w", localPath, err)
 	}
 
 	return newRepository(*ref)
@@ -58,7 +58,7 @@ func createSkeleton(ref kickoff.RepoRef, name string) error {
 	log.WithField("path", path).Info("creating directory")
 
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return fmt.Errorf("failed to create skeleton in %q: %w", path, err)
+		return fmt.Errorf("failed to create skeleton in %s: %w", path, err)
 	}
 
 	return writeFiles(path)
