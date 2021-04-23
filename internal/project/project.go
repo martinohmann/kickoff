@@ -1,11 +1,9 @@
 package project
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -195,9 +193,8 @@ func (p *Project) makeTemplateValues(skeleton *kickoff.Skeleton) (template.Value
 	return vals, nil
 }
 
-func (p *Project) makeSources(skeleton *kickoff.Skeleton) []kickoff.File {
-	sources := make([]kickoff.File, 0, len(skeleton.Files))
-	sources = append(sources, skeleton.Files...)
+func (p *Project) makeSources(skeleton *kickoff.Skeleton) []*kickoff.BufferedFile {
+	var extraFiles []*kickoff.BufferedFile
 
 	if p.license != nil {
 		text := license.ResolvePlaceholders(p.license.Body, license.FieldMap{
@@ -206,19 +203,29 @@ func (p *Project) makeSources(skeleton *kickoff.Skeleton) []kickoff.File {
 			"year":    strconv.Itoa(time.Now().Year()),
 		})
 
-		sources = append(sources, kickoff.NewBufferedFile("LICENSE", []byte(text), 0644))
+		extraFiles = append(extraFiles, &kickoff.BufferedFile{
+			RelPath: "LICENSE",
+			Content: []byte(text),
+			Mode:    0644,
+		})
 	}
 
 	if p.gitignore != nil {
-		sources = append(sources, kickoff.NewBufferedFile(".gitignore", p.gitignore.Content, 0644))
+		extraFiles = append(extraFiles, &kickoff.BufferedFile{
+			RelPath: ".gitignore",
+			Content: p.gitignore.Content,
+			Mode:    0644,
+		})
 	}
+
+	sources := kickoff.MergeFiles(skeleton.Files, extraFiles)
 
 	// We sort files by path so we can ensure that parent directories get
 	// created before we attempt to write the files contained in them. This
 	// works because we are going to process files sequentially. In the future
 	// we might take a different approach and do things concurrently.
 	sort.SliceStable(sources, func(i, j int) bool {
-		return sources[i].Path() < sources[j].Path()
+		return sources[i].RelPath < sources[j].RelPath
 	})
 
 	return sources
@@ -258,8 +265,8 @@ func (p *Project) create(s *kickoff.Skeleton, values template.Values) error {
 	return nil
 }
 
-func (p *Project) makeDestination(f kickoff.File, values template.Values) (Destination, error) {
-	relPath := f.Path()
+func (p *Project) makeDestination(f *kickoff.BufferedFile, values template.Values) (Destination, error) {
+	relPath := f.RelPath
 	srcFilename := filepath.Base(relPath)
 	srcRelDir := filepath.Dir(relPath)
 
@@ -283,13 +290,13 @@ func (p *Project) makeDestination(f kickoff.File, values template.Values) (Desti
 	}
 
 	// Trim .skel extension.
-	if ext := filepath.Ext(targetRelPath); ext == ".skel" {
+	if ext := filepath.Ext(targetRelPath); ext == kickoff.SkeletonTemplateExtension {
 		targetRelPath = targetRelPath[:len(targetRelPath)-len(ext)]
 	}
 
 	// Track potentially templated directory names that need to be
 	// rewritten for all files contained in them.
-	if f.Mode().IsDir() && relPath != targetRelPath {
+	if f.Mode.IsDir() && relPath != targetRelPath {
 		p.dirRewriteMap[relPath] = targetRelPath
 	}
 
@@ -330,45 +337,22 @@ func (p *Project) executeAction(action Action, values template.Values) error {
 	case ActionTypeSkipUser, ActionTypeSkipExisting:
 		return nil
 	default:
-		switch {
-		case source.Mode().IsDir():
-			return p.fs.MkdirAll(dest.AbsPath(), source.Mode())
-		default:
-			r, err := p.sourceReader(source, values)
+		if source.Mode.IsDir() {
+			return p.fs.MkdirAll(dest.AbsPath(), source.Mode)
+		}
+
+		content := source.Content
+		if filepath.Ext(source.RelPath) == kickoff.SkeletonTemplateExtension {
+			rendered, err := template.Render(string(content), values)
 			if err != nil {
 				return err
 			}
 
-			return p.writeReader(dest.AbsPath(), r, source.Mode())
-		}
-	}
-}
-
-func (p *Project) sourceReader(source kickoff.File, values template.Values) (io.Reader, error) {
-	r, err := source.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	if source.IsTemplate() {
-		rendered, err := template.RenderReader(r, values)
-		if err != nil {
-			return nil, err
+			content = []byte(rendered)
 		}
 
-		r = bytes.NewBufferString(rendered)
+		return afero.WriteFile(p.fs, dest.AbsPath(), content, source.Mode)
 	}
-
-	return r, nil
-}
-
-func (p *Project) writeReader(path string, r io.Reader, mode os.FileMode) error {
-	err := afero.WriteReader(p.fs, path, r)
-	if err != nil {
-		return err
-	}
-
-	return p.fs.Chmod(path, mode)
 }
 
 // matchPathPrefix returns true if path or any parent dir of path is set in

@@ -192,7 +192,7 @@ func loadSkeleton(repo kickoff.Repository, name string) (*kickoff.Skeleton, erro
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
 	}
 
-	files, err := getSkeletonFiles(ref)
+	files, err := loadSkeletonFiles(ref)
 	if err != nil {
 		return nil, err
 	}
@@ -207,8 +207,8 @@ func loadSkeleton(repo kickoff.Repository, name string) (*kickoff.Skeleton, erro
 	return s, nil
 }
 
-func getSkeletonFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {
-	files := make([]kickoff.File, 0)
+func loadSkeletonFiles(ref *kickoff.SkeletonRef) ([]*kickoff.BufferedFile, error) {
+	files := make([]*kickoff.BufferedFile, 0)
 
 	err := filepath.Walk(ref.Path, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
@@ -216,7 +216,7 @@ func getSkeletonFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {
 		}
 
 		if fi.Name() == kickoff.SkeletonConfigFileName {
-			// ignore skeleton config file
+			// ignore dirs and the skeleton config file
 			return nil
 		}
 
@@ -235,12 +235,32 @@ func getSkeletonFiles(ref *kickoff.SkeletonRef) ([]kickoff.File, error) {
 			return err
 		}
 
-		files = append(files, &kickoff.FileRef{
-			RelPath:  relPath,
-			AbsPath:  absPath,
-			FileMode: fi.Mode(),
-		})
+		if fi.Mode().IsDir() {
+			files = append(files, &kickoff.BufferedFile{
+				RelPath: relPath,
+				Mode:    fi.Mode(),
+			})
+			return nil
+		}
 
+		if !fi.Mode().IsRegular() {
+			return fmt.Errorf("%s is not a regular file", absPath)
+		}
+
+		if fi.Size() > 100*1024*1024 {
+			return fmt.Errorf("file %s too large: refusing to load files larger than 100 MiB", absPath)
+		}
+
+		buf, err := ioutil.ReadFile(absPath)
+		if err != nil {
+			return err
+		}
+
+		files = append(files, &kickoff.BufferedFile{
+			RelPath: relPath,
+			Content: buf,
+			Mode:    fi.Mode(),
+		})
 		return nil
 	})
 	if err != nil {
