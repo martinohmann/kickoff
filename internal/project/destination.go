@@ -1,9 +1,8 @@
 package project
 
 import (
+	"os"
 	"path/filepath"
-
-	"github.com/martinohmann/kickoff/internal/file"
 )
 
 // Destination describes the destination a project file should be written to.
@@ -26,5 +25,6 @@ func (d Destination) AbsPath() string {
 
 // Exists returns true if the destination already exists.
 func (d Destination) Exists() bool {
-	return file.Exists(d.AbsPath())
+	_, err := os.Stat(d.AbsPath())
+	return err == nil
 }

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +26,7 @@ func Create(path string) (kickoff.Repository, error) {
 
 	localPath := ref.LocalPath()
 
-	if file.Exists(localPath) {
+	if _, err := os.Stat(localPath); err == nil {
 		return nil, fmt.Errorf("cannot create local repository: path %s already exists", localPath)
 	}
 
@@ -51,7 +50,7 @@ func createSkeleton(ref kickoff.RepoRef, name string) error {
 
 	path := ref.SkeletonPath(name)
 
-	if file.Exists(path) {
+	if _, err := os.Stat(path); err == nil {
 		return SkeletonAlreadyExistsError{Name: name, RepoName: ref.Name}
 	}
 

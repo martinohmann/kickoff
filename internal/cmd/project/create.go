@@ -13,7 +13,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/file"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
@@ -182,8 +181,14 @@ func (o *CreateOptions) Complete() (err error) {
 		return err
 	}
 
-	if file.Exists(o.ProjectDir) && !o.Force {
-		return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
+	if fi, err := os.Stat(o.ProjectDir); err == nil {
+		if !fi.Mode().IsDir() {
+			return fmt.Errorf("%s exists but is not a directory", o.ProjectDir)
+		}
+
+		if !o.Force {
+			return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
+		}
 	}
 
 	if o.ProjectHost == "" {
