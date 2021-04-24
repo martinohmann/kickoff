@@ -37,7 +37,7 @@ func NewTableWriter(w io.Writer) TableWriter {
 	tw.SetRowSeparator("")
 	tw.SetHeaderLine(false)
 	tw.SetBorder(false)
-	tw.SetTablePadding(" ")
+	tw.SetTablePadding("  ")
 	tw.SetNoWhiteSpace(true)
 
 	return &tableWriter{tw}

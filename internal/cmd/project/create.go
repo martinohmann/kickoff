@@ -330,7 +330,6 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 
 func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Skeleton) error {
 	tw := cli.NewTableWriter(o.Out)
-	tw.SetTablePadding("  ")
 	tw.Append(bold.Sprint("Name"), color.CyanString(config.ProjectName), bold.Sprint("Owner"), config.Owner)
 	tw.Append(bold.Sprint("Directory"), color.CyanString(homedir.Collapse(o.ProjectDir)), bold.Sprint("Host"), config.Host)
 	tw.Render()
@@ -352,7 +351,6 @@ func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Sk
 		}
 
 		tw := cli.NewTableWriter(o.Out)
-		tw.SetTablePadding("  ")
 		tw.SetHeader("Skeleton values", "Value overrides")
 		tw.Append(string(sbuf), string(obuf))
 		tw.Render()
@@ -370,7 +368,6 @@ func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Sk
 		}
 
 		tw := cli.NewTableWriter(o.Out)
-		tw.SetTablePadding("  ")
 		tw.SetHeader("License", "Gitignore")
 		tw.Append(license, gitignore)
 		tw.Render()

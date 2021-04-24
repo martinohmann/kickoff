@@ -87,8 +87,8 @@ func (p *Project) writeSummary(w io.Writer) {
 		}
 
 		tw.Append(
+			color.CyanString(origin),
 			color.HiBlackString("❯"),
-			color.BlueString(origin),
 			colorizePath(source.RelPath+dirSuffix),
 			color.HiBlackString("=❯"),
 			colorizePath(dest.RelPath()+dirSuffix),

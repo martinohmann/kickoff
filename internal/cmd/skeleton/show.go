@@ -110,7 +110,6 @@ func (o *ShowOptions) showSkeleton(skeleton *kickoff.Skeleton) error {
 		return cmdutil.RenderYAML(o.Out, skeleton)
 	default:
 		tw := cli.NewTableWriter(o.Out)
-		tw.SetTablePadding("  ")
 		tw.Append(bold.Sprint("Repository"), skeleton.Ref.Repo.Name)
 		tw.Append(bold.Sprint("Name"), skeleton.Ref.Name)
 		tw.Append(bold.Sprint("Path"), homedir.Collapse(skeleton.Ref.Path))
@@ -134,7 +133,6 @@ func (o *ShowOptions) showSkeleton(skeleton *kickoff.Skeleton) error {
 		}
 
 		tw = cli.NewTableWriter(o.Out)
-		tw.SetTablePadding("  ")
 		tw.SetHeader("Files", "Values")
 		tw.Append(tree.Print(), string(buf))
 		tw.Render()
