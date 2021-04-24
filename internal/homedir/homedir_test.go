@@ -17,7 +17,13 @@ func TestCollapse(t *testing.T) {
 			expected: "~/foo",
 		},
 		{
-			name:     "full path with trailing slash gets collapsed",
+			name:     "full path gets collapsed #2",
+			home:     "/home/user",
+			path:     "/home/user/foo/",
+			expected: "~/foo/",
+		},
+		{
+			name:     "full path gets collapsed (homedir with trailing slash)",
 			home:     "/home/user/",
 			path:     "/home/user/foo",
 			expected: "~/foo",
@@ -27,6 +33,18 @@ func TestCollapse(t *testing.T) {
 			home:     "/home/user",
 			path:     "/home/user",
 			expected: "~",
+		},
+		{
+			name:     "already collapsed path is returned as is",
+			home:     "/home/user",
+			path:     "~/foo/bar",
+			expected: "~/foo/bar",
+		},
+		{
+			name:     "homedir of another user with the same prefix does not get collapsed",
+			home:     "/home/user",
+			path:     "/home/userfoo/dir",
+			expected: "/home/userfoo/dir",
 		},
 		{
 			name:     "relative paths are left untouched",

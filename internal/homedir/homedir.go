@@ -27,7 +27,7 @@ func Collapse(path string) string {
 		log.WithError(err).Panic("failed to discover homedir")
 	}
 
-	unprefixed := strings.TrimPrefix(path, home)
+	unprefixed := strings.TrimPrefix(path, strings.TrimRight(home, "/"))
 	if unprefixed == path {
 		return path
 	}
@@ -36,7 +36,11 @@ func Collapse(path string) string {
 		return "~"
 	}
 
-	return fmt.Sprintf("~/%s", strings.TrimLeft(unprefixed, "/"))
+	if unprefixed[0] != '/' {
+		return path
+	}
+
+	return fmt.Sprintf("~%s", unprefixed)
 }
 
 // expand expands the path to include the home directory if the path
