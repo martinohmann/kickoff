@@ -83,7 +83,7 @@ func newRepository(ref kickoff.RepoRef) (kickoff.Repository, error) {
 func (r *repository) GetSkeleton(name string) (*kickoff.SkeletonRef, error) {
 	path := r.ref.SkeletonPath(name)
 
-	if !kickoff.IsSkeletonDir(path) {
+	if !isSkeletonDir(path) {
 		return nil, SkeletonNotFoundError{name, r.ref.Name}
 	}
 
@@ -133,7 +133,7 @@ func listSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef
 
 		path := filepath.Join(dir, fi.Name())
 
-		if kickoff.IsSkeletonDir(path) {
+		if isSkeletonDir(path) {
 			abspath, err := filepath.Abs(path)
 			if err != nil {
 				return nil, err
@@ -162,6 +162,19 @@ func listSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef
 	}
 
 	return refs, nil
+}
+
+// isSkeletonDir returns true if dir is a skeleton dir. Skeleton dirs are
+// detected by the fact that they contain a .kickoff.yaml file.
+func isSkeletonDir(dir string) bool {
+	configPath := filepath.Join(dir, kickoff.SkeletonConfigFileName)
+
+	fi, err := os.Stat(configPath)
+	if err != nil {
+		return false
+	}
+
+	return fi.Mode().IsRegular()
 }
 
 // LoadSkeletons loads multiple skeletons from given repository. Returns an

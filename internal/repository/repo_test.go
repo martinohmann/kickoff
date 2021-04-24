@@ -228,3 +228,9 @@ func TestLoadSkeletons(t *testing.T) {
 		skeleton.Values,
 	)
 }
+
+func TestIsSkeletonDir(t *testing.T) {
+	assert.True(t, isSkeletonDir("../testdata/repos/repo1/skeletons/minimal"))
+	assert.False(t, isSkeletonDir("../testdata/repos/repo1/skeletons/"))
+	assert.False(t, isSkeletonDir(".../testdata/repos/repo1/skeletons/minimal/.kickoff.yaml"))
+}
