@@ -341,6 +341,10 @@ func (p *Project) executeAction(action Action, values template.Values) error {
 			return p.fs.MkdirAll(dest.AbsPath(), source.Mode)
 		}
 
+		if err := p.fs.MkdirAll(filepath.Dir(dest.AbsPath()), 0755); err != nil {
+			return err
+		}
+
 		content := source.Content
 		if filepath.Ext(source.RelPath) == kickoff.SkeletonTemplateExtension {
 			rendered, err := template.Render(string(content), values)
