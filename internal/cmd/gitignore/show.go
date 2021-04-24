@@ -3,6 +3,7 @@ package gitignore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
@@ -13,7 +14,7 @@ import (
 // gitignore templates.
 func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show <name>",
+		Use:   "show <name> [<name>...]",
 		Short: "Fetch a gitignore template",
 		Long: cmdutil.LongDesc(`
 			Fetches a gitignore template via the gitignore.io API.
@@ -24,18 +25,17 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 			kickoff gitignore show go
 
 			# Fetch multiple concatenated templates
-			kickoff gitignore show go,helm,hugo`),
-		Args: cobra.ExactArgs(1),
+			kickoff gitignore show go helm hugo`),
+		Args: cobra.MinimumNArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) == 0 {
-				return cmdutil.GitignoreNames(f), cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveNoFileComp
+			return cmdutil.GitignoreNames(f), cobra.ShellCompDirectiveNoFileComp
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := gitignore.NewClient(f.HTTPClient())
 
-			template, err := client.GetTemplate(context.Background(), args[0])
+			query := strings.Join(args, ",")
+
+			template, err := client.GetTemplate(context.Background(), query)
 			if err != nil {
 				return err
 			}

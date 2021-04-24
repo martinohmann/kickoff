@@ -128,6 +128,7 @@ type CreateOptions struct {
 
 	rawValues   []string
 	valuesFiles []string
+	gitignores  []string
 }
 
 // AddFlags adds flags for all project creation options to cmd.
@@ -147,8 +148,8 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 		"Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles,
 		"Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
-	cmd.Flags().StringVar(&o.Gitignore, "gitignore", o.Gitignore,
-		"Comma-separated list of gitignore template to use for the project. If set this will automatically populate the .gitignore file")
+	cmd.Flags().StringArrayVar(&o.gitignores, "gitignore", o.gitignores,
+		"Name of a gitignore template. If provided this will automatically populate the .gitignore file. Can be specified multiple times")
 	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 
 	cmd.Flags().StringVarP(&o.ProjectDir, "dir", "d", o.ProjectDir, "Custom project directory. If empty the project is created in $PWD/<project-name>")
@@ -207,6 +208,7 @@ func (o *CreateOptions) Complete() (err error) {
 		o.License = config.Project.License
 	}
 
+	o.Gitignore = strings.Join(o.gitignores, ",")
 	if o.Gitignore == "" {
 		o.Gitignore = config.Project.Gitignore
 	}
