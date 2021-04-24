@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewListCmd creates a command that lists all gitignore templates available on
-// gitignore.io.
+// NewListCmd creates a command that lists all gitignore templates available
+// via the GitHub Gitignores API.
 func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 	var output string
 
@@ -20,9 +20,7 @@ func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List available gitignores",
 		Long: cmdutil.LongDesc(`
-			Lists gitignores available via the gitignore.io API.
-
-			Check out https://www.gitignore.io for more information about .gitignore templates.`),
+			Lists all gitignore templates available via the GitHub Gitignores API (https://docs.github.com/en/rest/reference/gitignore#get-all-gitignore-templates).`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := gitignore.NewClient(f.HTTPClient())

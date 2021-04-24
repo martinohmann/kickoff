@@ -85,7 +85,7 @@ documentation for more information.
 
 Kickoff can automatically add a `LICENSE` file containing a popular open source
 license which is obtained via the [GitHub Licenses
-API](https://developer.github.com/v3/licenses/).
+API](https://docs.github.com/en/rest/reference/licenses).
 
 To add a license to your project, just specify its name using the `--license` flag:
 
@@ -120,9 +120,9 @@ used for all new projects if not explicitly overridden.
 ## Including a `.gitignore`
 
 You can automatically include a `.gitignore` file with your project which can
-be built from one or multiple gitignore templates from
-[gitignore.io](https://gitignore.io/). The templates can be passed as comma
-separated list via the `--gitignore` flag:
+be built from one or multiple gitignore templates available via the [GitHub
+Gitignores API](https://docs.github.com/en/rest/reference/gitignore). The
+templates can be passed as comma separated list via the `--gitignore` flag:
 
 ```bash
 $ kickoff project create myproject myskeleton --gitignore go,hugo

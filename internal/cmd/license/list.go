@@ -20,7 +20,7 @@ func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List available licenses",
 		Long: cmdutil.LongDesc(`
-			Lists licenses available via the GitHub Licenses API (https://developer.github.com/v3/licenses/#list-all-licenses).`),
+			Lists licenses available via the GitHub Licenses API (https://docs.github.com/en/rest/reference/licenses#get-all-commonly-used-licenses).`),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client := license.NewClient(f.HTTPClient())
