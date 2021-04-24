@@ -5,15 +5,20 @@ package license
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/go-github/v28/github"
 	log "github.com/sirupsen/logrus"
 )
 
-// ErrNotFound is returned by the Adapter if a license cannot be
-// found via the GitHub Licenses API.
-var ErrNotFound = errors.New("license not found")
+// NotFoundError is returned by the client if a license cannot be found via the
+// GitHub Licenses API.
+type NotFoundError string
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("license %q not found", string(e))
+}
 
 // Info holds information about a single license.
 type Info struct {
@@ -72,7 +77,7 @@ func (c *Client) GetLicense(ctx context.Context, name string) (*Info, error) {
 	if err != nil {
 		var errResp *github.ErrorResponse
 		if errors.As(err, &errResp) && errResp.Response.StatusCode == 404 {
-			return nil, ErrNotFound
+			return nil, NotFoundError(name)
 		}
 
 		return nil, err

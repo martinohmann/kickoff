@@ -70,8 +70,7 @@ func TestClient_GetLicense_NotFound(t *testing.T) {
 	})
 
 	_, err := client.GetLicense(context.Background(), "foo")
-	require.Error(t, err)
-	assert.Equal(t, ErrNotFound, err)
+	require.EqualError(t, err, NotFoundError("foo").Error())
 }
 
 func TestClient_ListLicenses(t *testing.T) {

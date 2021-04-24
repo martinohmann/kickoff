@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,8 +12,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ErrNotFound is returned if a gitignore template could not be found.
-var ErrNotFound = errors.New("gitignore template not found")
+// NotFoundError is returned if a gitignore template could not be found.
+type NotFoundError string
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("gitignore template %q not found", string(e))
+}
 
 // Template holds the content of a gitignore template and the query that was
 // used to obtain it.
@@ -52,7 +57,7 @@ func (c *Client) GetTemplate(ctx context.Context, query string) (*Template, erro
 	query = strings.TrimSpace(query)
 
 	if query == "" {
-		return nil, ErrNotFound
+		return nil, NotFoundError("")
 	}
 
 	gitignores, err := c.ListTemplates(ctx)
@@ -66,7 +71,7 @@ func (c *Client) GetTemplate(ctx context.Context, query string) (*Template, erro
 	for _, name := range names {
 		normalized, ok := matchCaseInsensitive(gitignores, strings.TrimSpace(name))
 		if !ok {
-			return nil, ErrNotFound
+			return nil, NotFoundError(name)
 		}
 
 		normalizedNames = append(normalizedNames, normalized)
@@ -79,7 +84,7 @@ func (c *Client) GetTemplate(ctx context.Context, query string) (*Template, erro
 		if err != nil {
 			var errResp *github.ErrorResponse
 			if errors.As(err, &errResp) && errResp.Response.StatusCode == 404 {
-				return nil, ErrNotFound
+				return nil, NotFoundError(name)
 			}
 
 			return nil, err

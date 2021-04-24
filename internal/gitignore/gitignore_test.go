@@ -96,14 +96,14 @@ func TestClient_GetTemplate(t *testing.T) {
 		svc.On("List", mock.Anything).Return([]string{"Go", "Java", "Python"}, &github.Response{}, nil)
 
 		_, err := client.GetTemplate(context.Background(), "Go,nonexistent,python")
-		require.EqualError(t, err, ErrNotFound.Error())
+		require.EqualError(t, err, NotFoundError("nonexistent").Error())
 	})
 
 	t.Run("empty query returns 404 without making request", func(t *testing.T) {
 		client := &Client{}
 
 		_, err := client.GetTemplate(context.Background(), " ")
-		require.EqualError(t, err, ErrNotFound.Error())
+		require.EqualError(t, err, NotFoundError("").Error())
 	})
 
 	t.Run("error on initial list", func(t *testing.T) {
@@ -126,7 +126,7 @@ func TestClient_GetTemplate(t *testing.T) {
 		})
 
 		_, err := client.GetTemplate(context.Background(), "foo")
-		require.EqualError(t, err, ErrNotFound.Error())
+		require.EqualError(t, err, NotFoundError("foo").Error())
 	})
 
 	t.Run("error on get", func(t *testing.T) {

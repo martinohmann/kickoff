@@ -91,6 +91,8 @@ func handleError(w io.Writer, err error) {
 	var (
 		errorContext         string
 		netErr               net.Error
+		gitignoreNotFoundErr gitignore.NotFoundError
+		licenseNotFoundErr   license.NotFoundError
 		skeletonNotFoundErr  repository.SkeletonNotFoundError
 		repoNotConfiguredErr cmdutil.RepositoryNotConfiguredError
 		revisionNotFoundErr  repository.RevisionNotFoundError
@@ -98,9 +100,9 @@ func handleError(w io.Writer, err error) {
 	)
 
 	switch {
-	case errors.Is(err, gitignore.ErrNotFound):
+	case errors.As(err, &gitignoreNotFoundErr):
 		errorContext = "Run `kickoff gitignore list` to get a list of available templates."
-	case errors.Is(err, license.ErrNotFound):
+	case errors.As(err, &licenseNotFoundErr):
 		errorContext = "Run `kickoff licenses list` to get a list of available licenses."
 	case errors.As(err, &skeletonNotFoundErr):
 		errorContext = "Run `kickoff skeleton list` to get a list of available skeletons."
