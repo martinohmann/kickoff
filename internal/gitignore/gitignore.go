@@ -1,22 +1,15 @@
-// Package gitignore provides an interface to gitignore.io to fetch gitignore
-// templates. These templates are used to optionally populate the .gitignore
-// file of a new project.
 package gitignore
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/google/go-github/v28/github"
 	log "github.com/sirupsen/logrus"
 )
-
-const defaultBaseURL = "https://www.toptal.com/developers/gitignore/api"
 
 // ErrNotFound is returned if a gitignore template could not be found.
 var ErrNotFound = errors.New("gitignore template not found")
@@ -25,105 +18,115 @@ var ErrNotFound = errors.New("gitignore template not found")
 // used to obtain it.
 type Template struct {
 	Query   string
+	Names   []string
 	Content []byte
+}
+
+// GitHubGitignoresService is the interface of the GitHub Gitignores API Service.
+type GitHubGitignoresService interface {
+	Get(ctx context.Context, name string) (*github.Gitignore, *github.Response, error)
+	List(ctx context.Context) ([]string, *github.Response, error)
 }
 
 // Client can fetch gitignore templates.
 type Client struct {
-	*http.Client
-	BaseURL string
+	GitHubGitignoresService
 }
 
 // NewClient creates a new *Client which will use httpClient for making http
 // requests. If httpClient is nil, http.DefaultClient will be used instead.
 func NewClient(httpClient *http.Client) *Client {
-	return &Client{
-		Client:  httpClient,
-		BaseURL: defaultBaseURL,
-	}
+	githubClient := github.NewClient(httpClient)
+
+	return &Client{githubClient.Gitignores}
 }
 
 // GetTemplate fetches the gitignore template for query. The query can be a
 // comma-separated list of gitignore templates (e.g. "go,python") which are
-// combined into a single gitignore template. Will return an error if the
-// http connection fails or if the response status code is not 200. Will
-// return ErrNotFound if any of the requested gitignore templates cannot be
-// found.
+// combined into a single gitignore template. Will return an error if the http
+// connection fails or if the response status code is not 200. Will return
+// ErrNotFound if any of the requested gitignore templates cannot be found.
 func (c *Client) GetTemplate(ctx context.Context, query string) (*Template, error) {
 	log.WithField("query", query).Debug("fetching gitignore template")
 
-	req, err := http.NewRequest("GET", c.buildRequestURL(fmt.Sprintf("/%s", query)), nil)
-	if err != nil {
-		return nil, err
-	}
+	query = strings.TrimSpace(query)
 
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 404 {
+	if query == "" {
 		return nil, ErrNotFound
-	} else if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("received status code %d while fetching gitignore template", resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	gitignores, err := c.ListTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	tpl := &Template{
-		Query:   query,
-		Content: bytes.TrimSpace(body),
+	names := strings.Split(query, ",")
+
+	normalizedNames := make([]string, 0, len(names))
+	for _, name := range names {
+		normalized, ok := matchCaseInsensitive(gitignores, strings.TrimSpace(name))
+		if !ok {
+			return nil, ErrNotFound
+		}
+
+		normalizedNames = append(normalizedNames, normalized)
 	}
 
-	return tpl, err
+	buf := new(bytes.Buffer)
+
+	for i, name := range normalizedNames {
+		gitignore, _, err := c.Get(ctx, name)
+		if err != nil {
+			var errResp *github.ErrorResponse
+			if errors.As(err, &errResp) && errResp.Response.StatusCode == 404 {
+				return nil, ErrNotFound
+			}
+
+			return nil, err
+		}
+
+		source := strings.TrimSpace(gitignore.GetSource())
+
+		buf.WriteString("### ")
+		buf.WriteString(gitignore.GetName())
+		buf.WriteString(" ###\n")
+		buf.WriteString(source)
+		buf.WriteRune('\n')
+
+		if i < len(normalizedNames)-1 {
+			buf.WriteRune('\n')
+		}
+	}
+
+	t := &Template{
+		Query:   query,
+		Names:   normalizedNames,
+		Content: buf.Bytes(),
+	}
+
+	return t, nil
 }
 
-// ListTemplates obtains a list of available gitignore templates. Will
-// return an error if the http connection fails or the response status code
-// is not 200.
+// ListTemplates obtains a list of available gitignore templates.
 func (c *Client) ListTemplates(ctx context.Context) ([]string, error) {
 	log.Debug("fetching gitignore template list")
 
-	req, err := http.NewRequest("GET", c.buildRequestURL("/list"), nil)
+	gitignores, _, err := c.List(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	resp, err := c.doRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("received status code %d while listing gitignore templates", resp.StatusCode)
-	}
-
-	gitignores := make([]string, 0)
-
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		gitignores = append(gitignores, strings.Split(scanner.Text(), ",")...)
 	}
 
 	return gitignores, nil
 }
 
-func (c *Client) buildRequestURL(path string) string {
-	return fmt.Sprintf("%s%s", c.BaseURL, path)
-}
+func matchCaseInsensitive(haystack []string, needle string) (string, bool) {
+	needle = strings.ToLower(needle)
 
-func (c *Client) doRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
-	req = req.WithContext(ctx)
-
-	httpClient := c.Client
-	if httpClient == nil {
-		httpClient = http.DefaultClient
+	for _, item := range haystack {
+		if strings.ToLower(item) == needle {
+			return item, true
+		}
 	}
 
-	return httpClient.Do(req)
+	return "", false
 }

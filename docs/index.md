@@ -26,9 +26,9 @@ existing projects to a new one.
 - Extensible by allowing users to pass arbitrary values to templates via config
   files or CLI flags.
 - Automatically populate LICENSE file with an open source license obtained from
-  the [GitHub Licenses API](https://developer.github.com/v3/licenses/).
+  the [GitHub Licenses API](https://docs.github.com/en/rest/reference/licenses).
 - Automatically add a .gitignore created from templates obtained from
-  [gitignore.io](https://gitignore.io).
+  [GitHub Gitignores API](https://docs.github.com/en/rest/reference/gitignore).
 - Set local author, repository and skeleton defaults using custom config file.
 - Dry run for project creation.
 - Skeleton composition: projects can be created by composing multiple skeletons

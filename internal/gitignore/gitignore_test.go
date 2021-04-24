@@ -4,164 +4,139 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
+	"github.com/google/go-github/v28/github"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func TestClient_ListTemplates(t *testing.T) {
-	tests := []struct {
-		name        string
-		handler     func(t *testing.T) http.HandlerFunc
-		expected    []string
-		expectError bool
-		expectedErr error
-	}{
-		{
-			name:     "returns a list of gitignores",
-			expected: []string{"foo", "bar", "baz", "qux"},
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					if r.RequestURI != "/list" {
-						t.Fatalf("unexpected request URI: %s", r.RequestURI)
-					}
+type mockService struct {
+	mock.Mock
+}
 
-					_, err := w.Write([]byte("foo,bar\nbaz\nqux\n"))
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					w.WriteHeader(200)
-				}
-			},
-		},
-		{
-			name:        "returns error on non-200 status codes",
-			expectError: true,
-			expectedErr: errors.New("received status code 500 while listing gitignore templates"),
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(500)
-				}
-			},
-		},
-		{
-			name:        "returns connection errors",
-			expectError: true,
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					panic("whoops")
-				}
-			},
-		},
+func (s *mockService) Get(ctx context.Context, name string) (gitignore *github.Gitignore, resp *github.Response, err error) {
+	args := s.Called(ctx, name)
+	if args.Get(0) != nil {
+		gitignore = args.Get(0).(*github.Gitignore)
 	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler(t))
-			defer server.Close()
-
-			client := &Client{BaseURL: server.URL}
-
-			gitignores, err := client.ListTemplates(context.Background())
-			if test.expectError {
-				require.Error(t, err)
-
-				if test.expectedErr != nil {
-					assert.Equal(t, test.expectedErr, err)
-				}
-			} else {
-				require.NoError(t, err)
-
-				assert.Equal(t, test.expected, gitignores)
-			}
-		})
+	if args.Get(1) != nil {
+		resp = args.Get(1).(*github.Response)
 	}
+	return gitignore, resp, args.Error(2)
+}
+
+func (s *mockService) List(ctx context.Context) (gitignores []string, resp *github.Response, err error) {
+	args := s.Called(ctx)
+	if args.Get(0) != nil {
+		gitignores = args.Get(0).([]string)
+	}
+	if args.Get(1) != nil {
+		resp = args.Get(1).(*github.Response)
+	}
+	return gitignores, resp, args.Error(2)
 }
 
 func TestClient_GetTemplate(t *testing.T) {
-	tests := []struct {
-		name        string
-		query       string
-		handler     func(t *testing.T) http.HandlerFunc
-		expected    *Template
-		expectError bool
-		expectedErr error
-	}{
-		{
-			name:  "returns a gitignore, with space trimmed",
-			query: "go,python",
-			expected: &Template{
-				Query:   "go,python",
-				Content: []byte("coverage.txt\nvendor/\n__pycache__"),
-			},
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					if r.RequestURI != "/go,python" {
-						t.Fatalf("unexpected request URI: %s", r.RequestURI)
-					}
+	t.Run("fetches template", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
 
-					_, err := w.Write([]byte("\ncoverage.txt\nvendor/\n__pycache__\n"))
-					if err != nil {
-						t.Fatal(err)
-					}
+		gitignore := &github.Gitignore{
+			Name:   github.String("Go"),
+			Source: github.String("the-source\n"),
+		}
 
-					w.WriteHeader(200)
-				}
-			},
-		},
-		{
-			name:        "returns error on non-200 status codes",
-			expectError: true,
-			expectedErr: errors.New("received status code 500 while fetching gitignore template"),
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(500)
-				}
-			},
-		},
-		{
-			name:        "returns well-known 404 error",
-			expectError: true,
-			expectedErr: ErrNotFound,
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(404)
-				}
-			},
-		},
-		{
-			name:        "returns connection errors",
-			expectError: true,
-			handler: func(t *testing.T) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					panic("whoops")
-				}
-			},
-		},
-	}
+		svc.On("List", mock.Anything).Return([]string{"Go"}, &github.Response{}, nil)
+		svc.On("Get", mock.Anything, "Go").Return(gitignore, &github.Response{}, nil)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler(t))
-			defer server.Close()
+		template, err := client.GetTemplate(context.Background(), "Go")
+		require.NoError(t, err)
 
-			client := &Client{BaseURL: server.URL}
+		expected := &Template{
+			Query:   "Go",
+			Names:   []string{"Go"},
+			Content: []byte("### Go ###\nthe-source\n"),
+		}
 
-			tpl, err := client.GetTemplate(context.Background(), test.query)
-			if test.expectError {
-				require.Error(t, err)
+		assert.Equal(t, expected, template)
+	})
 
-				if test.expectedErr != nil {
-					assert.Equal(t, test.expectedErr, err)
-				}
-			} else {
-				require.NoError(t, err)
+	t.Run("fetches all templates from comma separated query", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
 
-				assert.Equal(t, test.expected, tpl)
-			}
+		svc.On("List", mock.Anything).Return([]string{"Go", "Java", "Python"}, &github.Response{}, nil)
+		svc.On("Get", mock.Anything, "Go").Return(&github.Gitignore{
+			Name:   github.String("Go"),
+			Source: github.String("go-source\n\n"),
+		}, &github.Response{}, nil)
+		svc.On("Get", mock.Anything, "Python").Return(&github.Gitignore{
+			Name:   github.String("Python"),
+			Source: github.String("\npython-source\n"),
+		}, &github.Response{}, nil)
+
+		template, err := client.GetTemplate(context.Background(), "Go,python")
+		require.NoError(t, err)
+
+		expected := &Template{
+			Query:   "Go,python",
+			Names:   []string{"Go", "Python"},
+			Content: []byte("### Go ###\ngo-source\n\n### Python ###\npython-source\n"),
+		}
+
+		assert.Equal(t, expected, template)
+	})
+
+	t.Run("normalizes names before fetching templates", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
+
+		svc.On("List", mock.Anything).Return([]string{"Go", "Java", "Python"}, &github.Response{}, nil)
+
+		_, err := client.GetTemplate(context.Background(), "Go,nonexistent,python")
+		require.EqualError(t, err, ErrNotFound.Error())
+	})
+
+	t.Run("empty query returns 404 without making request", func(t *testing.T) {
+		client := &Client{}
+
+		_, err := client.GetTemplate(context.Background(), " ")
+		require.EqualError(t, err, ErrNotFound.Error())
+	})
+
+	t.Run("error on initial list", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
+
+		svc.On("List", mock.Anything).Return(nil, &github.Response{}, errors.New("whoops"))
+
+		_, err := client.GetTemplate(context.Background(), "go")
+		require.EqualError(t, err, "whoops")
+	})
+
+	t.Run("converts github 404 error response", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
+
+		svc.On("List", mock.Anything).Return([]string{"foo"}, &github.Response{}, nil)
+		svc.On("Get", mock.Anything, "foo").Return(nil, &github.Response{}, &github.ErrorResponse{
+			Response: &http.Response{StatusCode: 404},
 		})
-	}
+
+		_, err := client.GetTemplate(context.Background(), "foo")
+		require.EqualError(t, err, ErrNotFound.Error())
+	})
+
+	t.Run("error on get", func(t *testing.T) {
+		svc := &mockService{}
+		client := &Client{svc}
+
+		svc.On("List", mock.Anything).Return([]string{"foo"}, &github.Response{}, nil)
+		svc.On("Get", mock.Anything, "foo").Return(nil, &github.Response{}, errors.New("whoops"))
+
+		_, err := client.GetTemplate(context.Background(), "foo")
+		require.EqualError(t, err, "whoops")
+	})
 }

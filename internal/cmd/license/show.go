@@ -16,7 +16,7 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 		Use:   "show <key>",
 		Short: "Fetch a license text",
 		Long: cmdutil.LongDesc(`
-			Fetches a license text via the GitHub Licenses API (https://developer.github.com/v3/licenses/#get-an-individual-license).`),
+			Fetches a license text via the GitHub Licenses API (https://docs.github.com/en/rest/reference/licenses#get-a-license).`),
 		Example: cmdutil.Examples(`
 			# Show MIT license text
 			kickoff license show mit`),

@@ -2,7 +2,6 @@ package gitignore
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/martinohmann/kickoff/internal/cmdutil"
@@ -17,9 +16,7 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 		Use:   "show <name> [<name>...]",
 		Short: "Fetch a gitignore template",
 		Long: cmdutil.LongDesc(`
-			Fetches a gitignore template via the gitignore.io API.
-
-			Check out https://www.gitignore.io for more information about .gitignore templates.`),
+			Fetches a gitignore template via the GitHub Gitignores API (https://docs.github.com/en/rest/reference/gitignore#get-a-gitignore-template).`),
 		Example: cmdutil.Examples(`
 			# Fetch a single template
 			kickoff gitignore show go
@@ -40,9 +37,8 @@ func NewShowCmd(f *cmdutil.Factory) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(f.IOStreams.Out, string(template.Content))
-
-			return nil
+			_, err = f.IOStreams.Out.Write(template.Content)
+			return err
 		},
 	}
 

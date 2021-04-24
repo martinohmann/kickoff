@@ -24,8 +24,8 @@ func TestCompletion(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	httpmock.RegisterResponder("GET", "https://www.toptal.com/developers/gitignore/api/list",
-		httpmock.NewStringResponder(200, "hugo\ngo"))
+	httpmock.RegisterResponder("GET", "https://api.github.com/gitignore/templates",
+		httpmock.NewStringResponder(200, `["go", "hugo"]`))
 
 	assert.Equal(t, []string{"go", "hugo"}, GitignoreNames(f))
 
