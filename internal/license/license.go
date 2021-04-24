@@ -27,28 +27,6 @@ type Info struct {
 	Body string
 }
 
-func toInfo(license *github.License) *Info {
-	if license == nil {
-		return nil
-	}
-
-	info := Info{}
-
-	if license.Key != nil {
-		info.Key = *license.Key
-	}
-
-	if license.Name != nil {
-		info.Name = *license.Name
-	}
-
-	if license.Body != nil {
-		info.Body = *license.Body
-	}
-
-	return &info
-}
-
 // GitHubLicensesService is the interface of the GitHub Licenses API Service.
 type GitHubLicensesService interface {
 	Get(ctx context.Context, licenseName string) (*github.License, *github.Response, error)
@@ -83,7 +61,13 @@ func (c *Client) GetLicense(ctx context.Context, name string) (*Info, error) {
 		return nil, err
 	}
 
-	return toInfo(license), nil
+	info := &Info{
+		Key:  license.GetKey(),
+		Name: license.GetName(),
+		Body: license.GetBody(),
+	}
+
+	return info, nil
 }
 
 // ListLicenses lists the infos for all available licenses. These do not
@@ -98,8 +82,13 @@ func (c *Client) ListLicenses(ctx context.Context) ([]*Info, error) {
 	}
 
 	infos := make([]*Info, len(licenses))
+
 	for i, license := range licenses {
-		infos[i] = toInfo(license)
+		infos[i] = &Info{
+			Key:  license.GetKey(),
+			Name: license.GetName(),
+			Body: license.GetBody(),
+		}
 	}
 
 	return infos, nil
