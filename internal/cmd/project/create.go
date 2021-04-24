@@ -361,7 +361,7 @@ func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Sk
 	if config.Gitignore != nil || config.License != nil {
 		gitignore := "-"
 		if config.Gitignore != nil {
-			gitignore = config.Gitignore.Query
+			gitignore = strings.Join(config.Gitignore.Names, " ")
 		}
 
 		license := "-"
