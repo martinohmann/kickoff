@@ -39,7 +39,8 @@ func TestSkeletonRef(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedConfig := &SkeletonConfig{
-			Values: template.Values{"foo": "bar"},
+			Description: "minimal description",
+			Values:      template.Values{"foo": "bar"},
 		}
 
 		assert.Equal(t, expectedConfig, config)

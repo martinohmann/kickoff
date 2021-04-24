@@ -49,8 +49,10 @@ func TestShowCmd(t *testing.T) {
 
 		output := out.String()
 
-		assert.Regexp(t, `Name\s+default:minimal`, output)
-		assert.Regexp(t, `Values\s+foo: bar`, output)
+		assert.Regexp(t, `Repository\s+default`, output)
+		assert.Regexp(t, `Name\s+minimal`, output)
+		assert.Regexp(t, `Description`, output)
+		assert.Regexp(t, `Files\s+Values`, output)
 	})
 
 	t.Run("show yaml", func(t *testing.T) {

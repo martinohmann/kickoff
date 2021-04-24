@@ -1,13 +1,13 @@
 package skeleton
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/filetree"
@@ -110,31 +110,33 @@ func (o *ShowOptions) showSkeleton(skeleton *kickoff.Skeleton) error {
 		return cmdutil.RenderYAML(o.Out, skeleton)
 	default:
 		tw := cli.NewTableWriter(o.Out)
-
-		tw.Append(bold.Sprint("Name"), skeleton.Ref.String())
+		tw.SetTablePadding("  ")
+		tw.Append(bold.Sprint("Repository"), skeleton.Ref.Repo.Name)
+		tw.Append(bold.Sprint("Name"), skeleton.Ref.Name)
 		tw.Append(bold.Sprint("Path"), homedir.MustCollapse(skeleton.Ref.Path))
+		tw.Render()
+
+		fmt.Fprintln(o.Out)
 
 		description := strings.TrimSpace(skeleton.Description)
 
 		if description != "" {
-			tw.Append(bold.Sprint("Description"), description)
+			fmt.Fprintln(o.Out, bold.Sprint("Description"))
+			fmt.Fprintln(o.Out, description)
+			fmt.Fprintln(o.Out)
 		}
 
 		tree := filetree.Build(skeleton)
 
-		tw.Append(bold.Sprint("Files"), tree.Print())
-
-		if len(skeleton.Values) > 0 {
-			var buf bytes.Buffer
-
-			err := cmdutil.RenderYAML(&buf, skeleton.Values)
-			if err != nil {
-				return err
-			}
-
-			tw.Append(bold.Sprint("Values"), color.BlueString(strings.TrimRight(buf.String(), "\n")))
+		buf, err := yaml.Marshal(skeleton.Values)
+		if err != nil {
+			return err
 		}
 
+		tw = cli.NewTableWriter(o.Out)
+		tw.SetTablePadding("  ")
+		tw.SetHeader("Files", "Values")
+		tw.Append(tree.Print(), string(buf))
 		tw.Render()
 
 		return nil
