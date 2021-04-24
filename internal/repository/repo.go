@@ -202,7 +202,7 @@ func loadSkeleton(repo kickoff.Repository, name string) (*kickoff.Skeleton, erro
 
 	config, err := ref.LoadConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
+		return nil, err
 	}
 
 	files, err := loadSkeletonFiles(ref)
