@@ -319,10 +319,10 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 
 	if o.DryRun {
 		fmt.Fprintf(o.Out, "\n%s Project %s would be created in %s, no files were written yet\n",
-			color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.MustCollapse(o.ProjectDir)))
+			color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.Collapse(o.ProjectDir)))
 	} else {
 		fmt.Fprintf(o.Out, "\n%s Project %s created in %s\n",
-			color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.MustCollapse(o.ProjectDir)))
+			color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.Collapse(o.ProjectDir)))
 	}
 
 	return nil
@@ -332,7 +332,7 @@ func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Sk
 	tw := cli.NewTableWriter(o.Out)
 	tw.SetTablePadding("  ")
 	tw.Append(bold.Sprint("Name"), color.CyanString(config.ProjectName), bold.Sprint("Owner"), config.Owner)
-	tw.Append(bold.Sprint("Directory"), color.CyanString(homedir.MustCollapse(o.ProjectDir)), bold.Sprint("Host"), config.Host)
+	tw.Append(bold.Sprint("Directory"), color.CyanString(homedir.Collapse(o.ProjectDir)), bold.Sprint("Host"), config.Host)
 	tw.Render()
 
 	fmt.Fprintln(o.Out)

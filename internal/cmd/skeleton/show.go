@@ -113,7 +113,7 @@ func (o *ShowOptions) showSkeleton(skeleton *kickoff.Skeleton) error {
 		tw.SetTablePadding("  ")
 		tw.Append(bold.Sprint("Repository"), skeleton.Ref.Repo.Name)
 		tw.Append(bold.Sprint("Name"), skeleton.Ref.Name)
-		tw.Append(bold.Sprint("Path"), homedir.MustCollapse(skeleton.Ref.Path))
+		tw.Append(bold.Sprint("Path"), homedir.Collapse(skeleton.Ref.Path))
 		tw.Render()
 
 		fmt.Fprintln(o.Out)

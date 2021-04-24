@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMustCollapse(t *testing.T) {
+func TestCollapse(t *testing.T) {
 	testCases := []homedirTestCase{
 		{
 			name:     "full path gets collapsed",
@@ -42,10 +42,10 @@ func TestMustCollapse(t *testing.T) {
 		},
 	}
 
-	runTestCases(t, testCases, MustCollapse)
+	runTestCases(t, testCases, Collapse)
 }
 
-func TestMustExpand(t *testing.T) {
+func TestExpand(t *testing.T) {
 	testCases := []homedirTestCase{
 		{
 			name:     "full path gets expanded",
@@ -79,7 +79,7 @@ func TestMustExpand(t *testing.T) {
 		},
 	}
 
-	runTestCases(t, testCases, MustExpand)
+	runTestCases(t, testCases, Expand)
 }
 
 type homedirTestCase struct {

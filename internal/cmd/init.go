@@ -281,7 +281,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 	var createRepo bool
 
 	err = survey.AskOne(&survey.Confirm{
-		Message: fmt.Sprintf("Skeleton repository %s does not exist, initialize it?", homedir.MustCollapse(localPath)),
+		Message: fmt.Sprintf("Skeleton repository %s does not exist, initialize it?", homedir.Collapse(localPath)),
 		Default: true,
 		Help: cmdutil.LongDesc(`
 			Initializing a skeleton repository
@@ -324,11 +324,11 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 		}
 	}
 
-	message := fmt.Sprintf("Save config to %s?", homedir.MustCollapse(o.ConfigPath))
+	message := fmt.Sprintf("Save config to %s?", homedir.Collapse(o.ConfigPath))
 	if _, err := os.Stat(o.ConfigPath); err == nil {
 		message = fmt.Sprintf(
 			"There is already a config at %s, do you want to overwrite it?",
-			homedir.MustCollapse(o.ConfigPath),
+			homedir.Collapse(o.ConfigPath),
 		)
 	}
 

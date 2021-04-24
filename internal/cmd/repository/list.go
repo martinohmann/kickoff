@@ -77,7 +77,7 @@ func (o *ListOptions) Run() error {
 			}
 
 			typ, url, revision := makeListTableFields(ref)
-			localPath := homedir.MustCollapse(ref.LocalPath())
+			localPath := homedir.Collapse(ref.LocalPath())
 
 			tw.Append(name, typ, url, revision, localPath)
 		}
@@ -115,5 +115,5 @@ func makeListTableFields(ref *kickoff.RepoRef) (typ string, url string, rev stri
 		return "remote", ref.URL, revision
 	}
 
-	return "local", homedir.MustCollapse(ref.Path), "-"
+	return "local", homedir.Collapse(ref.Path), "-"
 }

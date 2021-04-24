@@ -125,7 +125,7 @@ func ParseRepoRef(rawurl string) (*RepoRef, error) {
 	}
 
 	if u.Host == "" {
-		return &RepoRef{Path: homedir.MustExpand(u.Path)}, nil
+		return &RepoRef{Path: homedir.Expand(u.Path)}, nil
 	}
 
 	query, err := url.ParseQuery(u.RawQuery)
