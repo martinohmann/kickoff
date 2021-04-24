@@ -44,6 +44,8 @@ func NewListCmd(f *cmdutil.Factory) *cobra.Command {
 				for _, gitignore := range gitignores {
 					tw.Append(gitignore)
 				}
+
+				tw.Render()
 			}
 
 			return nil
