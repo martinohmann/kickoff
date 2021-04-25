@@ -138,15 +138,6 @@ It is also possible to [configure default `.gitignore`
 templates](/configuration#configuring-default-project-gitignore-templates)
 which can be overridden explicitly on project creation.
 
-## Dry-run project creation
-
-Use the `--dry-run` flag if you just want to see which files and directories
-would be created for your new project:
-
-```bash
-$ kickoff project create myproject myskeleton --dry-run
-```
-
 ## Creating a project from multiple skeletons
 
 Projects can be created by composing multiple skeletons together. This is just

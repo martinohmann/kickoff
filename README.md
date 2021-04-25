@@ -30,7 +30,6 @@ into the [Getting started guide](https://kickoff.run/getting-started).
 - Automatically add a .gitignore created from templates obtained from
   [GitHub Gitignores API](https://docs.github.com/en/rest/reference/gitignore).
 - Set local author, repository and skeleton defaults using custom config file.
-- Dry run for project creation.
 - Skeleton composition: projects can be created by composing multiple skeletons
   together.
 

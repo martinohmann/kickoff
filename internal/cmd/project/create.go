@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
-	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/git"
@@ -22,12 +22,9 @@ import (
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/pkg/strvals"
 )
-
-var bold = color.New(color.Bold)
 
 // NewCreateCmd creates a command that can create projects from project
 // skeletons using a variety of user-defined options.
@@ -48,9 +45,6 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		Example: cmdutil.Examples(`
 			# Create project
 			kickoff project create myproject myskeleton
-
-			# Dry run project creation
-			kickoff project create myproject myskeleton --dry-run
 
 			# Create project from skeleton in specific repo
 			kickoff project create myproject myrepo:myskeleton --dir /path/to/project
@@ -119,8 +113,7 @@ type CreateOptions struct {
 
 	RepoNames      []string
 	SkeletonNames  []string
-	DryRun         bool
-	Force          bool
+	AutoApprove    bool
 	Overwrite      bool
 	OverwriteFiles []string
 	SkipFiles      []string
@@ -133,8 +126,7 @@ type CreateOptions struct {
 
 // AddFlags adds flags for all project creation options to cmd.
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&o.DryRun, "dry-run", o.DryRun, "Only print what would be done")
-	cmd.Flags().BoolVar(&o.Force, "force", o.Force, "Forces writing into existing output directory")
+	cmd.Flags().BoolVar(&o.AutoApprove, "yes", o.AutoApprove, "Auto-approve all prompts")
 	cmd.Flags().BoolVar(&o.InitGit, "init-git", o.InitGit, "Initialize git in the project directory")
 	cmd.Flags().BoolVar(&o.Overwrite, "overwrite", o.Overwrite, "Overwrite files that are already present in output directory")
 
@@ -185,10 +177,6 @@ func (o *CreateOptions) Complete() (err error) {
 	if fi, err := os.Stat(o.ProjectDir); err == nil {
 		if !fi.Mode().IsDir() {
 			return fmt.Errorf("%s exists but is not a directory", o.ProjectDir)
-		}
-
-		if !o.Force {
-			return fmt.Errorf("project dir %s already exists, add --force to overwrite", o.ProjectDir)
 		}
 	}
 
@@ -259,24 +247,20 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	err = o.createProject(context.Background(), skeleton)
-	if err != nil || !o.InitGit {
-		return err
-	}
-
-	return o.initGitRepository(o.ProjectDir)
+	return o.createProject(context.Background(), skeleton)
 }
 
-func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) error {
+func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Skeleton) error {
 	config := &project.Config{
-		ProjectName:    o.ProjectName,
+		Name:           o.ProjectName,
 		Host:           o.ProjectHost,
 		Owner:          o.ProjectOwner,
+		ProjectDir:     o.ProjectDir,
 		Overwrite:      o.Overwrite,
 		OverwriteFiles: o.OverwriteFiles,
 		SkipFiles:      o.SkipFiles,
+		Skeleton:       skeleton,
 		Values:         o.Values,
-		Output:         o.Out,
 	}
 
 	if o.License != "" && o.License != kickoff.NoLicense {
@@ -301,94 +285,73 @@ func (o *CreateOptions) createProject(ctx context.Context, s *kickoff.Skeleton) 
 		config.Gitignore = template
 	}
 
-	if o.DryRun {
-		config.Filesystem = afero.NewMemMapFs()
+	if err := o.printConfig(config); err != nil {
+		return err
 	}
 
-	err := o.writeProjectConfig(config, s)
+	plan, err := project.MakePlan(config)
 	if err != nil {
 		return err
 	}
 
-	result, err := project.Create(s, o.ProjectDir, config)
-	if err != nil {
+	o.printPlan(plan)
+
+	if plan.SkipsExisting() {
+		fmt.Fprintf(o.Out, "%s Some files will be skipped because they already exist, "+
+			"pass %s or %s to overwrite\n\n", color.YellowString("!"), bold.Sprint("--overwrite"), bold.Sprint("--overwrite-file"))
+	}
+
+	if plan.IsNoOp() {
+		fmt.Fprintf(o.Out, "%s No files to write to %s\n",
+			color.YellowString("!"), bold.Sprint(homedir.Collapse(o.ProjectDir)))
+		return nil
+	}
+
+	if !o.AutoApprove {
+		if apply, err := o.confirmApply(); err != nil {
+			return err
+		} else if !apply {
+			return nil
+		}
+	}
+
+	if err := plan.Apply(); err != nil {
 		return err
 	}
 
-	if result.Stats[project.ActionTypeSkipExisting] > 0 {
-		fmt.Fprintf(o.Out, "\n%s Some targets were be skipped because they already exist, use --overwrite or --overwrite-file to overwrite\n", color.YellowString("!"))
+	o.printSummary(plan)
+
+	if !o.InitGit {
+		return nil
 	}
 
-	if o.DryRun {
-		fmt.Fprintf(o.Out, "\n%s Project %s would be created in %s, no files were written yet\n",
-			color.CyanString("✓ dry-run"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.Collapse(o.ProjectDir)))
-	} else {
-		fmt.Fprintf(o.Out, "\n%s Project %s created in %s\n",
-			color.GreenString("✓"), bold.Sprint(o.ProjectName), bold.Sprint(homedir.Collapse(o.ProjectDir)))
-	}
-
-	return nil
+	return o.initGitRepository(o.ProjectDir)
 }
 
-func (o *CreateOptions) writeProjectConfig(config *project.Config, s *kickoff.Skeleton) error {
-	tw := cli.NewTableWriter(o.Out)
-	tw.Append(bold.Sprint("Name"), color.CyanString(config.ProjectName), bold.Sprint("Owner"), config.Owner)
-	tw.Append(bold.Sprint("Directory"), color.CyanString(homedir.Collapse(o.ProjectDir)), bold.Sprint("Host"), config.Host)
-	tw.Render()
-
-	fmt.Fprintln(o.Out)
-	fmt.Fprintln(o.Out, bold.Sprint("Skeletons"))
-	fmt.Fprintln(o.Out, color.CyanString(strings.Join(o.SkeletonNames, " ")))
-	fmt.Fprintln(o.Out)
-
-	if len(s.Values) > 0 || len(config.Values) > 0 {
-		sbuf, err := yaml.Marshal(s.Values)
-		if err != nil {
-			return err
-		}
-
-		obuf, err := yaml.Marshal(config.Values)
-		if err != nil {
-			return err
-		}
-
-		tw := cli.NewTableWriter(o.Out)
-		tw.SetHeader("Skeleton values", "Value overrides")
-		tw.Append(string(sbuf), string(obuf))
-		tw.Render()
+func (o *CreateOptions) confirmApply() (apply bool, err error) {
+	if _, err = os.Stat(o.ProjectDir); err == nil {
+		err = survey.AskOne(&survey.Confirm{
+			Message: fmt.Sprintf("Project directory %s already exists, still create project?", homedir.Collapse(o.ProjectDir)),
+			Default: false,
+		}, &apply)
+	} else {
+		err = survey.AskOne(&survey.Confirm{
+			Message: fmt.Sprintf("Create project in %s?", homedir.Collapse(o.ProjectDir)),
+			Default: true,
+		}, &apply)
 	}
 
-	if config.Gitignore != nil || config.License != nil {
-		gitignore := "-"
-		if config.Gitignore != nil {
-			gitignore = strings.Join(config.Gitignore.Names, " ")
-		}
-
-		license := "-"
-		if config.License != nil {
-			license = config.License.Name
-		}
-
-		tw := cli.NewTableWriter(o.Out)
-		tw.SetHeader("License", "Gitignore")
-		tw.Append(license, gitignore)
-		tw.Render()
-
-		fmt.Fprintln(o.Out)
-	}
-
-	return nil
+	fmt.Fprintln(o.Out)
+	return apply, err
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {
 	log.WithField("path", path).Debug("initializing git repository")
 
-	if !o.DryRun {
-		_, err := o.GitClient.Init(path)
-		if err != nil && err != git.ErrRepositoryAlreadyExists {
-			return err
-		}
+	_, err := o.GitClient.Init(path)
+	if errors.Is(err, git.ErrRepositoryAlreadyExists) {
+		return nil
 	}
 
-	return nil
+	return err
 }
