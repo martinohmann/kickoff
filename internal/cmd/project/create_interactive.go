@@ -16,6 +16,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/template"
 )
 
 func (o *CreateOptions) configureInteractively(config *kickoff.Config) error {
@@ -291,9 +292,15 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 		AppendDefault: true,
 		HideDefault:   true,
 	}, &content, survey.WithValidator(func(ans interface{}) error {
+		var values template.Values
 		// The validator directly unmarshals into the target value. This acts
 		// both as validation that the YAML is valid and as final step to save
 		// the values when the user closes the editor.
-		return yaml.Unmarshal([]byte(ans.(string)), &o.Values)
+		if err := yaml.Unmarshal([]byte(ans.(string)), &values); err != nil {
+			return err
+		}
+
+		o.Values = values
+		return nil
 	}))
 }
