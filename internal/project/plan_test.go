@@ -14,7 +14,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,15 +69,6 @@ func TestCreate(t *testing.T) {
 				t.assertFileExists(filepath.Join("foobar", "somefile.yaml"))
 				t.assertFileContains(".gitignore", `somegitignorebody`)
 				t.assertFileContains("LICENSE", `some license johndoe `+strconv.Itoa(time.Now().Year()))
-			},
-		},
-		{
-			name: "dry run does not write files",
-			config: &Config{
-				Filesystem: afero.NewMemMapFs(),
-			},
-			validate: func(t *dirTester) {
-				t.assertDirEmpty()
 			},
 		},
 		{
@@ -195,7 +185,10 @@ func TestCreate(t *testing.T) {
 				test.setup(tester)
 			}
 
-			_, err = Create(skeleton, tmpdir, test.config)
+			test.config.Skeleton = skeleton
+			test.config.ProjectDir = tmpdir
+
+			err = Create(test.config)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -238,12 +231,6 @@ func (t *dirTester) assertFileExists(file string) {
 func (t *dirTester) assertFileAbsent(file string) {
 	_, err := ioutil.ReadFile(t.path(file))
 	assert.True(t, os.IsNotExist(err))
-}
-
-func (t *dirTester) assertDirEmpty() {
-	infos, err := ioutil.ReadDir(t.dir)
-	require.NoError(t, err)
-	assert.Len(t, infos, 0)
 }
 
 func (t *dirTester) mustWriteFile(file, content string) {
