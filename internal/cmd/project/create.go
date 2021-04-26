@@ -60,7 +60,6 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 
 			# Selectively skip creation of certain files or dirs
 			kickoff project create myproject myskeleton --skip-file README.md --skip-file some/dir`),
-		Args: cobra.MinimumNArgs(2),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) == 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -68,8 +67,17 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			o.ProjectName = args[0]
-			o.SkeletonNames = args[1:]
+			if len(args) < 2 {
+				o.Interactive = true
+			}
+
+			if len(args) > 0 {
+				o.ProjectName = args[0]
+			}
+
+			if len(args) > 1 {
+				o.SkeletonNames = args[1:]
+			}
 
 			if err := o.Complete(); err != nil {
 				return err
@@ -113,10 +121,11 @@ type CreateOptions struct {
 	RepoNames      []string
 	SkeletonNames  []string
 	AutoApprove    bool
+	Interactive    bool
+	InitGit        bool
 	Overwrite      bool
 	OverwriteFiles []string
 	SkipFiles      []string
-	InitGit        bool
 
 	rawValues   []string
 	valuesFiles []string
@@ -126,6 +135,7 @@ type CreateOptions struct {
 // AddFlags adds flags for all project creation options to cmd.
 func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.AutoApprove, "yes", o.AutoApprove, "Auto-approve all prompts")
+	cmd.Flags().BoolVarP(&o.Interactive, "interactive", "i", o.Interactive, "Configure project via interactive prompts")
 	cmd.Flags().BoolVar(&o.InitGit, "init-git", o.InitGit, "Initialize git in the project directory")
 	cmd.Flags().BoolVar(&o.Overwrite, "overwrite", o.Overwrite, "Overwrite files that are already present in output directory")
 
@@ -135,13 +145,15 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.SkipFiles, "skip-file", o.SkipFiles,
 		"Skip writing a specific file to the output directory. File path must be relative to the output directory. "+
 			"If file is a dir, files contained in it will be skipped as well")
+
 	cmd.Flags().StringArrayVar(&o.rawValues, "set", o.rawValues,
 		"Set custom values of the form key1=value1,key2=value2,deeply.nested.key3=value that are then made available to .skel templates")
 	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles,
 		"Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
-	cmd.Flags().StringArrayVar(&o.gitignores, "gitignore", o.gitignores,
+
+	cmd.Flags().StringArrayVarP(&o.gitignores, "gitignore", "g", o.gitignores,
 		"Name of a gitignore template. If provided this will automatically populate the .gitignore file. Can be specified multiple times")
-	cmd.Flags().StringVar(&o.License, "license", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
+	cmd.Flags().StringVarP(&o.License, "license", "l", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 
 	cmd.Flags().StringVarP(&o.ProjectDir, "dir", "d", o.ProjectDir, "Custom project directory. If empty the project is created in $PWD/<project-name>")
 	cmd.Flags().StringVar(&o.ProjectHost, "host", o.ProjectHost, "Project repository host")
@@ -155,6 +167,14 @@ func (o *CreateOptions) Complete() (err error) {
 		return err
 	}
 
+	o.Values = config.Values
+
+	if o.Interactive {
+		if err := o.configureInteractively(config); err != nil {
+			return err
+		}
+	}
+
 	if o.ProjectName == "" {
 		return errors.New("project name must not be empty")
 	}
@@ -166,17 +186,6 @@ func (o *CreateOptions) Complete() (err error) {
 		}
 
 		o.ProjectDir = filepath.Join(pwd, o.ProjectName)
-	}
-
-	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
-	if err != nil {
-		return err
-	}
-
-	if fi, err := os.Stat(o.ProjectDir); err == nil {
-		if !fi.Mode().IsDir() {
-			return fmt.Errorf("%s exists but is not a directory", o.ProjectDir)
-		}
 	}
 
 	if o.ProjectHost == "" {
@@ -200,28 +209,31 @@ func (o *CreateOptions) Complete() (err error) {
 		o.Gitignore = config.Project.Gitignore
 	}
 
-	o.Values = config.Values
+	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
+	if err != nil {
+		return err
+	}
 
-	if len(o.valuesFiles) > 0 {
-		for _, path := range o.valuesFiles {
-			vals, err := template.LoadValues(path)
-			if err != nil {
-				return err
-			}
-
-			err = o.Values.Merge(vals)
-			if err != nil {
-				return err
-			}
+	if fi, err := os.Stat(o.ProjectDir); err == nil {
+		if !fi.Mode().IsDir() {
+			return fmt.Errorf("%s exists but is not a directory", o.ProjectDir)
 		}
 	}
 
-	if len(o.rawValues) > 0 {
-		for _, rawValues := range o.rawValues {
-			err = strvals.ParseInto(rawValues, o.Values)
-			if err != nil {
-				return err
-			}
+	for _, path := range o.valuesFiles {
+		vals, err := template.LoadValues(path)
+		if err != nil {
+			return err
+		}
+
+		if err := o.Values.Merge(vals); err != nil {
+			return err
+		}
+	}
+
+	for _, rawValues := range o.rawValues {
+		if err := strvals.ParseInto(rawValues, o.Values); err != nil {
+			return err
 		}
 	}
 
