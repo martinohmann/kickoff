@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/martinohmann/kickoff/internal/cli"
+	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
@@ -18,6 +19,7 @@ type Factory struct {
 	IOStreams  cli.IOStreams
 	ConfigPath string
 	Config     func() (*kickoff.Config, error)
+	GitClient  func() git.Client
 	HTTPClient func() *http.Client
 	Repository func(...string) (kickoff.Repository, error)
 }
@@ -80,6 +82,7 @@ func NewFactoryWithConfigPath(ioStreams cli.IOStreams, configPath string) *Facto
 		ConfigPath: configPath,
 		IOStreams:  ioStreams,
 		Config:     configFunc,
+		GitClient:  git.NewClient,
 		HTTPClient: httpcache.NewClient,
 		Repository: repositoryFunc,
 	}

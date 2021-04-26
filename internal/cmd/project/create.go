@@ -32,9 +32,9 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 	o := &CreateOptions{
 		IOStreams:  f.IOStreams,
 		Config:     f.Config,
+		GitClient:  f.GitClient,
 		HTTPClient: f.HTTPClient,
 		Repository: f.Repository,
-		GitClient:  git.NewClient(),
 	}
 
 	cmd := &cobra.Command{
@@ -98,10 +98,9 @@ type CreateOptions struct {
 	cli.IOStreams
 
 	Config     func() (*kickoff.Config, error)
+	GitClient  func() git.Client
 	HTTPClient func() *http.Client
 	Repository func(...string) (kickoff.Repository, error)
-
-	GitClient git.Client
 
 	ProjectName  string
 	ProjectDir   string
@@ -348,7 +347,9 @@ func (o *CreateOptions) confirmApply() (apply bool, err error) {
 func (o *CreateOptions) initGitRepository(path string) error {
 	log.WithField("path", path).Debug("initializing git repository")
 
-	_, err := o.GitClient.Init(path)
+	client := o.GitClient()
+
+	_, err := client.Init(path)
 	if errors.Is(err, git.ErrRepositoryAlreadyExists) {
 		return nil
 	}
