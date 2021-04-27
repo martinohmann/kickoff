@@ -63,7 +63,7 @@ func (o *CreateOptions) configureSkeletons(config *kickoff.Config) error {
 
 	sort.Strings(options)
 
-	return survey.AskOne(&survey.MultiSelect{
+	return o.Prompt.AskOne(&survey.MultiSelect{
 		Message:  "Select one or more project skeletons",
 		Options:  options,
 		PageSize: 20,
@@ -75,7 +75,7 @@ func (o *CreateOptions) configureProject(config *kickoff.Config) error {
 	required := survey.WithValidator(survey.Required)
 
 	if o.ProjectName == "" {
-		err := survey.AskOne(&survey.Input{
+		err := o.Prompt.AskOne(&survey.Input{
 			Message: "Project name",
 			Help: cmdutil.LongDesc(`
                 Project name
@@ -95,7 +95,7 @@ func (o *CreateOptions) configureProject(config *kickoff.Config) error {
 			return err
 		}
 
-		err = survey.AskOne(&survey.Input{
+		err = o.Prompt.AskOne(&survey.Input{
 			Message: "Project directory",
 			Default: filepath.Join(pwd, o.ProjectName),
 			Suggest: func(toComplete string) []string {
@@ -113,7 +113,7 @@ func (o *CreateOptions) configureProject(config *kickoff.Config) error {
 	}
 
 	if o.ProjectHost == "" {
-		err := survey.AskOne(&survey.Input{
+		err := o.Prompt.AskOne(&survey.Input{
 			Message: "Project host",
 			Default: config.Project.Host,
 			Help: cmdutil.LongDesc(`
@@ -128,7 +128,7 @@ func (o *CreateOptions) configureProject(config *kickoff.Config) error {
 	}
 
 	if o.ProjectOwner == "" {
-		err := survey.AskOne(&survey.Input{
+		err := o.Prompt.AskOne(&survey.Input{
 			Message: "Project owner",
 			Default: config.Project.Owner,
 			Help: cmdutil.LongDesc(`
@@ -170,7 +170,7 @@ func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
 
 	var choice string
 
-	err = survey.AskOne(&survey.Select{
+	err = o.Prompt.AskOne(&survey.Select{
 		Message:  "Choose a license",
 		Options:  options,
 		PageSize: 20,
@@ -203,7 +203,7 @@ func (o *CreateOptions) configureGitignoreTemplates(config *kickoff.Config) erro
 		return err
 	}
 
-	err = survey.AskOne(&survey.MultiSelect{
+	err = o.Prompt.AskOne(&survey.MultiSelect{
 		Message:  "Choose gitignore templates",
 		Options:  options,
 		PageSize: 20,
@@ -228,7 +228,7 @@ func (o *CreateOptions) configureGit(config *kickoff.Config) error {
 		return nil
 	}
 
-	return survey.AskOne(&survey.Confirm{
+	return o.Prompt.AskOne(&survey.Confirm{
 		Message: "Initialize git in the project directory?",
 		Default: o.AutoApprove,
 	}, &o.InitGit)
@@ -241,7 +241,7 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 
 	var edit bool
 
-	err := survey.AskOne(&survey.Confirm{
+	err := o.Prompt.AskOne(&survey.Confirm{
 		Message: "Edit skeleton values?",
 		Default: o.AutoApprove,
 		Help: cmdutil.LongDesc(`
@@ -285,7 +285,7 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 			"close the editor after you are done.\n%s",
 		strings.Join(o.SkeletonNames, ", "), string(buf))
 
-	return survey.AskOne(&survey.Editor{
+	err = o.Prompt.AskOne(&survey.Editor{
 		Message:       "Open editor",
 		FileName:      "*.yaml",
 		Default:       content,
@@ -293,14 +293,17 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 		HideDefault:   true,
 	}, &content, survey.WithValidator(func(ans interface{}) error {
 		var values template.Values
-		// The validator directly unmarshals into the target value. This acts
-		// both as validation that the YAML is valid and as final step to save
-		// the values when the user closes the editor.
-		if err := yaml.Unmarshal([]byte(ans.(string)), &values); err != nil {
-			return err
-		}
-
-		o.Values = values
-		return nil
+		return yaml.Unmarshal([]byte(ans.(string)), &values)
 	}))
+	if err != nil {
+		return err
+	}
+
+	var values template.Values
+	if err := yaml.Unmarshal([]byte(content), &values); err != nil {
+		return err
+	}
+
+	o.Values = values
+	return nil
 }
