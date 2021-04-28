@@ -10,6 +10,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/httpcache"
 	"github.com/martinohmann/kickoff/internal/kickoff"
+	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
 )
 
@@ -22,6 +23,7 @@ type Factory struct {
 	GitClient  func() git.Client
 	HTTPClient func() *http.Client
 	Repository func(...string) (kickoff.Repository, error)
+	Prompt     prompt.Prompt
 }
 
 // NewFactory creates the default *Factory that is passed to commands.
@@ -85,6 +87,7 @@ func NewFactoryWithConfigPath(ioStreams cli.IOStreams, configPath string) *Facto
 		GitClient:  git.NewClient,
 		HTTPClient: httpcache.NewClient,
 		Repository: repositoryFunc,
+		Prompt:     prompt.New(),
 	}
 }
 

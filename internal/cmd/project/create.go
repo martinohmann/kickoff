@@ -19,6 +19,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
+	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
@@ -35,6 +36,7 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		GitClient:  f.GitClient,
 		HTTPClient: f.HTTPClient,
 		Repository: f.Repository,
+		Prompt:     f.Prompt,
 	}
 
 	cmd := &cobra.Command{
@@ -109,6 +111,7 @@ type CreateOptions struct {
 	GitClient  func() git.Client
 	HTTPClient func() *http.Client
 	Repository func(...string) (kickoff.Repository, error)
+	Prompt     prompt.Prompt
 
 	ProjectName  string
 	ProjectDir   string
@@ -341,12 +344,12 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 
 func (o *CreateOptions) confirmApply() (apply bool, err error) {
 	if _, err = os.Stat(o.ProjectDir); err == nil {
-		err = survey.AskOne(&survey.Confirm{
+		err = o.Prompt.AskOne(&survey.Confirm{
 			Message: fmt.Sprintf("Project directory %s already exists, still create project?", homedir.Collapse(o.ProjectDir)),
 			Default: false,
 		}, &apply)
 	} else {
-		err = survey.AskOne(&survey.Confirm{
+		err = o.Prompt.AskOne(&survey.Confirm{
 			Message: fmt.Sprintf("Create project in %s?", homedir.Collapse(o.ProjectDir)),
 			Default: true,
 		}, &apply)

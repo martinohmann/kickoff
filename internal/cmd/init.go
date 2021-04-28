@@ -15,6 +15,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
+	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -30,6 +31,7 @@ func NewInitCmd(f *cmdutil.Factory) *cobra.Command {
 		Config:     f.Config,
 		ConfigPath: f.ConfigPath,
 		HTTPClient: f.HTTPClient,
+		Prompt:     f.Prompt,
 	}
 
 	cmd := &cobra.Command{
@@ -53,6 +55,7 @@ type InitOptions struct {
 
 	Config     func() (*kickoff.Config, error)
 	HTTPClient func() *http.Client
+	Prompt     prompt.Prompt
 
 	ConfigPath string
 }
@@ -83,39 +86,31 @@ func (o *InitOptions) Run() error {
 }
 
 func (o *InitOptions) configureProject(config *kickoff.Config) error {
-	questions := []*survey.Question{
-		{
-			Name: "host",
-			Prompt: &survey.Input{
-				Message: "Default project host",
-				Default: config.Project.Host,
-				Help: cmdutil.LongDesc(`
-					Default project host
+	err := o.Prompt.AskOne(&survey.Input{
+		Message: "Default project host",
+		Default: config.Project.Host,
+		Help: cmdutil.LongDesc(`
+            Default project host
 
-					To be able to build nice links that are related to the source code repo, e.g. links to
-					CI or docs, kickoff needs to know the hostname of your SCM platform. You can override
-					this on project creation.
-				`),
-			},
-		},
-		{
-			Name: "owner",
-			Prompt: &survey.Input{
-				Message: "Default project owner",
-				Default: config.Project.Owner,
-				Help: cmdutil.LongDesc(`
-					Default project owner
-
-					To be able to build nice links that are related to the source code repo, e.g. links to
-					CI or docs, kickoff needs to know the username that you use on your SCM platform. You
-					can override this on project creation. 
-					The project owner is automatically inserted into license texts if enabled.
-				`),
-			},
-		},
+            To be able to build nice links that are related to the source code repo, e.g. links to
+            CI or docs, kickoff needs to know the hostname of your SCM platform. You can override
+            this on project creation.`),
+	}, &config.Project.Host)
+	if err != nil {
+		return err
 	}
 
-	return survey.Ask(questions, &config.Project)
+	return o.Prompt.AskOne(&survey.Input{
+		Message: "Default project owner",
+		Default: config.Project.Owner,
+		Help: cmdutil.LongDesc(`
+            Default project owner
+
+            To be able to build nice links that are related to the source code repo, e.g. links to
+            CI or docs, kickoff needs to know the username that you use on your SCM platform. You
+            can override this on project creation. 
+            The project owner is automatically inserted into license texts if enabled.`),
+	}, &config.Project.Owner)
 }
 
 func (o *InitOptions) configureLicense(config *kickoff.Config) error {
@@ -142,7 +137,7 @@ func (o *InitOptions) configureLicense(config *kickoff.Config) error {
 
 	var chooseLicense bool
 
-	err = survey.AskOne(&survey.Confirm{
+	err = o.Prompt.AskOne(&survey.Confirm{
 		Message: "Do you want to set a default project license?",
 		Default: false,
 		Help: cmdutil.LongDesc(`
@@ -163,7 +158,7 @@ func (o *InitOptions) configureLicense(config *kickoff.Config) error {
 
 	var chosenLicense string
 
-	err = survey.AskOne(&survey.Select{
+	err = o.Prompt.AskOne(&survey.Select{
 		Message:  "Choose a license",
 		Options:  licenseOptions,
 		PageSize: 20,
@@ -200,7 +195,7 @@ func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error 
 
 	var selectGitignores bool
 
-	err = survey.AskOne(&survey.Confirm{
+	err = o.Prompt.AskOne(&survey.Confirm{
 		Message: "Do you want to select default .gitignore templates?",
 		Default: false,
 		Help: cmdutil.LongDesc(`
@@ -222,7 +217,7 @@ func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error 
 
 	var selectedGitignores []string
 
-	err = survey.AskOne(&survey.MultiSelect{
+	err = o.Prompt.AskOne(&survey.MultiSelect{
 		Message:  "Choose gitignore templates",
 		Options:  gitignoreOptions,
 		PageSize: 20,
@@ -247,7 +242,7 @@ func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error 
 func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config) error {
 	var repoURL string
 
-	err := survey.AskOne(&survey.Input{
+	err := o.Prompt.AskOne(&survey.Input{
 		Message: "Default skeleton repository",
 		Default: config.Repositories[kickoff.DefaultRepositoryName],
 		Help: cmdutil.LongDesc(`
@@ -280,7 +275,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 
 	var createRepo bool
 
-	err = survey.AskOne(&survey.Confirm{
+	err = o.Prompt.AskOne(&survey.Confirm{
 		Message: fmt.Sprintf("Skeleton repository %s does not exist, initialize it?", homedir.Collapse(localPath)),
 		Default: true,
 		Help: cmdutil.LongDesc(`
@@ -310,7 +305,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 	var reviewConfig bool
 
-	err := survey.AskOne(&survey.Confirm{
+	err := o.Prompt.AskOne(&survey.Confirm{
 		Message: "Do you want to review the configuration before saving it?",
 		Default: true,
 	}, &reviewConfig)
@@ -334,7 +329,7 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 
 	var persistConfig bool
 
-	err = survey.AskOne(&survey.Confirm{Message: message, Default: true}, &persistConfig)
+	err = o.Prompt.AskOne(&survey.Confirm{Message: message, Default: true}, &persistConfig)
 	if err != nil {
 		return err
 	}
