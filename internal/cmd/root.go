@@ -110,12 +110,11 @@ func handleError(w io.Writer, err error) {
 		errorContext = fmt.Sprintf("To get a list of available repositories run: %s", bold.Sprint("kickoff repository list"))
 	case errors.As(err, &revisionNotFoundErr):
 		ref := revisionNotFoundErr.RepoRef
-		ref.Revision = ""
 
 		if ref.Name != "" {
 			errorContext = fmt.Sprintf("You may want to re-add the repository with an existing revision:\n\n%s\n%s",
 				bold.Sprintf("  kickoff repository remove %s", ref.Name),
-				bold.Sprintf("  kickoff repository add %s %s --revision <existing-revision>", ref.Name, ref.String()))
+				bold.Sprintf("  kickoff repository add %s %s --revision <existing-revision>", ref.Name, ref.URL))
 		}
 	case errors.As(err, &invalidRepoErr):
 		ref := invalidRepoErr.RepoRef
