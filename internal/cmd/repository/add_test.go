@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -24,7 +24,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("repo already exists", func(t *testing.T) {
 		cmd := NewAddCmd(f)
 		cmd.SetArgs([]string{"default", "../../testdata/repos/repo2"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, `repository "default" already exists`)
@@ -37,7 +37,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("invalid repository url", func(t *testing.T) {
 		cmd := NewAddCmd(f)
 		cmd.SetArgs([]string{"new-repo", "invalid\\:"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, `invalid repo URL "invalid\\:": parse "invalid\\:": first path segment in URL cannot contain colon`)
@@ -50,7 +50,7 @@ func TestAddCmd(t *testing.T) {
 	t.Run("add new repo", func(t *testing.T) {
 		cmd := NewAddCmd(f)
 		cmd.SetArgs([]string{"new-repo", "../../testdata/repos/repo2"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 

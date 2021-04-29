@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -121,7 +120,7 @@ func (r *repository) CreateSkeleton(name string) (*kickoff.SkeletonRef, error) {
 func listSkeletons(repoRef *kickoff.RepoRef, dir string) ([]*kickoff.SkeletonRef, error) {
 	refs := make([]*kickoff.SkeletonRef, 0)
 
-	fileInfos, err := ioutil.ReadDir(dir)
+	fileInfos, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +264,7 @@ func loadSkeletonFiles(ref *kickoff.SkeletonRef) ([]*kickoff.BufferedFile, error
 			return fmt.Errorf("file %s too large: refusing to load files larger than 100 MiB", absPath)
 		}
 
-		buf, err := ioutil.ReadFile(absPath)
+		buf, err := os.ReadFile(absPath)
 		if err != nil {
 			return err
 		}

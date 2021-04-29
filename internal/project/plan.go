@@ -2,7 +2,6 @@ package project
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -194,7 +193,7 @@ func (p *Plan) executeOperation(op *Operation) error {
 		content = []byte(rendered)
 	}
 
-	return ioutil.WriteFile(dest.AbsPath(), content, source.Mode)
+	return os.WriteFile(dest.AbsPath(), content, source.Mode)
 }
 
 func (p *Plan) makeTemplateValues(config *Config, skeleton *kickoff.Skeleton) error {

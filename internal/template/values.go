@@ -1,7 +1,7 @@
 package template
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/ghodss/yaml"
 	"github.com/imdario/mergo"
@@ -35,7 +35,7 @@ func MergeValues(values ...Values) (Values, error) {
 func LoadValues(path string) (Values, error) {
 	var values Values
 
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

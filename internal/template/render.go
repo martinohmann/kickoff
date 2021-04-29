@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -24,7 +23,7 @@ func Render(templateText string, data interface{}) (string, error) {
 
 // RenderReader renders a template obtained from a reader with data.
 func RenderReader(r io.Reader, data interface{}) (string, error) {
-	buf, err := ioutil.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	if err != nil {
 		return "", err
 	}

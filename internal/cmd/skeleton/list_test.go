@@ -1,7 +1,7 @@
 package skeleton
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -24,7 +24,7 @@ func TestListCmd(t *testing.T) {
 		out.Reset()
 
 		cmd := NewListCmd(f)
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -37,7 +37,7 @@ func TestListCmd(t *testing.T) {
 
 		cmd := NewListCmd(f)
 		cmd.SetArgs([]string{"-o", "wide"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -50,7 +50,7 @@ func TestListCmd(t *testing.T) {
 
 		cmd := NewListCmd(f)
 		cmd.SetArgs([]string{"-o", "name"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 

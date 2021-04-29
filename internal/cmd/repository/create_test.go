@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -25,7 +25,7 @@ func TestCreateCmd(t *testing.T) {
 
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{"default", dir})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.Error(t, cmd.Execute())
 		require.NoDirExists(t, dir)
@@ -36,7 +36,7 @@ func TestCreateCmd(t *testing.T) {
 
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{"new-repo", dir})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 		require.DirExists(t, dir)
@@ -45,7 +45,7 @@ func TestCreateCmd(t *testing.T) {
 	t.Run("creating remote skeletons is not supported", func(t *testing.T) {
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{"remote-repo", "https://foo.bar.baz/owner/repo"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.Error(t, cmd.Execute())
 	})

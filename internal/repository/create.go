@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -77,8 +76,7 @@ func writeFiles(dir string) error {
 
 		log.WithField("path", path).Debug("creating skeleton file")
 
-		err := ioutil.WriteFile(path, []byte(contents), 0644)
-		if err != nil {
+		if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
 			return fmt.Errorf("failed to write skeleton file: %w", err)
 		}
 	}
