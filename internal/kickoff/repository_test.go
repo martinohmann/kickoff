@@ -149,6 +149,11 @@ func TestRepoRef_Validate(t *testing.T) {
 			v:    &RepoRef{URL: "inval\\:"},
 			err:  newRepositoryRefError(`invalid URL: parse "inval\\:": first path segment in URL cannot contain colon`),
 		},
+		{
+			name: "invalid name",
+			v:    &RepoRef{Name: "invalid:", Path: "/tmp"},
+			err:  newRepositoryRefError(`repository name "invalid:" does not match pattern: ^[a-zA-Z0-9_/.+-]+$`),
+		},
 	}
 
 	runValidatorTests(t, testCases)

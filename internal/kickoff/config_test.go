@@ -99,6 +99,13 @@ func TestConfig_Validate(t *testing.T) {
 				Repositories: map[string]string{"default": "/tmp/foo"},
 			},
 		},
+		{
+			name: "config with invalid repository name",
+			v: &Config{
+				Repositories: map[string]string{"invalid:": "/tmp/foo"},
+			},
+			err: newRepositoryRefError(`repository name "invalid:" does not match pattern: ^[a-zA-Z0-9_/.+-]+$`),
+		},
 	}
 
 	runValidatorTests(t, testCases)

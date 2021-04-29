@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"regexp"
 
 	"github.com/martinohmann/kickoff/internal/homedir"
 	log "github.com/sirupsen/logrus"
 )
+
+var repoNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_/.+-]+$`)
 
 // RepoRef holds information about a skeleton repository's location.
 type RepoRef struct {
@@ -51,6 +54,10 @@ func (r *RepoRef) Validate() error {
 		if _, err := url.Parse(r.URL); err != nil {
 			return newRepositoryRefError("invalid URL: %w", err)
 		}
+	}
+
+	if r.Name != "" && !repoNameRegexp.MatchString(r.Name) {
+		return newRepositoryRefError("repository name %q does not match pattern: %s", r.Name, repoNameRegexp)
 	}
 
 	return nil
