@@ -3,7 +3,6 @@ package project
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -168,16 +167,13 @@ func TestCreate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			tmpdir := t.TempDir()
+
 			repo, err := repository.Open(context.Background(), "../testdata/repos/repo1", nil)
 			require.NoError(t, err)
 
 			skeleton, err := repo.LoadSkeleton("advanced")
 			require.NoError(t, err)
-
-			tmpdir, err := ioutil.TempDir("", "kickoff-")
-			require.NoError(t, err)
-
-			defer os.RemoveAll(tmpdir)
 
 			tester := &dirTester{T: t, dir: tmpdir}
 
@@ -213,13 +209,13 @@ func (t *dirTester) path(file string) string {
 }
 
 func (t *dirTester) assertFileContains(file, expectedContent string) {
-	contents, err := ioutil.ReadFile(t.path(file))
+	contents, err := os.ReadFile(t.path(file))
 	require.NoError(t, err)
 	assert.Equal(t, expectedContent, string(contents))
 }
 
 func (t *dirTester) assertFileNotContains(file, expectedContent string) {
-	contents, err := ioutil.ReadFile(t.path(file))
+	contents, err := os.ReadFile(t.path(file))
 	require.NoError(t, err)
 	assert.NotEqual(t, expectedContent, string(contents))
 }
@@ -229,7 +225,7 @@ func (t *dirTester) assertFileExists(file string) {
 }
 
 func (t *dirTester) assertFileAbsent(file string) {
-	_, err := ioutil.ReadFile(t.path(file))
+	_, err := os.ReadFile(t.path(file))
 	assert.True(t, os.IsNotExist(err))
 }
 
@@ -239,6 +235,6 @@ func (t *dirTester) mustWriteFile(file, content string) {
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	require.NoError(t, err)
 
-	err = ioutil.WriteFile(path, []byte(content), 0644)
+	err = os.WriteFile(path, []byte(content), 0644)
 	require.NoError(t, err)
 }

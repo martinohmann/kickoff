@@ -1,7 +1,8 @@
 package config
 
 import (
-	"io/ioutil"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -70,7 +71,7 @@ func TestEditCmd(t *testing.T) {
 			WithValues(template.Values{"foo": "bar"}).
 			Create()
 
-		configBuf, err := ioutil.ReadFile(configPath)
+		configBuf, err := os.ReadFile(configPath)
 		require.NoError(t, err)
 
 		streams, _, _, _ := cli.NewTestIOStreams()
@@ -78,7 +79,7 @@ func TestEditCmd(t *testing.T) {
 		f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 		cmd := NewEditCmd(f)
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		expectedErrPattern := `error while launching editor command "sh -c ./nonexistent /tmp/kickoff-[0-9]+.yaml": exit status 127`
 
@@ -87,7 +88,7 @@ func TestEditCmd(t *testing.T) {
 
 		assert.Regexp(t, expectedErrPattern, err)
 
-		configBuf2, err := ioutil.ReadFile(configPath)
+		configBuf2, err := os.ReadFile(configPath)
 		require.NoError(t, err)
 
 		assert.Equal(t, configBuf, configBuf2, "config file was changed although it should not")

@@ -2,7 +2,7 @@ package skeleton
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 
@@ -25,7 +25,7 @@ func TestShowCmd(t *testing.T) {
 	t.Run("nonexistent repository", func(t *testing.T) {
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"myskeleton", "-r", "nonexistent"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		assert.Error(t, cmd.Execute())
 	})
@@ -33,7 +33,7 @@ func TestShowCmd(t *testing.T) {
 	t.Run("nonexistent skeleton", func(t *testing.T) {
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"nonexistent"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.Error(t, cmd.Execute())
 	})
@@ -43,7 +43,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"minimal"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -60,7 +60,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"minimal", "-o", "yaml"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -72,7 +72,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"minimal", "-o", "json"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -89,7 +89,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"advanced", "README.md.skel"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -101,7 +101,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"advanced", "README.md.skel", "-o", "json"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -118,7 +118,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"advanced", "README.md.skel", "-o", "yaml"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -133,7 +133,7 @@ func TestShowCmd(t *testing.T) {
 	t.Run("nonexistent file", func(t *testing.T) {
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"advanced", "nonexistent-file"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, os.ErrNotExist.Error())
@@ -144,7 +144,7 @@ func TestShowCmd(t *testing.T) {
 
 		cmd := NewShowCmd(f)
 		cmd.SetArgs([]string{"advanced", "{{.Values.filename}}"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, `{{.Values.filename}} is a directory`)

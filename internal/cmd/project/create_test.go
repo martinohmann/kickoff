@@ -1,8 +1,9 @@
 package project
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{"myproject", "default:minimal", "-d", dir, "--owner", "johndoe"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 		require.NoDirExists(t, dir)
@@ -60,7 +61,7 @@ func TestCreate(t *testing.T) {
 
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{"myproject", "default:advanced", "-d", dir, "--owner", "johndoe"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		// confirm apply
 		stubber.StubOne(true)
@@ -78,7 +79,7 @@ func TestCreate(t *testing.T) {
 		stubber, fakePrompt := stubPrompt(f)
 
 		cmd := NewCreateCmd(f)
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		// skeleton names
 		stubber.StubOne([]string{"default:advanced"})
@@ -128,7 +129,7 @@ func TestCreate(t *testing.T) {
 			"myproject", "default:advanced", "-d", dir,
 			"--owner", "johndoe", "--license", "mit",
 		})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		// confirm apply
 		stubber.StubOne(true)
@@ -142,7 +143,7 @@ func TestCreate(t *testing.T) {
 			"myproject", "default:advanced", "-d", dir,
 			"--owner", "johndoe", "--license", "unlicense",
 		})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 		assertFileContains(t, filepath.Join(dir, "LICENSE"), "the-mit-license")
@@ -153,7 +154,7 @@ func TestCreate(t *testing.T) {
 			"myproject", "default:advanced", "-d", dir,
 			"--owner", "johndoe", "--license", "unlicense", "--overwrite",
 		})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		// confirm apply
 		stubber.StubOne(true)
@@ -176,7 +177,7 @@ func TestCreate(t *testing.T) {
 			"--set", "filename=barbaz", "--init-git",
 			"--interactive",
 		})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		// project config
 		stubber.StubOneDefault()
@@ -204,7 +205,7 @@ func stubPrompt(f *cmdutil.Factory) (*prompt.Stubber, *prompt.FakePrompt) {
 }
 
 func assertFileContains(t *testing.T, path, expectedContent string) {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	require.NoError(t, err)
 	assert.Equal(t, expectedContent, string(contents))
 }

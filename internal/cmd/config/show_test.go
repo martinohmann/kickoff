@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -23,7 +23,7 @@ func TestShowCmd(t *testing.T) {
 		f := cmdutil.NewFactoryWithConfigPath(streams, configPath)
 
 		cmd := NewShowCmd(f)
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 
@@ -40,7 +40,7 @@ func TestShowCmd(t *testing.T) {
 		f := cmdutil.NewFactoryWithConfigPath(streams, nonexistent)
 
 		cmd := NewShowCmd(f)
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.Error(t, cmd.Execute())
 	})

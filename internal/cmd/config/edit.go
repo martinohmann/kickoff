@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -72,7 +71,7 @@ func (o *EditOptions) Run() (err error) {
 		return err
 	}
 
-	tmpf, err := ioutil.TempFile("", "kickoff-*.yaml")
+	tmpf, err := os.CreateTemp("", "kickoff-*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
@@ -86,13 +85,11 @@ func (o *EditOptions) Run() (err error) {
 		"configfile": o.ConfigPath,
 	}).Debug("writing config to temporary file")
 
-	err = ioutil.WriteFile(tmpfilePath, contents, 0644)
-	if err != nil {
+	if err := os.WriteFile(tmpfilePath, contents, 0644); err != nil {
 		return err
 	}
 
-	err = launchEditor(tmpfilePath)
-	if err != nil {
+	if err := launchEditor(tmpfilePath); err != nil {
 		return err
 	}
 

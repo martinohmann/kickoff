@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -25,7 +25,7 @@ func TestRemoveCmd(t *testing.T) {
 	t.Run("repo not exists", func(t *testing.T) {
 		cmd := NewRemoveCmd(f)
 		cmd.SetArgs([]string{"non-existent"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		err := cmd.Execute()
 		require.EqualError(t, err, `repository "non-existent" not configured`)
@@ -38,7 +38,7 @@ func TestRemoveCmd(t *testing.T) {
 	t.Run("remove a repo", func(t *testing.T) {
 		cmd := NewRemoveCmd(f)
 		cmd.SetArgs([]string{"other"})
-		cmd.SetOut(ioutil.Discard)
+		cmd.SetOut(io.Discard)
 
 		require.NoError(t, cmd.Execute())
 

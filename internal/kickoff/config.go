@@ -2,7 +2,6 @@ package kickoff
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -153,7 +152,7 @@ func SaveConfig(path string, config *Config) error {
 func Load(path string, v interface{}) error {
 	log.WithField("path", path).Debug("loading file")
 
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -175,7 +174,7 @@ func Save(path string, v interface{}) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, buf, 0644)
+	return os.WriteFile(path, buf, 0644)
 }
 
 func detectDefaultProjectOwner() string {
