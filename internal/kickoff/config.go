@@ -60,6 +60,10 @@ func (c *Config) Validate() error {
 			return newRepositoryRefError("repository name must not be empty")
 		}
 
+		if !repoNameRegexp.MatchString(name) {
+			return newRepositoryRefError("repository name %q does not match pattern: %s", name, repoNameRegexp)
+		}
+
 		if repoURL == "" {
 			return newRepositoryRefError("repository URL must not be empty")
 		}
