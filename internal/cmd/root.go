@@ -101,28 +101,29 @@ func handleError(w io.Writer, err error) {
 
 	switch {
 	case errors.As(err, &gitignoreNotFoundErr):
-		errorContext = "Run `kickoff gitignore list` to get a list of available templates."
+		errorContext = fmt.Sprintf("To get a list of available gitignore templates run: %s", bold.Sprint("kickoff gitignore list"))
 	case errors.As(err, &licenseNotFoundErr):
-		errorContext = "Run `kickoff licenses list` to get a list of available licenses."
+		errorContext = fmt.Sprintf("To get a list of available licenses run: %s", bold.Sprint("kickoff license list"))
 	case errors.As(err, &skeletonNotFoundErr):
-		errorContext = "Run `kickoff skeleton list` to get a list of available skeletons."
+		errorContext = fmt.Sprintf("To get a list of available skeletons run: %s", bold.Sprint("kickoff skeleton list"))
 	case errors.As(err, &repoNotConfiguredErr):
-		errorContext = "Run `kickoff repository list` to get a list of available repositories."
+		errorContext = fmt.Sprintf("To get a list of available repositories run: %s", bold.Sprint("kickoff repository list"))
 	case errors.As(err, &revisionNotFoundErr):
 		ref := revisionNotFoundErr.RepoRef
 		ref.Revision = ""
 
-		errorContext = fmt.Sprintf("You may want to re-add the repository with an existing revision:\n"+
-			"  kickoff repository remove %s\n"+
-			"  kickoff repository add %s %s --revision <existing-revision>", ref.Name, ref.Name, ref.String())
+		if ref.Name != "" {
+			errorContext = fmt.Sprintf("You may want to re-add the repository with an existing revision:\n\n%s\n%s",
+				bold.Sprintf("  kickoff repository remove %s", ref.Name),
+				bold.Sprintf("  kickoff repository add %s %s --revision <existing-revision>", ref.Name, ref.String()))
+		}
 	case errors.As(err, &invalidRepoErr):
 		ref := invalidRepoErr.RepoRef
 
-		errorContext = "Ensure that the repository contains a `skeletons/` subdirectory."
+		errorContext = fmt.Sprintf("Ensure that the repository contains a %s subdirectory.", bold.Sprint("skeletons/"))
 
 		if ref.Name != "" {
-			errorContext += fmt.Sprintf("\n\nYou can remove it by running:\n"+
-				"  kickoff repository remove %s", ref.Name)
+			errorContext += fmt.Sprintf("\n\nTo remove it run: %s", bold.Sprintf("kickoff repository remove %s", ref.Name))
 		}
 	case errors.As(err, &netErr):
 		if netErr.Temporary() {
