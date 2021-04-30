@@ -1,23 +1,17 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
-	"github.com/martinohmann/kickoff/internal/gitignore"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
-	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +24,6 @@ func NewInitCmd(f *cmdutil.Factory) *cobra.Command {
 		IOStreams:  f.IOStreams,
 		Config:     f.Config,
 		ConfigPath: f.ConfigPath,
-		HTTPClient: f.HTTPClient,
 		Prompt:     f.Prompt,
 	}
 
@@ -53,9 +46,8 @@ func NewInitCmd(f *cmdutil.Factory) *cobra.Command {
 type InitOptions struct {
 	cli.IOStreams
 
-	Config     func() (*kickoff.Config, error)
-	HTTPClient func() *http.Client
-	Prompt     prompt.Prompt
+	Config func() (*kickoff.Config, error)
+	Prompt prompt.Prompt
 
 	ConfigPath string
 }
@@ -69,8 +61,6 @@ func (o *InitOptions) Run() error {
 
 	configureFuncs := []func(*kickoff.Config) error{
 		o.configureProject,
-		o.configureLicense,
-		o.configureGitignoreTemplates,
 		o.configureDefaultSkeletonRepository,
 		o.persistConfiguration,
 	}
@@ -111,132 +101,6 @@ func (o *InitOptions) configureProject(config *kickoff.Config) error {
             can override this on project creation. 
             The project owner is automatically inserted into license texts if enabled.`),
 	}, &config.Project.Owner)
-}
-
-func (o *InitOptions) configureLicense(config *kickoff.Config) error {
-	client := license.NewClient(o.HTTPClient())
-
-	licenses, err := client.ListLicenses(context.Background())
-	if err != nil {
-		log.WithError(err).
-			Debug("failed to fetch licenses, skipping configuration")
-		return nil
-	}
-
-	if len(licenses) == 0 {
-		return nil
-	}
-
-	licenseOptions := make([]string, 0, len(licenses))
-	licenseMap := make(map[string]string, len(licenses))
-
-	for _, license := range licenses {
-		licenseOptions = append(licenseOptions, license.Name)
-		licenseMap[license.Name] = license.Key
-	}
-
-	var chooseLicense bool
-
-	err = o.Prompt.AskOne(&survey.Confirm{
-		Message: "Do you want to set a default project license?",
-		Default: false,
-		Help: cmdutil.LongDesc(`
-			Open source license
-
-			You can set a default open source license that will be used for all new projects
-			if not explicitly overridden on project creation.
-		`),
-	}, &chooseLicense)
-	if err != nil {
-		return err
-	}
-
-	if !chooseLicense {
-		config.Project.License = ""
-		return nil
-	}
-
-	var chosenLicense string
-
-	err = o.Prompt.AskOne(&survey.Select{
-		Message:  "Choose a license",
-		Options:  licenseOptions,
-		PageSize: 20,
-		VimMode:  true,
-		Help: cmdutil.LongDesc(`
-			Open source license
-
-			You can set a default open source license that will be used for all new projects
-			if not explicitly overridden on project creation.
-		`),
-	}, &chosenLicense)
-	if err != nil {
-		return err
-	}
-
-	config.Project.License = licenseMap[chosenLicense]
-
-	return nil
-}
-
-func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error {
-	client := gitignore.NewClient(o.HTTPClient())
-
-	gitignoreOptions, err := client.ListTemplates(context.Background())
-	if err != nil {
-		log.WithError(err).
-			Debug("failed to fetch gitignore templates, skipping configuration")
-		return nil
-	}
-
-	if len(gitignoreOptions) == 0 {
-		return nil
-	}
-
-	var selectGitignores bool
-
-	err = o.Prompt.AskOne(&survey.Confirm{
-		Message: "Do you want to select default .gitignore templates?",
-		Default: false,
-		Help: cmdutil.LongDesc(`
-			Gitignore templates
-
-			If .gitignore templates are configured, new projects will automatically
-			include a .gitignore which is populated with the specified templates.
-			Don't worry, you can override this setting on project creation if you want to.
-		`),
-	}, &selectGitignores)
-	if err != nil {
-		return err
-	}
-
-	if !selectGitignores {
-		config.Project.Gitignore = ""
-		return nil
-	}
-
-	var selectedGitignores []string
-
-	err = o.Prompt.AskOne(&survey.MultiSelect{
-		Message:  "Choose gitignore templates",
-		Options:  gitignoreOptions,
-		PageSize: 20,
-		VimMode:  true,
-		Help: cmdutil.LongDesc(`
-			Gitignore templates
-
-			If .gitignore templates are configured, new projects will automatically
-			include a .gitignore which is populated with the specified templates.
-			Don't worry, you can override this setting on project creation if you want to.
-		`),
-	}, &selectedGitignores)
-	if err != nil {
-		return err
-	}
-
-	config.Project.Gitignore = strings.Join(selectedGitignores, ",")
-
-	return nil
 }
 
 func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config) error {

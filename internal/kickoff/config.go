@@ -83,11 +83,6 @@ type ProjectConfig struct {
 	Host string `json:"host,omitempty"`
 	// Owner holds the default repository owner name.
 	Owner string `json:"owner,omitempty"`
-	// License holds the name of the default open source license.
-	License string `json:"license,omitempty"`
-	// Gitignore holds a comma-separated list of gitignore templates, e.g.
-	// 'go,hugo'.
-	Gitignore string `json:"gitignore,omitempty"`
 }
 
 // ApplyDefaults applies defaults to unset fields. If the Owner field is empty
@@ -100,14 +95,6 @@ func (p *ProjectConfig) ApplyDefaults() {
 
 	if p.Owner == "" {
 		p.Owner = detectDefaultProjectOwner()
-	}
-
-	if p.License == NoLicense {
-		p.License = ""
-	}
-
-	if p.Gitignore == NoGitignore {
-		p.Gitignore = ""
 	}
 }
 

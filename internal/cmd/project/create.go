@@ -118,7 +118,7 @@ type CreateOptions struct {
 	ProjectHost  string
 	ProjectOwner string
 	License      string
-	Gitignore    string
+	Gitignores   []string
 	Values       template.Values
 
 	RepoNames      []string
@@ -132,7 +132,6 @@ type CreateOptions struct {
 
 	rawValues   []string
 	valuesFiles []string
-	gitignores  []string
 }
 
 // AddFlags adds flags for all project creation options to cmd.
@@ -154,7 +153,7 @@ func (o *CreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&o.valuesFiles, "values", o.valuesFiles,
 		"Load custom values from provided file, making them available to .skel templates. Values passed via --set take precedence")
 
-	cmd.Flags().StringArrayVarP(&o.gitignores, "gitignore", "g", o.gitignores,
+	cmd.Flags().StringArrayVarP(&o.Gitignores, "gitignore", "g", o.Gitignores,
 		"Name of a gitignore template. If provided this will automatically populate the .gitignore file. Can be specified multiple times")
 	cmd.Flags().StringVarP(&o.License, "license", "l", o.License, "License to use for the project. If set this will automatically populate the LICENSE file")
 
@@ -201,15 +200,6 @@ func (o *CreateOptions) Complete() (err error) {
 
 	if o.ProjectOwner == "" {
 		return errors.New("--owner needs to be set as it could not be inferred")
-	}
-
-	if o.License == "" {
-		o.License = config.Project.License
-	}
-
-	o.Gitignore = strings.Join(o.gitignores, ",")
-	if o.Gitignore == "" {
-		o.Gitignore = config.Project.Gitignore
 	}
 
 	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
@@ -277,7 +267,7 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 		Values:         o.Values,
 	}
 
-	if o.License != "" && o.License != kickoff.NoLicense {
+	if o.License != "" {
 		client := license.NewClient(o.HTTPClient())
 
 		license, err := client.GetLicense(ctx, o.License)
@@ -288,10 +278,12 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 		config.License = license
 	}
 
-	if o.Gitignore != "" && o.Gitignore != kickoff.NoGitignore {
+	if len(o.Gitignores) > 0 {
 		client := gitignore.NewClient(o.HTTPClient())
 
-		template, err := client.GetTemplate(ctx, o.Gitignore)
+		query := strings.Join(o.Gitignores, ",")
+
+		template, err := client.GetTemplate(ctx, query)
 		if err != nil {
 			return err
 		}
