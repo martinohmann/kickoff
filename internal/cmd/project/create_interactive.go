@@ -192,7 +192,7 @@ func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
 }
 
 func (o *CreateOptions) configureGitignoreTemplates(config *kickoff.Config) error {
-	if len(o.gitignores) > 0 {
+	if len(o.Gitignores) > 0 {
 		return nil
 	}
 
@@ -203,7 +203,7 @@ func (o *CreateOptions) configureGitignoreTemplates(config *kickoff.Config) erro
 		return err
 	}
 
-	err = o.Prompt.AskOne(&survey.MultiSelect{
+	return o.Prompt.AskOne(&survey.MultiSelect{
 		Message:  "Choose gitignore templates",
 		Options:  options,
 		PageSize: 20,
@@ -214,13 +214,7 @@ func (o *CreateOptions) configureGitignoreTemplates(config *kickoff.Config) erro
             If .gitignore templates are configured, new projects will
             automatically include a .gitignore which is populated with the
             specified templates.`),
-	}, &o.gitignores)
-	if err != nil {
-		return err
-	}
-
-	o.Gitignore = strings.Join(o.gitignores, ",")
-	return nil
+	}, &o.Gitignores)
 }
 
 func (o *CreateOptions) configureGit(config *kickoff.Config) error {

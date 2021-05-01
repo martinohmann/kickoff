@@ -35,15 +35,6 @@ const (
 )
 
 const (
-	// NoLicense means that no license file will be generated for a new
-	// project.
-	NoLicense = "none"
-	// NoGitignore means that no .gitignore file will be generated for a new
-	// project.
-	NoGitignore = "none"
-)
-
-const (
 	// EnvKeyLogLevel configures custom path to the kickoff config file.
 	EnvKeyConfig = "KICKOFF_CONFIG"
 	// EnvKeyEditor configures the command used to edit config files.
