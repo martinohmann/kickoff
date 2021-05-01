@@ -15,7 +15,9 @@ import (
 func TestConfig_ApplyDefaults(t *testing.T) {
 	config := Config{
 		Project: ProjectConfig{
-			Owner: "johndoe",
+			Owner:     "johndoe",
+			License:   NoLicense,
+			Gitignore: NoGitignore,
 		},
 	}
 
