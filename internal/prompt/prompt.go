@@ -13,14 +13,19 @@ type Prompt interface {
 	AskOne(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error
 }
 
-type prompt struct{}
+type prompt struct {
+	opts []survey.AskOpt
+}
 
-// New returns a prompt which just directly calls survey.AskOne.
-func New() Prompt { return new(prompt) }
+// New returns a prompt which just directly calls survey.AskOne. The provided
+// opts are prepended to options passed to the AskOne method.
+func New(opts ...survey.AskOpt) Prompt {
+	return &prompt{opts: opts}
+}
 
 // AskOne implements Prompt.
-func (prompt) AskOne(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
-	return survey.AskOne(p, response, opts...)
+func (pr *prompt) AskOne(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
+	return survey.AskOne(p, response, append(pr.opts, opts...)...)
 }
 
 // FakePrompt is a mock implementation of a Prompt.

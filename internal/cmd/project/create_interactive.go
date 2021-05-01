@@ -15,6 +15,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
+	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
 )
@@ -285,12 +286,12 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 			"close the editor after you are done.\n%s",
 		strings.Join(o.SkeletonNames, ", "), string(buf))
 
-	err = o.Prompt.AskOne(&survey.Editor{
-		Message:       "Open editor",
-		FileName:      "*.yaml",
-		Default:       content,
-		AppendDefault: true,
-		HideDefault:   true,
+	err = o.Prompt.AskOne(&prompt.Editor{
+		Message:         "Open editor",
+		FilenamePattern: "*.yaml",
+		Default:         content,
+		AppendDefault:   true,
+		HideDefault:     true,
 	}, &content, survey.WithValidator(func(ans interface{}) error {
 		var values template.Values
 		return yaml.Unmarshal([]byte(ans.(string)), &values)

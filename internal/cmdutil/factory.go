@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/git"
 	"github.com/martinohmann/kickoff/internal/httpcache"
@@ -80,6 +82,25 @@ func NewFactoryWithConfigPath(ioStreams cli.IOStreams, configPath string) *Facto
 		return repository.OpenMap(context.Background(), repos, nil)
 	}
 
+	promptFunc := func() prompt.Prompt {
+		return prompt.New(func(opts *survey.AskOptions) error {
+			if in, ok := ioStreams.In.(terminal.FileReader); ok {
+				opts.Stdio.In = in
+			} else {
+				opts.Stdio.In = os.Stdin
+			}
+
+			if out, ok := ioStreams.Out.(terminal.FileWriter); ok {
+				opts.Stdio.Out = out
+			} else {
+				opts.Stdio.Out = os.Stdout
+			}
+
+			opts.Stdio.Err = ioStreams.ErrOut
+			return nil
+		})
+	}
+
 	return &Factory{
 		ConfigPath: configPath,
 		IOStreams:  ioStreams,
@@ -87,7 +108,7 @@ func NewFactoryWithConfigPath(ioStreams cli.IOStreams, configPath string) *Facto
 		GitClient:  git.NewClient,
 		HTTPClient: httpcache.NewClient,
 		Repository: repositoryFunc,
-		Prompt:     prompt.New(),
+		Prompt:     promptFunc(),
 	}
 }
 
