@@ -252,6 +252,8 @@ func (o *CreateOptions) completeGitignoreTemplates(config *kickoff.Config) error
 			return err
 		}
 
+		var choices []string
+
 		err = o.Prompt.AskOne(&survey.MultiSelect{
 			Message:  "Choose gitignore templates",
 			Options:  options,
@@ -264,10 +266,12 @@ func (o *CreateOptions) completeGitignoreTemplates(config *kickoff.Config) error
                 If .gitignore templates are configured, new projects will
                 automatically include a .gitignore which is populated with the
                 specified templates.`),
-		}, &o.gitignores)
+		}, &choices)
 		if err != nil {
 			return err
 		}
+
+		o.gitignores = choices
 	}
 
 	o.Gitignore = strings.Join(o.gitignores, ",")
