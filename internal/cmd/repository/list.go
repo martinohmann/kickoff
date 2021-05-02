@@ -8,6 +8,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
+	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/spf13/cobra"
 )
 
@@ -53,6 +54,10 @@ func (o *ListOptions) Run() error {
 	}
 
 	repos := config.Repositories
+
+	if len(repos) == 0 {
+		return repository.ErrNoRepositories
+	}
 
 	repoNames := make([]string, 0, len(repos))
 	for name := range repos {

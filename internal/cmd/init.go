@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
+	"github.com/ghodss/yaml"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
 	"github.com/martinohmann/kickoff/internal/gitignore"
@@ -17,6 +19,7 @@ import (
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/template"
 	"github.com/spf13/cobra"
 )
 
@@ -68,10 +71,11 @@ func (o *InitOptions) Run() error {
 
 	configureFuncs := []func(*kickoff.Config) error{
 		o.configureProject,
+		o.configureDefaultSkeletonRepository,
 		o.configureLicense,
 		o.configureGitignoreTemplates,
-		o.configureDefaultSkeletonRepository,
-		o.persistConfiguration,
+		o.configureValues,
+		o.saveConfig,
 	}
 
 	for _, configure := range configureFuncs {
@@ -191,18 +195,27 @@ func (o *InitOptions) configureGitignoreTemplates(config *kickoff.Config) error 
 }
 
 func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config) error {
+	if len(config.Repositories) > 0 {
+		return nil
+	}
+
 	var repoURL string
 
 	err := o.Prompt.AskOne(&survey.Input{
 		Message: "Default skeleton repository",
-		Default: config.Repositories[kickoff.DefaultRepositoryName],
+		Default: kickoff.DefaultRepositoryURL,
+		Suggest: func(toComplete string) []string {
+			files, _ := filepath.Glob(homedir.Expand(toComplete) + "*")
+			return files
+		},
 		Help: cmdutil.LongDesc(`
-			Default skeleton repository
+            Default skeleton repository
 
-			You should at least configure a default skeleton repository to make use of kickoff.
-			You can change it or add more repositories at any time if you need to.
-		`),
-	}, &repoURL)
+            Path to a local or URL to a remote skeleton repository.
+
+            You should at least configure a default skeleton repository to make use of kickoff.
+            You can change it or add more repositories at any time if you need to.`),
+	}, &repoURL, survey.WithValidator(survey.Required))
 	if err != nil {
 		return err
 	}
@@ -233,8 +246,7 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 			Initializing a skeleton repository
 
 			This will create a directory to house your project skeleton and seed it with a "default"
-			skeleton which you can customize and use as a starter to create other templates.
-		`),
+			skeleton which you can customize and use as a starter to create other templates.`),
 	}, &createRepo)
 	if err != nil || !createRepo {
 		return err
@@ -249,22 +261,64 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 	return err
 }
 
-func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
-	var reviewConfig bool
+func (o *InitOptions) configureValues(config *kickoff.Config) error {
+	var edit bool
 
 	err := o.Prompt.AskOne(&survey.Confirm{
-		Message: "Do you want to review the configuration before saving it?",
+		Message: "Edit default skeleton values?",
 		Default: true,
-	}, &reviewConfig)
+		Help: cmdutil.LongDesc(`
+            Default skeleton values
+
+            These will be automatically merged on top of skeleton values when creating a project.`),
+	}, &edit)
+	if err != nil || !edit {
+		return err
+	}
+
+	buf, err := yaml.Marshal(config.Values)
 	if err != nil {
 		return err
 	}
 
-	if reviewConfig {
-		if err := cmdutil.RenderYAML(o.Out, config); err != nil {
-			return err
-		}
+	content := fmt.Sprintf(
+		"# Add or change default values to your needs. To continue, save the file and "+
+			"close the editor after you are done.\n%s", string(buf))
+
+	err = o.Prompt.AskOne(&survey.Editor{
+		Message:       "Open editor",
+		FileName:      "*.yaml",
+		Default:       content,
+		AppendDefault: true,
+		HideDefault:   true,
+	}, &content, survey.WithValidator(func(ans interface{}) error {
+		var values template.Values
+		return yaml.Unmarshal([]byte(ans.(string)), &values)
+	}))
+	if err != nil {
+		return err
 	}
+
+	var values template.Values
+	if err := yaml.Unmarshal([]byte(content), &values); err != nil {
+		return err
+	}
+
+	config.Values = values
+
+	return nil
+}
+
+func (o *InitOptions) saveConfig(config *kickoff.Config) error {
+	fmt.Fprintln(o.Out)
+	bold.Fprintln(o.Out, "Configuration:")
+	fmt.Fprintln(o.Out)
+
+	if err := cmdutil.RenderYAML(o.Out, config); err != nil {
+		return err
+	}
+
+	fmt.Fprintln(o.Out)
 
 	message := fmt.Sprintf("Save config to %s?", homedir.Collapse(o.ConfigPath))
 	if _, err := os.Stat(o.ConfigPath); err == nil {
@@ -274,16 +328,16 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 		)
 	}
 
-	var persistConfig bool
+	var save bool
 
-	err = o.Prompt.AskOne(&survey.Confirm{Message: message, Default: true}, &persistConfig)
+	err := o.Prompt.AskOne(&survey.Confirm{Message: message, Default: true}, &save)
 	if err != nil {
 		return err
 	}
 
 	fmt.Fprintln(o.Out)
 
-	if !persistConfig {
+	if !save {
 		fmt.Fprintln(o.Out, color.YellowString("!"), "Config was not saved")
 		return nil
 	}
@@ -295,10 +349,10 @@ func (o *InitOptions) persistConfiguration(config *kickoff.Config) error {
 
 	fmt.Fprintln(o.Out, color.GreenString("✓"), "Config saved")
 	fmt.Fprint(o.Out, "\nHere are some useful commands to get you started:\n\n")
-	fmt.Fprintln(o.Out, "- List repositories:", bold.Sprint("kickoff repository list"))
-	fmt.Fprintln(o.Out, "- List skeletons:", bold.Sprint("kickoff skeleton list"))
-	fmt.Fprintln(o.Out, "- Inspect a skeleton:", bold.Sprint("kickoff skeleton show <skeleton-name>"))
-	fmt.Fprintln(o.Out, "- Create new project from skeleton:", bold.Sprint("kickoff project create <name> <skeleton-name>"))
+	fmt.Fprintln(o.Out, "❯ List repositories:", bold.Sprint("kickoff repository list"))
+	fmt.Fprintln(o.Out, "❯ List skeletons:", bold.Sprint("kickoff skeleton list"))
+	fmt.Fprintln(o.Out, "❯ Inspect a skeleton:", bold.Sprint("kickoff skeleton show <skeleton-name>"))
+	fmt.Fprintln(o.Out, "❯ Create new project from skeleton:", bold.Sprint("kickoff project create <name> <skeleton-name>"))
 
 	return nil
 }
