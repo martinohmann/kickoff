@@ -26,10 +26,8 @@ func TestConfig_ApplyDefaults(t *testing.T) {
 			Host:  DefaultProjectHost,
 			Owner: "johndoe",
 		},
-		Repositories: map[string]string{
-			DefaultRepositoryName: DefaultRepositoryURL,
-		},
-		Values: template.Values{},
+		Repositories: map[string]string{},
+		Values:       template.Values{},
 	}
 
 	assert.Equal(t, expected, config)
@@ -173,10 +171,8 @@ func TestLoadConfig(t *testing.T) {
 					Host:  "github.com",
 					Owner: "johndoe",
 				},
-				Repositories: map[string]string{
-					"default": "https://github.com/martinohmann/kickoff-skeletons",
-				},
-				Values: template.Values{},
+				Repositories: map[string]string{},
+				Values:       template.Values{},
 			},
 		},
 		{

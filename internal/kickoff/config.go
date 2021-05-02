@@ -42,10 +42,6 @@ func (c *Config) ApplyDefaults() {
 		c.Repositories = make(map[string]string)
 	}
 
-	if len(c.Repositories) == 0 {
-		c.Repositories[DefaultRepositoryName] = DefaultRepositoryURL
-	}
-
 	if c.Values == nil {
 		c.Values = make(template.Values)
 	}

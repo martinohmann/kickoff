@@ -100,6 +100,10 @@ func handleError(w io.Writer, err error) {
 	)
 
 	switch {
+	case errors.Is(err, repository.ErrNoRepositories):
+		errorContext = "For kickoff to be functional you need to configure at least one skeleton repository.\n\nHere are two ways how to do that:\n\n"
+		errorContext += fmt.Sprintf("❯ Interactively: %s\n", bold.Sprint("kickoff init"))
+		errorContext += fmt.Sprintf("❯ Manually: %s", bold.Sprint("kickoff repository add <name> <repo-url>"))
 	case errors.As(err, &gitignoreNotFoundErr):
 		errorContext = fmt.Sprintf("To get a list of available gitignore templates run: %s", bold.Sprint("kickoff gitignore list"))
 	case errors.As(err, &licenseNotFoundErr):
