@@ -20,6 +20,7 @@ func TestCreate(t *testing.T) {
 	configPath := testutil.NewConfigFileBuilder(t).
 		WithRepository("default", "../../testdata/repos/repo1").
 		WithRepository("other", "../../testdata/repos/repo2").
+		WithProjectOwner("hansdampf").
 		Create()
 
 	streams, _, _, _ := cli.NewTestIOStreams()
@@ -73,36 +74,20 @@ func TestCreate(t *testing.T) {
 		require.DirExists(t, dir)
 	})
 
-	t.Run("creates project interactively", func(t *testing.T) {
+	t.Run("asks for required inputs", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "myproject")
 
 		stubber, fakePrompt := stubPrompt(f)
 
 		cmd := NewCreateCmd(f)
 		cmd.SetOut(io.Discard)
+		cmd.SetArgs([]string{"-d", dir})
 
 		// skeleton names
 		stubber.StubOne([]string{"default:advanced"})
 
-		// project config
-		stubber.StubMany("myotherproject", dir)
-		stubber.StubOneDefault()
-		stubber.StubOne("johndoe")
-
-		// license
-		stubber.StubOne("MIT License")
-
-		// gitignores
-		stubber.StubOne([]string{"go"})
-
-		// init git?
-		stubber.StubOne(true)
-
-		// edit values?
-		stubber.StubOne(true)
-
-		// config edit result
-		stubber.StubOne("{}")
+		// project name
+		stubber.StubOne("myproject")
 
 		// confirm apply
 		stubber.StubOne(true)
@@ -113,12 +98,10 @@ func TestCreate(t *testing.T) {
 
 		require.DirExists(t, dir)
 		require.DirExists(t, filepath.Join(dir, ".git"))
-		require.FileExists(t, filepath.Join(dir, "LICENSE"))
-		require.FileExists(t, filepath.Join(dir, ".gitignore"))
 		require.FileExists(t, filepath.Join(dir, "foobar", "somefile.yaml"))
 	})
 
-	t.Run("overwrite files in --overwrite flag is provided", func(t *testing.T) {
+	t.Run("overwrite files if --overwrite flag is provided", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "myproject")
 
 		stubber, fakePrompt := stubPrompt(f)
@@ -165,23 +148,40 @@ func TestCreate(t *testing.T) {
 		fakePrompt.AssertExpectations(t)
 	})
 
-	t.Run("interactive mode only prompts for things not explicitly set", func(t *testing.T) {
+	t.Run("interactive mode prompts for every config option", func(t *testing.T) {
 		dir := filepath.Join(t.TempDir(), "myproject")
 
 		stubber, fakePrompt := stubPrompt(f)
 
 		cmd := NewCreateCmd(f)
 		cmd.SetArgs([]string{
-			"myproject", "default:advanced", "-d", dir,
+			"myproject", "default:advanced",
 			"--license", "unlicense", "--gitignore", "go",
 			"--set", "filename=barbaz", "--init-git",
+			"--skip-file", "optional-file",
 			"--interactive",
 		})
 		cmd.SetOut(io.Discard)
 
-		// project config
+		// skeleton name, project name and dir
 		stubber.StubOneDefault()
-		stubber.StubOne("johndoe")
+		stubber.StubOneDefault()
+		stubber.StubOne(dir)
+
+		// project host, project owner
+		stubber.StubOneDefault()
+		stubber.StubOneDefault()
+
+		// license, gitignore templates
+		stubber.StubOneDefault()
+		stubber.StubOneDefault()
+
+		// git init
+		stubber.StubOne(true)
+
+		// edit values
+		stubber.StubOne(true)
+		stubber.StubOneDefault()
 
 		// confirm apply
 		stubber.StubOne(true)
@@ -195,6 +195,7 @@ func TestCreate(t *testing.T) {
 		require.FileExists(t, filepath.Join(dir, "LICENSE"))
 		require.FileExists(t, filepath.Join(dir, ".gitignore"))
 		require.FileExists(t, filepath.Join(dir, "barbaz", "somefile.yaml"))
+		require.NoFileExists(t, filepath.Join(dir, "optional-file"))
 	})
 }
 

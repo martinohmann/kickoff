@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
@@ -24,7 +22,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/pkg/strvals"
 )
 
 // NewCreateCmd creates a command that can create projects from project
@@ -37,6 +34,7 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 		HTTPClient: f.HTTPClient,
 		Repository: f.Repository,
 		Prompt:     f.Prompt,
+		InitGit:    true,
 	}
 
 	cmd := &cobra.Command{
@@ -69,10 +67,6 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			return cmdutil.SkeletonNames(f, o.RepoNames...), cobra.ShellCompDirectiveDefault
 		},
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			if len(args) < 2 {
-				o.Interactive = true
-			}
-
 			if len(args) > 0 {
 				o.ProjectName = args[0]
 			}
@@ -170,77 +164,7 @@ func (o *CreateOptions) Complete() (err error) {
 		return err
 	}
 
-	o.Values = config.Values
-
-	if o.Interactive {
-		if err := o.configureInteractively(config); err != nil {
-			return err
-		}
-	}
-
-	if o.ProjectName == "" {
-		return errors.New("project name must not be empty")
-	}
-
-	if o.ProjectDir == "" {
-		pwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-
-		o.ProjectDir = filepath.Join(pwd, o.ProjectName)
-	}
-
-	if o.ProjectHost == "" {
-		o.ProjectHost = config.Project.Host
-	}
-
-	if o.ProjectOwner == "" {
-		o.ProjectOwner = config.Project.Owner
-	}
-
-	if o.ProjectOwner == "" {
-		return errors.New("--owner needs to be set as it could not be inferred")
-	}
-
-	if o.License == "" {
-		o.License = config.Project.License
-	}
-
-	o.Gitignore = strings.Join(o.gitignores, ",")
-	if o.Gitignore == "" {
-		o.Gitignore = config.Project.Gitignore
-	}
-
-	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
-	if err != nil {
-		return err
-	}
-
-	if fi, err := os.Stat(o.ProjectDir); err == nil {
-		if !fi.Mode().IsDir() {
-			return fmt.Errorf("%s exists but is not a directory", o.ProjectDir)
-		}
-	}
-
-	for _, path := range o.valuesFiles {
-		vals, err := template.LoadValues(path)
-		if err != nil {
-			return err
-		}
-
-		if err := o.Values.Merge(vals); err != nil {
-			return err
-		}
-	}
-
-	for _, rawValues := range o.rawValues {
-		if err := strvals.ParseInto(rawValues, o.Values); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return o.complete(config)
 }
 
 // Run loads all project skeletons that the user provided and creates the
@@ -277,7 +201,7 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 		Values:         o.Values,
 	}
 
-	if o.License != "" && o.License != kickoff.NoLicense {
+	if o.License != "" {
 		client := license.NewClient(o.HTTPClient())
 
 		license, err := client.GetLicense(ctx, o.License)
@@ -288,7 +212,7 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 		config.License = license
 	}
 
-	if o.Gitignore != "" && o.Gitignore != kickoff.NoGitignore {
+	if o.Gitignore != "" {
 		client := gitignore.NewClient(o.HTTPClient())
 
 		template, err := client.GetTemplate(ctx, o.Gitignore)
@@ -322,11 +246,13 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 	}
 
 	if !o.AutoApprove {
-		if apply, err := o.confirmApply(); err != nil {
+		var apply bool
+
+		if err := o.confirmApply(&apply); err != nil || !apply {
 			return err
-		} else if !apply {
-			return nil
 		}
+
+		fmt.Fprintln(o.Out)
 	}
 
 	if err := plan.Apply(); err != nil {
@@ -342,21 +268,18 @@ func (o *CreateOptions) createProject(ctx context.Context, skeleton *kickoff.Ske
 	return o.initGitRepository(o.ProjectDir)
 }
 
-func (o *CreateOptions) confirmApply() (apply bool, err error) {
-	if _, err = os.Stat(o.ProjectDir); err == nil {
-		err = o.Prompt.AskOne(&survey.Confirm{
+func (o *CreateOptions) confirmApply(apply *bool) error {
+	if _, err := os.Stat(o.ProjectDir); err == nil {
+		return o.Prompt.AskOne(&survey.Confirm{
 			Message: fmt.Sprintf("Project directory %s already exists, still create project?", homedir.Collapse(o.ProjectDir)),
 			Default: false,
-		}, &apply)
-	} else {
-		err = o.Prompt.AskOne(&survey.Confirm{
-			Message: fmt.Sprintf("Create project in %s?", homedir.Collapse(o.ProjectDir)),
-			Default: true,
-		}, &apply)
+		}, apply)
 	}
 
-	fmt.Fprintln(o.Out)
-	return apply, err
+	return o.Prompt.AskOne(&survey.Confirm{
+		Message: fmt.Sprintf("Create project in %s?", homedir.Collapse(o.ProjectDir)),
+		Default: true,
+	}, apply)
 }
 
 func (o *CreateOptions) initGitRepository(path string) error {
