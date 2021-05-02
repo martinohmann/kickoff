@@ -17,32 +17,33 @@ import (
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
+	"helm.sh/helm/pkg/strvals"
 )
 
-func (o *CreateOptions) configureInteractively(config *kickoff.Config) error {
-	configureFuncs := []func(*kickoff.Config) error{
-		o.configureSkeletons,
-		o.configureProject,
-		o.configureLicense,
-		o.configureGitignoreTemplates,
-		o.configureGit,
-		o.configureValues,
+func (o *CreateOptions) complete(config *kickoff.Config) error {
+	completeFuncs := []func(*kickoff.Config) error{
+		o.completeSkeletonNames,
+		o.completeProjectName,
+		o.completeProjectDir,
+		o.completeProjectHost,
+		o.completeProjectOwner,
+		o.completeLicense,
+		o.completeGitignoreTemplates,
+		o.completeGitInit,
+		o.completeValues,
 	}
 
-	for _, configure := range configureFuncs {
-		if err := configure(config); err != nil {
-			fmt.Fprintln(o.Out)
+	for _, complete := range completeFuncs {
+		if err := complete(config); err != nil {
 			return err
 		}
 	}
 
-	fmt.Fprintln(o.Out)
-
 	return nil
 }
 
-func (o *CreateOptions) configureSkeletons(config *kickoff.Config) error {
-	if len(o.SkeletonNames) > 0 {
+func (o *CreateOptions) completeSkeletonNames(config *kickoff.Config) error {
+	if len(o.SkeletonNames) > 0 && !o.Interactive {
 		return nil
 	}
 
@@ -66,38 +67,43 @@ func (o *CreateOptions) configureSkeletons(config *kickoff.Config) error {
 	return o.Prompt.AskOne(&survey.MultiSelect{
 		Message:  "Select one or more project skeletons",
 		Options:  options,
+		Default:  o.SkeletonNames,
 		PageSize: 20,
 		VimMode:  true,
 	}, &o.SkeletonNames, survey.WithValidator(survey.Required))
 }
 
-func (o *CreateOptions) configureProject(config *kickoff.Config) error {
-	required := survey.WithValidator(survey.Required)
-
-	if o.ProjectName == "" {
-		err := o.Prompt.AskOne(&survey.Input{
-			Message: "Project name",
-			Help: cmdutil.LongDesc(`
-                Project name
-
-                Every project needs a name and so does yours. The name is
-                available in templates and can be used to build links related
-                to your project, e.g. links to project, CI or docs.`),
-		}, &o.ProjectName, required)
-		if err != nil {
-			return err
-		}
+func (o *CreateOptions) completeProjectName(config *kickoff.Config) error {
+	if o.ProjectName != "" && !o.Interactive {
+		return nil
 	}
 
+	return o.Prompt.AskOne(&survey.Input{
+		Message: "Project name",
+		Default: o.ProjectName,
+		Help: cmdutil.LongDesc(`
+            Project name
+
+            Every project needs a name and so does yours. The name is
+            available in templates and can be used to build links related
+            to your project, e.g. links to project, CI or docs.`),
+	}, &o.ProjectName, survey.WithValidator(survey.Required))
+}
+
+func (o *CreateOptions) completeProjectDir(config *kickoff.Config) (err error) {
 	if o.ProjectDir == "" {
 		pwd, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 
-		err = o.Prompt.AskOne(&survey.Input{
+		o.ProjectDir = filepath.Join(pwd, o.ProjectName)
+	}
+
+	if o.Interactive {
+		err := o.Prompt.AskOne(&survey.Input{
 			Message: "Project directory",
-			Default: filepath.Join(pwd, o.ProjectName),
+			Default: o.ProjectDir,
 			Suggest: func(toComplete string) []string {
 				files, _ := filepath.Glob(homedir.Expand(toComplete) + "*")
 				return files
@@ -106,48 +112,84 @@ func (o *CreateOptions) configureProject(config *kickoff.Config) error {
                 Project directory
 
                 The directory in which the project will be created.`),
-		}, &o.ProjectDir, required)
+		}, &o.ProjectDir, survey.WithValidator(survey.Required), survey.WithValidator(func(ans interface{}) error {
+			return isDirOrNonexistent(ans.(string))
+		}))
 		if err != nil {
 			return err
 		}
 	}
 
+	o.ProjectDir, err = filepath.Abs(o.ProjectDir)
+	if err != nil {
+		return err
+	}
+
+	return isDirOrNonexistent(o.ProjectDir)
+}
+
+func isDirOrNonexistent(path string) error {
+	fi, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return err
+	} else if !fi.Mode().IsDir() {
+		return fmt.Errorf("%s exists but is not a directory", path)
+	}
+
+	return nil
+}
+
+func (o *CreateOptions) completeProjectHost(config *kickoff.Config) error {
 	if o.ProjectHost == "" {
-		err := o.Prompt.AskOne(&survey.Input{
+		o.ProjectHost = config.Project.Host
+	}
+
+	if o.Interactive || o.ProjectHost == "" {
+		return o.Prompt.AskOne(&survey.Input{
 			Message: "Project host",
-			Default: config.Project.Host,
+			Default: o.ProjectHost,
 			Help: cmdutil.LongDesc(`
                 Project host
 
                 To be able to build nice links that are related to the source code repo, e.g. links to
                 CI or docs, kickoff needs to know the hostname of your SCM platform.`),
-		}, &o.ProjectHost, required)
-		if err != nil {
-			return err
-		}
+		}, &o.ProjectHost, survey.WithValidator(survey.Required))
 	}
 
+	return nil
+}
+
+func (o *CreateOptions) completeProjectOwner(config *kickoff.Config) error {
 	if o.ProjectOwner == "" {
-		err := o.Prompt.AskOne(&survey.Input{
+		o.ProjectOwner = config.Project.Owner
+	}
+
+	if o.Interactive || o.ProjectOwner == "" {
+		return o.Prompt.AskOne(&survey.Input{
 			Message: "Project owner",
-			Default: config.Project.Owner,
+			Default: o.ProjectOwner,
 			Help: cmdutil.LongDesc(`
                 Project owner
 
                 To be able to build nice links that are related to the source code repo, e.g. links to
                 CI or docs, kickoff needs to know the username that you use on your SCM platform. 
                 The project owner is automatically inserted into license texts if enabled.`),
-		}, &o.ProjectOwner, required)
-		if err != nil {
-			return err
-		}
+		}, &o.ProjectOwner, survey.WithValidator(survey.Required))
 	}
 
 	return nil
 }
 
-func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
-	if o.License != "" {
+func (o *CreateOptions) completeLicense(config *kickoff.Config) error {
+	if o.License == "" {
+		o.License = config.Project.License
+	}
+
+	if !o.Interactive {
 		return nil
 	}
 
@@ -163,9 +205,14 @@ func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
 
 	optionMap := make(map[string]string, len(licenses))
 
+	var defaultName string
+
 	for _, license := range licenses {
 		options = append(options, license.Name)
 		optionMap[license.Name] = license.Key
+		if o.License == license.Key {
+			defaultName = license.Name
+		}
 	}
 
 	var choice string
@@ -173,6 +220,7 @@ func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
 	err = o.Prompt.AskOne(&survey.Select{
 		Message:  "Choose a license",
 		Options:  options,
+		Default:  defaultName,
 		PageSize: 20,
 		VimMode:  true,
 		Help: cmdutil.LongDesc(`
@@ -191,51 +239,73 @@ func (o *CreateOptions) configureLicense(config *kickoff.Config) error {
 	return nil
 }
 
-func (o *CreateOptions) configureGitignoreTemplates(config *kickoff.Config) error {
-	if len(o.gitignores) > 0 {
-		return nil
+func (o *CreateOptions) completeGitignoreTemplates(config *kickoff.Config) error {
+	if len(o.gitignores) == 0 {
+		o.gitignores = strings.Split(config.Project.Gitignore, ",")
 	}
 
-	client := gitignore.NewClient(o.HTTPClient())
+	if o.Interactive {
+		client := gitignore.NewClient(o.HTTPClient())
 
-	options, err := client.ListTemplates(context.Background())
-	if err != nil || len(options) == 0 {
-		return err
-	}
+		options, err := client.ListTemplates(context.Background())
+		if err != nil || len(options) == 0 {
+			return err
+		}
 
-	err = o.Prompt.AskOne(&survey.MultiSelect{
-		Message:  "Choose gitignore templates",
-		Options:  options,
-		PageSize: 20,
-		VimMode:  true,
-		Help: cmdutil.LongDesc(`
-            Gitignore templates
+		err = o.Prompt.AskOne(&survey.MultiSelect{
+			Message:  "Choose gitignore templates",
+			Options:  options,
+			Default:  o.gitignores,
+			PageSize: 20,
+			VimMode:  true,
+			Help: cmdutil.LongDesc(`
+                Gitignore templates
 
-            If .gitignore templates are configured, new projects will
-            automatically include a .gitignore which is populated with the
-            specified templates.`),
-	}, &o.gitignores)
-	if err != nil {
-		return err
+                If .gitignore templates are configured, new projects will
+                automatically include a .gitignore which is populated with the
+                specified templates.`),
+		}, &o.gitignores)
+		if err != nil {
+			return err
+		}
 	}
 
 	o.Gitignore = strings.Join(o.gitignores, ",")
 	return nil
 }
 
-func (o *CreateOptions) configureGit(config *kickoff.Config) error {
-	if o.InitGit {
+func (o *CreateOptions) completeGitInit(config *kickoff.Config) error {
+	if o.InitGit && !o.Interactive {
 		return nil
 	}
 
 	return o.Prompt.AskOne(&survey.Confirm{
 		Message: "Initialize git in the project directory?",
-		Default: o.AutoApprove,
+		Default: o.InitGit,
 	}, &o.InitGit)
 }
 
-func (o *CreateOptions) configureValues(config *kickoff.Config) error {
-	if len(o.valuesFiles) > 0 || len(o.rawValues) > 0 {
+func (o *CreateOptions) completeValues(config *kickoff.Config) error {
+	o.Values = config.Values
+
+	for _, path := range o.valuesFiles {
+		vals, err := template.LoadValues(path)
+		if err != nil {
+			return err
+		}
+
+		if err := o.Values.Merge(vals); err != nil {
+			return err
+		}
+	}
+
+	for _, rawValues := range o.rawValues {
+		if err := strvals.ParseInto(rawValues, o.Values); err != nil {
+			return err
+		}
+	}
+
+	if !o.Interactive {
 		return nil
 	}
 
@@ -243,16 +313,14 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 
 	err := o.Prompt.AskOne(&survey.Confirm{
 		Message: "Edit skeleton values?",
-		Default: o.AutoApprove,
+		Default: true,
 		Help: cmdutil.LongDesc(`
             Edit skeleton values
 
             This allows to edit the values that are passed to template files before rendering them.`),
 	}, &edit)
-	if err != nil {
+	if err != nil || !edit {
 		return err
-	} else if !edit {
-		return nil
 	}
 
 	repo, err := o.Repository(o.RepoNames...)
@@ -270,7 +338,8 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 		return err
 	}
 
-	if err := o.Values.Merge(merged.Values); err != nil {
+	o.Values, err = template.MergeValues(merged.Values, o.Values)
+	if err != nil {
 		return err
 	}
 
@@ -305,5 +374,6 @@ func (o *CreateOptions) configureValues(config *kickoff.Config) error {
 	}
 
 	o.Values = values
+
 	return nil
 }

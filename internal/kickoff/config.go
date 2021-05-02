@@ -101,14 +101,6 @@ func (p *ProjectConfig) ApplyDefaults() {
 	if p.Owner == "" {
 		p.Owner = detectDefaultProjectOwner()
 	}
-
-	if p.License == NoLicense {
-		p.License = ""
-	}
-
-	if p.Gitignore == NoGitignore {
-		p.Gitignore = ""
-	}
 }
 
 // Validate implements the Validator interface.
