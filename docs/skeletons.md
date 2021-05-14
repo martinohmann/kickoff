@@ -40,9 +40,10 @@ repositories you configured:
 ```bash
 $ kickoff skeleton list
 
-REPONAME        NAME                    PATH
-default         default                 ~/kickoff-skeletons/skeletons/default
-default         myskeleton              ~/kickoff-skeletons/skeletons/myskeleton
+Repository  Name
+default     default
+default     golang/cli
+default     golang/library
 ```
 
 To learn more about the working with repositories, head over to the
@@ -53,15 +54,38 @@ To learn more about the working with repositories, head over to the
 In addition to listing skeletons, they can also be inspected individual:
 
 ```bash
-$ kickoff skeleton show myskeleton
+$ kickoff skeleton show default:golang/cli
 
-Name            myskeleton
-Path            ~/kickoff-skeletons/skeletons/myskeleton
-Description     -
-Files           myskeleton
-                └── README.md.skel
-Values          travis:
-                  enabled: false
+Repository  default
+Name        golang/cli
+Path        ~/.cache/kickoff/repositories/4c76fb4fd87cd5b1dca9d94fa35751b06f507109b75bd3a4bc35012ed33cecfb/skeletons/golang/cli
+
+Files                       Values
+golang/cli                  golang:
+├── .github/                  targetVersion: "1.15"
+│   └── workflows/
+│       └── build.yml
+├── .gitignore.skel
+├── .golangci.yml
+├── .goreleaser.yml.skel
+├── Makefile.skel
+├── README.md.skel
+├── cmd/
+│   └── {{.Project.Name}}/
+│       └── main.go.skel
+├── doc.go.skel
+├── go.mod.skel
+└── pkg/
+    └── cmd/
+        └── root.go.skel
 ```
 
-**Hint**: try out the `--output yaml` flag to get even more information.
+To inspect the content of individual skeleton files, just add the file path to the `show` command:
+
+```bash
+$ kickoff skeleton show default:golang/cli doc.go.skel
+
+// Package {{.Project.Name|goPackageName}} provides a library to work with
+// stuff and things.
+package {{.Project.Name|goPackageName}}
+```

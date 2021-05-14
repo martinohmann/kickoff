@@ -89,7 +89,7 @@ check them out. Showing the help is a good starting point:
 $ kickoff help
 
 # Help for the `project create` subcommand.
-$ kickoff project create help
+$ kickoff project create --help
 ```
 
 ## Next steps

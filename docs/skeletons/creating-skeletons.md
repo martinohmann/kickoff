@@ -16,25 +16,25 @@ However, `kickoff` already provides a command for you that does just that and a
 little more:
 
 ```bash
-$ kickoff skeleton create ~/kickoff-skeletons/skeletons/myskeleton
+$ kickoff skeleton create default myskeleton
 
-• creating skeleton directory       path=/home/johndoe/kickoff-skeletons/skeletons/myskeleton
-• writing .kickoff.yaml             path=/home/johndoe/kickoff-skeletons/skeletons/myskeleton/.kickoff.yaml
-• writing README.md.skel            path=/home/johndoe/kickoff-skeletons/skeletons/myskeleton/README.md.skel
+✓ Created new skeleton myskeleton in repository default
+
+You can inspect it by running: kickoff skeleton show default:myskeleton
 ```
 
-This will create a new skeleton called `myskeleton` and seeds it with a
-documented `.kickoff.yaml` and an example `README.md.skel` template to get you
-started.
+This will create a new skeleton called `myskeleton` in the `default` and seeds
+it with a documented `.kickoff.yaml` and an example `README.md.skel` template
+to get you started.
 
 You should see the newly created skeleton in the skeleton list now:
 
 ```bash
 $ kickoff skeleton list
 
-REPONAME        NAME                    PATH
-default         default                 ~/kickoff-skeletons/skeletons/default
-default         myskeleton              ~/kickoff-skeletons/skeletons/myskeleton
+Repository  Name
+default     default
+default     myskeleton
 ```
 
 You can also inspect inpect individual skeletons to see what's in there:
@@ -42,13 +42,13 @@ You can also inspect inpect individual skeletons to see what's in there:
 ```bash
 $ kickoff skeleton show myskeleton
 
-Name            myskeleton
-Path            ~/kickoff-skeletons/skeletons/myskeleton
-Description     -
-Files           myskeleton
-                └── README.md.skel
-Values          travis:
-                  enabled: false
+Repository  default
+Name        myskeleton
+Path        ~/kickoff-skeletons/skeletons/myskeleton
+
+Files               Values
+myskeleton          null
+└── README.md.skel
 ```
 
 ## Next steps

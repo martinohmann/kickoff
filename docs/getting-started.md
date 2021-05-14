@@ -45,10 +45,8 @@ you already ran `kickoff init` in the past.
 ```bash
 $ kickoff init
 
-? Project host github.com
-? Project owner johndoe
-? Do you want to set a default project license? No
-? Do you want to select default .gitignore templates? No
+? Default project host github.com
+? Default project owner martinohmann
 ```
 
 You can type `?` and hit `Enter` for every configuration option to get some
@@ -69,22 +67,42 @@ best:
 
 ```bash
 ? Default skeleton repository ~/kickoff-skeletons
-? Skeleton repository /home/johndoe/kickoff-skeletons does not exist, initialize it? [? for help] (Y/n)
 ```
 
 This will create a new local skeleton repository and initializes it with a
-default project skeleton so that we have something to work with:
+default project skeleton so that we have something to work with.
+
+The next steps let you configure an [opensource
+license](configuration#configuring-a-default-project-license) and [gitignore
+templates](configuration#configuring-default-project-gitignore-templates) that
+will be used for new projects by default. The default values can be overridden
+on project creation. Finally you have a chance to set some [default skeleton
+values](configuration#configuring-default-values).
 
 ```bash
-? Skeleton repository /home/johndoe/kickoff-skeletons does not exist, initialize it? Yes
-• creating skeleton repository      path=/home/johndoe/kickoff-skeletons
-• creating skeleton directory       path=/home/johndoe/kickoff-skeletons/skeletons/default
-• writing .kickoff.yaml             path=/home/johndoe/kickoff-skeletons/skeletons/default/.kickoff.yaml
-• writing README.md.skel            path=/home/johndoe/kickoff-skeletons/skeletons/default/README.md.skel
-```
+? Default license
+? Default gitignore templates
+? Edit default skeleton values? No
 
-Confirm the last two steps of the setup with `Y` to review and save the
-configuration.
+Configuration:
+
+project:
+  host: github.com
+  owner: martinohmann
+repositories:
+  default: https://github.com/martinohmann/kickoff-skeletons
+
+? Save config to ~/.config/kickoff/config.yaml? Yes
+
+✓ Config saved
+
+Here are some useful commands to get you started:
+
+❯ List repositories: kickoff repository list
+❯ List skeletons: kickoff skeleton list
+❯ Inspect a skeleton: kickoff skeleton show <skeleton-name>
+❯ Create new project from skeleton: kickoff project create <name> <skeleton-name>
+```
 
 Kickoff will save its configuration in the user-level configuration directory
 which depends on your OS. E.g. on Linux this will be either
@@ -104,8 +122,8 @@ created in the previous section:
 ```bash
 $ kickoff repository list
 
-NAME    TYPE    PATH                    URL     REVISION
-default local   ~/kickoff-skeletons     -       -
+Name     Type   URL                  Revision
+default  local  ~/kickoff-skeletons  -
 ```
 
 As you can see, we have a local repository named `default` which acts as a
@@ -116,11 +134,11 @@ Let's see what's in there:
 ```bash
 $ kickoff skeleton list
 
-REPONAME        NAME    PATH
-default         default ~/kickoff-skeletons/skeletons/default
+Repository  Name
+default     default
 ```
 
-During the creating of our `default` repository it was also seeded with a
+During the creation of our `default` repository it was also seeded with a
 `default` project skeleton which we can use as a base to create our own. We
 will learn about how to do that later. For now, we will just use it as is to
 create our first project from a project skeleton.
@@ -135,11 +153,22 @@ $ mkdir ~/projects
 $ cd ~/projects
 $ kickoff project create myproject default:default
 
-Creating project in ~/projects/myproject.
+❯ kickoff project create myproject default:default
+Project configuration:
 
-❯ template README.md.skel =❯ README.md
+Name       myproject       Owner  martinohmann
+Directory  /tmp/myproject  Host   github.com
 
-Project creation complete. Created: 1, Overwritten: 0, Skipped: 0.
+Skeletons
+default:default
+
+The following file operations will be performed:
+
+default:default ❯ README.md.skel =❯ README.md ✓ create
+
+? Create project in /tmp/myproject? Yes
+
+✓ Project myproject created in /tmp/myproject. 1 files created, 0 skipped and 0 overwritten
 ```
 
 **Note:** You can also pass a different directory via the `--dir` flag.
