@@ -11,7 +11,7 @@ skeletons or create your own. No more need to copy & paste initial boilerplate
 like Makefiles, CI configuration or language specific configuration files from
 existing projects to a new one.
 
-[![asciicast](https://asciinema.org/a/409511.svg)](https://asciinema.org/a/409511)
+[![asciicast](https://asciinema.org/a/414074.svg)](https://asciinema.org/a/414074)
 
 ## Documentation
 
