@@ -53,6 +53,20 @@ displayed as part of the command help:
 $ kickoff project create --help
 ```
 
+## Interactive mode
+
+When `kickoff project create` is called with the `-i/--interactive` flag it
+prompts for all project configuration options:
+
+```bash
+$ kickoff project create
+
+? Select one or more project skeletons default:default
+? Project name myproject
+? Project directory [? for help, tab for suggestions] (/tmp/myproject)
+[...]
+```
+
 ## Overriding skeleton values
 
 Skeletons can make use of custom values which can be overridden by the user
@@ -61,11 +75,6 @@ listed by inspecting the skeleton:
 
 ```bash
 $ kickoff skeleton show myskeleton
-
-...
-Values          someKey: someValue
-                someOtherKey:
-                  someNestedKey: 42
 ```
 
 Using the `--set` and `--values` flags you can override these:
