@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.2.12
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/creack/pty v1.1.11
+	github.com/creack/pty v1.1.12
 	github.com/disiqueira/gotree/v3 v3.0.2
 	github.com/fatih/color v1.11.0
 	github.com/ghodss/yaml v1.0.0
