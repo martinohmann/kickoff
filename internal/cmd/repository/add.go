@@ -80,7 +80,10 @@ func (o *AddOptions) Run() error {
 		return err
 	}
 
-	if ref.IsRemote() && o.Revision != "" {
+	if ref.IsLocal() {
+		// ensure local path is absolute
+		o.RepoURL = ref.LocalPath()
+	} else if o.Revision != "" {
 		ref.Revision = o.Revision
 
 		o.RepoURL = ref.String()

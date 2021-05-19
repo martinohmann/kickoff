@@ -2,6 +2,7 @@ package repository
 
 import (
 	"io"
+	"path/filepath"
 	"testing"
 
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -47,16 +48,19 @@ func TestAddCmd(t *testing.T) {
 		assert.Equal(t, "../../testdata/repos/repo1", config.Repositories["default"])
 	})
 
-	t.Run("add new repo", func(t *testing.T) {
+	t.Run("adds new repo, resolves with abspath", func(t *testing.T) {
 		cmd := NewAddCmd(f)
 		cmd.SetArgs([]string{"new-repo", "../../testdata/repos/repo2"})
 		cmd.SetOut(io.Discard)
+
+		absPath, err := filepath.Abs("../../testdata/repos/repo2")
+		require.NoError(t, err)
 
 		require.NoError(t, cmd.Execute())
 
 		config, err := kickoff.LoadConfig(configPath)
 		require.NoError(t, err)
 		assert.Len(t, config.Repositories, 2)
-		assert.Equal(t, "../../testdata/repos/repo2", config.Repositories["new-repo"])
+		assert.Equal(t, absPath, config.Repositories["new-repo"])
 	})
 }

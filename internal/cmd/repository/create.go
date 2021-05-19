@@ -3,10 +3,12 @@ package repository
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
 	"github.com/martinohmann/kickoff/internal/cmdutil"
+	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/repository"
 	log "github.com/sirupsen/logrus"
@@ -39,7 +41,7 @@ func NewCreateCmd(f *cmdutil.Factory) *cobra.Command {
 			}
 			return nil, cobra.ShellCompDirectiveFilterDirs
 		},
-		RunE: func(cmd *cobra.Command, args []string) (err error) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			o.RepoName = args[0]
 			o.RepoDir = args[1]
 
@@ -92,6 +94,12 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
+	// ensure local path is absolute
+	o.RepoDir, err = filepath.Abs(o.RepoDir)
+	if err != nil {
+		return err
+	}
+
 	config.Repositories[o.RepoName] = o.RepoDir
 
 	err = kickoff.SaveConfig(o.ConfigPath, config)
@@ -99,7 +107,7 @@ func (o *CreateOptions) Run() error {
 		return err
 	}
 
-	fmt.Fprintf(o.Out, "%s Created new skeleton repository in %s\n\n", color.GreenString("✓"), bold.Sprint(o.RepoDir))
+	fmt.Fprintf(o.Out, "%s Created new skeleton repository in %s\n\n", color.GreenString("✓"), bold.Sprint(homedir.Collapse(o.RepoDir)))
 	fmt.Fprintln(o.Out, "You can inspect it by running:", bold.Sprintf("kickoff skeleton list -r %s", o.RepoName))
 
 	return nil
