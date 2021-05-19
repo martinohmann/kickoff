@@ -225,6 +225,11 @@ func (o *InitOptions) configureDefaultSkeletonRepository(config *kickoff.Config)
 		return err
 	}
 
+	if ref.IsLocal() {
+		// ensure local path is absolute
+		repoURL = ref.LocalPath()
+	}
+
 	config.Repositories[kickoff.DefaultRepositoryName] = repoURL
 
 	if ref.IsRemote() {
