@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -112,6 +113,10 @@ func writeState(path string) error {
 
 	buf, err := json.Marshal(state)
 	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
 
