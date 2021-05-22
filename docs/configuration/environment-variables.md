@@ -8,11 +8,12 @@ parent: Configuration
 
 The following environment variables can be used to configure kickoff:
 
-| Name                | Description                                                                                          |
-| ---                 | ---                                                                                                  |
-| `KICKOFF_CONFIG`    | Override path to the kickoff config.                                                                 |
-| `KICKOFF_EDITOR`    | Editor used by `kickoff config edit`. If unset, `EDITOR` environment will be used. Fallback is `vi`. |
-| `KICKOFF_LOG_LEVEL` | Sets the kickoff log level. Can be overridden with the `--log-level` flag                            |
+| Name                      | Description                                                                                          |
+| ---                       | ---                                                                                                  |
+| `KICKOFF_CONFIG`          | Override path to the kickoff config.                                                                 |
+| `KICKOFF_EDITOR`          | Editor used by `kickoff config edit`. If unset, `EDITOR` environment will be used. Fallback is `vi`. |
+| `KICKOFF_LOG_LEVEL`       | Sets the kickoff log level. Can be overridden with the `--log-level` flag.                           |
+| `KICKOFF_NO_UPDATE_CHECK` | Disables update checks if set to a non-empty string.                                                 |
 
 ## Next steps
 

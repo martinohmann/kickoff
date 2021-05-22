@@ -41,6 +41,8 @@ const (
 	EnvKeyEditor = "KICKOFF_EDITOR"
 	// EnvKeyLogLevel configures the log level.
 	EnvKeyLogLevel = "KICKOFF_LOG_LEVEL"
+	// EnvKeyNoUpdateCheck disables update checks.
+	EnvKeyNoUpdateCheck = "KICKOFF_NO_UPDATE_CHECK"
 )
 
 var (
