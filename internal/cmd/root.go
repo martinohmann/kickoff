@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/martinohmann/kickoff/internal/cli"
@@ -17,6 +20,8 @@ import (
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/repository"
+	"github.com/martinohmann/kickoff/internal/update"
+	"github.com/martinohmann/kickoff/internal/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -77,11 +82,44 @@ func Execute() {
 	streams := cli.DefaultIOStreams
 	f := cmdutil.NewFactory(streams)
 
+	updateCh := make(chan *update.Info)
+	errCh := make(chan error)
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		statePath := filepath.Join(kickoff.LocalCacheDir, "update-state.json")
+		current := version.Get()
+
+		info, err := update.Check(ctx, statePath, current.GitVersion, 24*time.Hour)
+		if err != nil {
+			errCh <- err
+		} else {
+			updateCh <- info
+		}
+	}()
+
 	cmd := NewRootCmd(f)
 
 	if err := cmd.Execute(); err != nil {
 		handleError(streams.ErrOut, err)
 		os.Exit(1)
+	}
+
+	select {
+	case info := <-updateCh:
+		if info != nil && info.IsUpdate {
+			fmt.Fprintf(
+				streams.ErrOut,
+				"\nA new release of kickoff is available: %s → %s\n\n%s\n",
+				color.CyanString(info.CurrentVersion),
+				color.CyanString(info.LatestVersion),
+				info.LatestReleaseURL,
+			)
+		}
+	case err := <-errCh:
+		log.WithError(err).Debug("update check failed")
 	}
 }
 
