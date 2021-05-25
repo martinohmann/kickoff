@@ -15,15 +15,26 @@ type SkeletonConfig struct {
 	Description string `json:"description,omitempty"`
 	// Values holds user-defined values available in .skel templates.
 	Values template.Values `json:"values,omitempty"`
+	// Parameters holds the schema of parameters that can be set by the user
+	// when creating a project from the skeleton.
+	Parameters Parameters `json:"parameters,omitempty"`
+}
+
+// Validate implements the Validator interface.
+func (c *SkeletonConfig) Validate() error {
+	return c.Parameters.Validate()
 }
 
 // LoadSkeletonConfig loads the skeleton config from path and returns it.
 func LoadSkeletonConfig(path string) (*SkeletonConfig, error) {
 	var config SkeletonConfig
 
-	err := Load(path, &config)
-	if err != nil {
+	if err := Load(path, &config); err != nil {
 		return nil, fmt.Errorf("failed to load skeleton config: %w", err)
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
 
 	return &config, nil

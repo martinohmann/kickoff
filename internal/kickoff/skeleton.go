@@ -22,6 +22,9 @@ type Skeleton struct {
 	Files []*BufferedFile `json:"files,omitempty"`
 	// Values are the template values from the skeleton's metadata.
 	Values template.Values `json:"values,omitempty"`
+	// Parameters
+	// @TODO(mohmann): add docs
+	Parameters Parameters `json:"parameters,omitempty"`
 }
 
 // String implements fmt.Stringer.
@@ -120,5 +123,8 @@ func (s *Skeleton) Merge(other *Skeleton) (*Skeleton, error) {
 		Files:       MergeFiles(s.Files, other.Files),
 		Description: other.Description,
 		Ref:         other.Ref,
+		// @FIXME(mohmann): this shouldn't be like this. due to the parameters
+		// we should get rid of the merging logic and limit it to files only.
+		Parameters: other.Parameters,
 	}, nil
 }

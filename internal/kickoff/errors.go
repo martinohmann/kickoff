@@ -17,9 +17,11 @@ var (
 
 // Base validation errors.
 var (
-	invalidProjectConfig = "invalid project config"
-	invalidRepositoryRef = "invalid repository ref"
-	invalidSkeletonRef   = "invalid skeleton ref"
+	invalidProjectConfig  = "invalid project config"
+	invalidRepositoryRef  = "invalid repository ref"
+	invalidSkeletonRef    = "invalid skeleton ref"
+	invalidParameterSpec  = "invalid parameter spec"
+	invalidParameterValue = "invalid parameter value"
 )
 
 // ValidationError wraps all errors that occur during validation.
@@ -57,4 +59,12 @@ func newRepositoryRefError(format string, args ...interface{}) *ValidationError 
 
 func newSkeletonRefError(format string, args ...interface{}) *ValidationError {
 	return newValidationError(invalidSkeletonRef, format, args...)
+}
+
+func newParameterSpecError(format string, args ...interface{}) *ValidationError {
+	return newValidationError(invalidParameterSpec, format, args...)
+}
+
+func newParameterValueError(format string, args ...interface{}) error {
+	return newValidationError(invalidParameterValue, format, args...)
 }

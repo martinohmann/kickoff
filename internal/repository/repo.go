@@ -212,6 +212,7 @@ func loadSkeleton(repo kickoff.Repository, name string) (*kickoff.Skeleton, erro
 	s := &kickoff.Skeleton{
 		Description: config.Description,
 		Values:      config.Values,
+		Parameters:  config.Parameters,
 		Ref:         ref,
 		Files:       files,
 	}

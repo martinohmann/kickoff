@@ -18,7 +18,6 @@ import (
 	"github.com/martinohmann/kickoff/internal/license"
 	"github.com/martinohmann/kickoff/internal/project"
 	"github.com/martinohmann/kickoff/internal/prompt"
-	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -117,6 +116,7 @@ type CreateOptions struct {
 
 	RepoNames      []string
 	SkeletonNames  []string
+	Skeletons      []*kickoff.Skeleton
 	AutoApprove    bool
 	Interactive    bool
 	InitGit        bool
@@ -170,17 +170,9 @@ func (o *CreateOptions) Complete() (err error) {
 // Run loads all project skeletons that the user provided and creates the
 // project at the output directory.
 func (o *CreateOptions) Run() error {
-	repo, err := o.Repository(o.RepoNames...)
-	if err != nil {
-		return err
-	}
-
-	skeletons, err := repository.LoadSkeletons(repo, o.SkeletonNames)
-	if err != nil {
-		return err
-	}
-
-	skeleton, err := kickoff.MergeSkeletons(skeletons...)
+	// @FIXME(mohmann): do not merge skeletons anymore. the project plan will
+	// take care of this in the future.
+	skeleton, err := kickoff.MergeSkeletons(o.Skeletons...)
 	if err != nil {
 		return err
 	}

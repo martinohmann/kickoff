@@ -1,0 +1,4 @@
+---
+parameters:
+  foo:
+    type: invalid

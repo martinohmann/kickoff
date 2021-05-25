@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,14 +16,17 @@ import (
 	"github.com/martinohmann/kickoff/internal/homedir"
 	"github.com/martinohmann/kickoff/internal/kickoff"
 	"github.com/martinohmann/kickoff/internal/license"
+	"github.com/martinohmann/kickoff/internal/prompt"
 	"github.com/martinohmann/kickoff/internal/repository"
 	"github.com/martinohmann/kickoff/internal/template"
+	"github.com/spf13/cast"
 	"helm.sh/helm/pkg/strvals"
 )
 
 func (o *CreateOptions) complete(config *kickoff.Config) error {
 	completeFuncs := []func(*kickoff.Config) error{
-		o.completeSkeletonNames,
+		o.completeSkeletons,
+		o.completeSkeletonParameters,
 		o.completeProjectName,
 		o.completeProjectDir,
 		o.completeProjectHost,
@@ -42,35 +46,181 @@ func (o *CreateOptions) complete(config *kickoff.Config) error {
 	return nil
 }
 
-func (o *CreateOptions) completeSkeletonNames(config *kickoff.Config) error {
-	if len(o.SkeletonNames) > 0 && !o.Interactive {
-		return nil
-	}
-
+func (o *CreateOptions) completeSkeletons(config *kickoff.Config) error {
 	repo, err := o.Repository(o.RepoNames...)
 	if err != nil {
 		return err
 	}
 
-	refs, err := repo.ListSkeletons()
+	if len(o.SkeletonNames) == 0 || o.Interactive {
+		refs, err := repo.ListSkeletons()
+		if err != nil {
+			return nil
+		}
+
+		options := make([]string, len(refs))
+		for i, ref := range refs {
+			options[i] = ref.String()
+		}
+
+		sort.Strings(options)
+
+		err = o.Prompt.AskOne(&survey.MultiSelect{
+			Message:  "Select one or more project skeletons",
+			Options:  options,
+			Default:  o.SkeletonNames,
+			PageSize: 20,
+			VimMode:  true,
+		}, &o.SkeletonNames, survey.WithValidator(survey.Required))
+		if err != nil {
+			return err
+		}
+	}
+
+	o.Skeletons, err = repository.LoadSkeletons(repo, o.SkeletonNames)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	options := make([]string, len(refs))
-	for i, ref := range refs {
-		options[i] = ref.String()
+	return nil
+}
+
+type parameterSetter struct {
+	name  string
+	param *kickoff.Parameter
+}
+
+func newParameterSetter(name string, param *kickoff.Parameter) *parameterSetter {
+	return &parameterSetter{
+		name:  name,
+		param: param,
+	}
+}
+
+func (ps *parameterSetter) WriteAnswer(field string, ans interface{}) error {
+	return ps.setValue(ans)
+}
+
+func (ps *parameterSetter) setValue(ans interface{}) error {
+	var vals []interface{}
+
+	switch tv := ans.(type) {
+	case bool:
+		vals = append(vals, tv)
+	case string:
+		vals = append(vals, tv)
+	case survey.OptionAnswer:
+		vals = append(vals, tv.Value)
+	case []survey.OptionAnswer:
+		if len(tv) == 0 {
+			return errors.New("selection required")
+		}
+
+		for _, v := range tv {
+			vals = append(vals, v.Value)
+		}
 	}
 
-	sort.Strings(options)
+	switch ps.param.Type {
+	case kickoff.NumberListParameterType, kickoff.StringListParameterType:
+		if len(ps.param.AllowedValues) > 0 {
+			return ps.param.SetValue(vals)
+		}
 
-	return o.Prompt.AskOne(&survey.MultiSelect{
-		Message:  "Select one or more project skeletons",
-		Options:  options,
-		Default:  o.SkeletonNames,
-		PageSize: 20,
-		VimMode:  true,
-	}, &o.SkeletonNames, survey.WithValidator(survey.Required))
+		// This is a multiline input, split first value on newlines.
+		lines, err := cast.ToStringE(vals[0])
+		if err != nil {
+			return err
+		}
+		return ps.param.SetValue(strings.Split(lines, "\n"))
+	default:
+		return ps.param.SetValue(vals[0])
+	}
+}
+
+func (ps *parameterSetter) buildPrompt() survey.Prompt {
+	param := ps.param
+
+	message := fmt.Sprintf("Parameter %q (%s):", ps.name, param.Type)
+
+	switch param.Type {
+	case kickoff.BoolParameterType:
+		return &survey.Confirm{
+			Message: message,
+			Help:    param.Description,
+			Default: cast.ToBool(param.Default),
+		}
+	case kickoff.NumberParameterType, kickoff.StringParameterType:
+		if len(param.AllowedValues) > 0 {
+			return &survey.Select{
+				Message: message,
+				Help:    param.Description,
+				Default: param.Default,
+				Options: cast.ToStringSlice(param.AllowedValues),
+				VimMode: true,
+			}
+		}
+
+		return &survey.Input{
+			Message: message,
+			Help:    param.Description,
+			Default: cast.ToString(param.Default),
+		}
+	case kickoff.NumberListParameterType, kickoff.StringListParameterType:
+		if len(param.AllowedValues) > 0 {
+			return &survey.MultiSelect{
+				Message: message,
+				Help:    param.Description,
+				Default: param.Default,
+				Options: cast.ToStringSlice(param.AllowedValues),
+				VimMode: true,
+			}
+		}
+
+		return &survey.Multiline{
+			Message: message,
+			Help:    param.Description,
+			Default: cast.ToString(param.Default),
+		}
+	default:
+		panic(fmt.Sprintf("unexpected parameter type %q", param.Type))
+	}
+}
+
+func (ps *parameterSetter) Prompt(prompt prompt.Prompt) error {
+	return prompt.AskOne(ps.buildPrompt(), ps,
+		survey.WithValidator(survey.Required),
+		survey.WithValidator(ps.setValue))
+}
+
+func (o *CreateOptions) completeSkeletonParameters(config *kickoff.Config) error {
+	for _, skeleton := range o.Skeletons {
+		err := skeleton.Parameters.ForEach(func(name string, param *kickoff.Parameter) error {
+			if param.Default != nil && !o.Interactive {
+				return nil
+			}
+
+			if len(o.Skeletons) > 1 {
+				name = fmt.Sprintf("%s.%s", skeleton.Ref, name)
+			}
+
+			setter := newParameterSetter(name, param)
+
+			return setter.Prompt(o.Prompt)
+		})
+		if err != nil {
+			return err
+		}
+
+		values, err := skeleton.Parameters.Values()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintf(o.Out, "%#v\n", values)
+	}
+
+	return nil
 }
 
 func (o *CreateOptions) completeProjectName(config *kickoff.Config) error {
