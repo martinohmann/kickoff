@@ -11,7 +11,7 @@ require (
 	github.com/disiqueira/gotree/v3 v3.0.2
 	github.com/fatih/color v1.12.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.4.1
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/imdario/mergo v0.3.12
