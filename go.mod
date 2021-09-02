@@ -7,7 +7,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/creack/pty v1.1.14
+	github.com/creack/pty v1.1.15
 	github.com/disiqueira/gotree/v3 v3.0.2
 	github.com/fatih/color v1.12.0
 	github.com/ghodss/yaml v1.0.0
