@@ -22,7 +22,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tcnksm/go-gitconfig v0.1.2
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
 	helm.sh/helm v2.17.0+incompatible
