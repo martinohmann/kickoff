@@ -16,7 +16,7 @@ require (
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.1.2 // indirect
-	github.com/imdario/mergo v0.3.12
+	github.com/imdario/mergo v0.3.13
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/kirsle/configdir v0.0.0-20170128060238-e45d2f54772f
 	github.com/martinohmann/httpcache v0.0.0-20200615162652-221549dc7015
