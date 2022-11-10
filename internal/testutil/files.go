@@ -9,8 +9,7 @@ import (
 //
 // Usage example in tests:
 //
-//   defer testutil.MockRepositoryCacheDir(t.TempDir())()
-//
+//	defer testutil.MockRepositoryCacheDir(t.TempDir())()
 func MockRepositoryCacheDir(dir string) func() {
 	oldCacheDir := kickoff.LocalRepositoryCacheDir
 	kickoff.LocalRepositoryCacheDir = dir
@@ -22,8 +21,7 @@ func MockRepositoryCacheDir(dir string) func() {
 //
 // Usage example in tests:
 //
-//   defer testutil.MockDefaultConfigPath(configPath)()
-//
+//	defer testutil.MockDefaultConfigPath(configPath)()
 func MockDefaultConfigPath(path string) func() {
 	oldConfigPath := kickoff.DefaultConfigPath
 	kickoff.DefaultConfigPath = path

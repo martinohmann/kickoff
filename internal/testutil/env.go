@@ -7,8 +7,7 @@ import "os"
 //
 // Usage example in tests:
 //
-//   defer testutil.Setenv(t, key, value)()
-//
+//	defer testutil.Setenv(t, key, value)()
 func Setenv(key, value string) func() {
 	oldVal, restoreNeeded := os.LookupEnv(key)
 
@@ -28,8 +27,7 @@ func Setenv(key, value string) func() {
 //
 // Usage example in tests:
 //
-//   defer testutil.Unsetenv(t, key)()
-//
+//	defer testutil.Unsetenv(t, key)()
 func Unsetenv(key string) func() {
 	oldVal, restoreNeeded := os.LookupEnv(key)
 
