@@ -20,7 +20,7 @@ title: kickoff docs
 description: >- # this means to ignore newlines until "baseurl:"
   A project bootstrapping tool with support for shared project skeletons from
   local and remote repositories.
-baseurl: "/"  # the subpath of your site, e.g. /blog
+# baseurl: "/"  # the subpath of your site, e.g. /blog
 # url: "https://martinohmann.github.io/kickoff"  # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
 github_username: martinohmann
