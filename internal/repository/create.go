@@ -88,7 +88,7 @@ func writeFiles(dir string) error {
 // files when generating a new skeleton.
 var fileTemplates = map[string]string{
 	kickoff.SkeletonConfigFileName: `---
-# Refer to the .kickoff.yaml documentation at https://kickoff.run/skeletons/configuration
+# Refer to the .kickoff.yaml documentation at https://martinohmann.github.io/kickoff/skeletons/configuration
 # for a complete list of available skeleton configuration options.
 #
 # ---

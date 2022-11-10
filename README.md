@@ -15,8 +15,10 @@ existing projects to a new one.
 
 ## Documentation
 
-Head over to the [kickoff documentation](https://kickoff.run) or directly jump
-into the [Getting started guide](https://kickoff.run/getting-started).
+Head over to the [kickoff
+documentation](https://martinohmann.github.io/kickoff) or directly jump into
+the [Getting started
+guide](https://martinohmann.github.io/kickoff/getting-started).
 
 ## Features
 
