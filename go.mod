@@ -11,8 +11,7 @@ require (
 	github.com/disiqueira/gotree/v3 v3.0.2
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.4.2
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/go-git/go-git/v5 v5.5.1
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.1.2 // indirect
@@ -28,9 +27,6 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
 	github.com/tcnksm/go-gitconfig v0.1.2
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	golang.org/x/term v0.0.0-20210503060354-a79de5458b56
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/term v0.2.0
 	helm.sh/helm v2.17.0+incompatible
 )
